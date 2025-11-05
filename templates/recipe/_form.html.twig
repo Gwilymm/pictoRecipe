@@ -4,6 +4,19 @@
 
 {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
 
+{# Capture prototypes into variables to avoid rendering them more than once (#\n   prevents "Field \"__name__\" has already been rendered" when embedding in attributes) #}
+{% if form.ingredients is defined and form.ingredients.vars.prototype is defined %}
+	{% set ingredient_prototype %}{{ form_widget(form.ingredients.vars.prototype) }}{% endset %}
+{% else %}
+	{% set ingredient_prototype = '' %}
+{% endif %}
+
+{% if form.steps is defined and form.steps.vars.prototype is defined %}
+	{% set step_prototype %}{{ form_widget(form.steps.vars.prototype) }}{% endset %}
+{% else %}
+	{% set step_prototype = '' %}
+{% endif %}
+
 <div class="card bg-base-100 shadow p-4">
 	<div class="card-body">
 		<h2 class="card-title">Recette</h2>
@@ -34,16 +47,27 @@
 			<h3 class="text-lg font-semibold">🧂 Ingrédients</h3>
 
 			{# list container: store prototype in data-prototype attribute (escaped) #}
-			<div data-controller="form-collection" data-form-collection-target="list" data-prototype="{{ form_widget(form.ingredients.vars.prototype)|e('html_attr') }}" class="mt-3 space-y-2">
+			<div data-controller="form-collection" data-form-collection-target="list" data-prototype="{{ ingredient_prototype|e('html_attr') }}" class="mt-3 space-y-2">
 				{% for ingredient in form.ingredients %}
-					<div class="collection-item card bg-base-200 p-3 flex items-start gap-3">
-						<div class="flex-1 grid grid-cols-3 gap-2">
-							<div class="col-span-2">{{ form_widget(ingredient.name) }}</div>
-							<div class="col-span-1">{{ form_widget(ingredient.amount) }}</div>
-							<div class="col-span-1">{{ form_widget(ingredient.unit) }}</div>
+					<div class="collection-item card bg-base-200 p-3">
+						<div class="flex items-start gap-3">
+							<div class="flex-1 grid grid-cols-3 gap-2">
+								<div class="col-span-2">{{ form_widget(ingredient.name) }}</div>
+								<div class="col-span-1">{{ form_widget(ingredient.amount) }}</div>
+								<div class="col-span-1">{{ form_widget(ingredient.unit) }}</div>
+							</div>
+							<div class="flex items-start">
+								<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+							</div>
 						</div>
-						<div class="flex items-start">
-							<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+
+						{# Widget de recherche de pictogramme pour l'ingrédient #}
+						<div class="mt-3 pt-3 border-t border-base-300">
+							{{ include('partials/_pictogram_widget.html.twig', {
+								'form_field': ingredient.name,
+								'url_field': ingredient.pictogramUrl,
+								'placeholder': 'Rechercher un pictogramme pour cet ingrédient...'
+							}) }}
 						</div>
 					</div>
 				{% else %}
@@ -54,6 +78,8 @@
 			<div class="mt-3">
 				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-primary">Ajouter un ingrédient</button>
 			</div>
+
+			{# close ingredients card #}
 		</div>
 	</div>
 
@@ -62,7 +88,7 @@
 		<div class="card-body">
 			<h3 class="text-lg font-semibold">👨‍🍳 Étapes</h3>
 
-			<div data-controller="form-collection" data-form-collection-target="list" data-prototype="{{ form_widget(form.steps.vars.prototype)|e('html_attr') }}" class="mt-3 space-y-2">
+			<div data-controller="form-collection" data-form-collection-target="list" data-prototype="{{ step_prototype|e('html_attr') }}" class="mt-3 space-y-2">
 				{% for step in form.steps %}
 					<div class="collection-item card bg-base-200 p-3">
 						<div class="flex gap-3 items-start">
@@ -71,6 +97,15 @@
 							<div class="flex items-start">
 								<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
 							</div>
+						</div>
+
+						{# Widget de recherche de pictogramme pour l'étape #}
+						<div class="mt-3 pt-3 border-t border-base-300">
+							{{ include('partials/_pictogram_widget.html.twig', {
+								'form_field': step.content,
+								'url_field': step.pictogramUrl,
+								'placeholder': 'Rechercher un pictogramme pour cette étape...'
+							}) }}
 						</div>
 					</div>
 				{% else %}
@@ -89,8 +124,8 @@
 	<button type="submit" class="btn btn-primary">{{ button_label|default('Enregistrer la recette') }}</button>
 
 	<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour à la liste</a>
-
-	{{ include('recipe/_delete_form.html.twig') }}
 </div>
 
+{# Render any remaining hidden fields (CSRF token, etc.) then close the form #}
+{{ form_rest(form) }}
 {{ form_end(form) }}

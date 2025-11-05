@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class IngredientType extends AbstractType
@@ -24,6 +25,9 @@ class IngredientType extends AbstractType
             ->add('unit', TextType::class, [
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-32', 'placeholder' => 'g, ml, pcs...'],
+            ])
+            ->add('pictogramUrl', HiddenType::class, [
+                'required' => false,
             ])
         ;
     }

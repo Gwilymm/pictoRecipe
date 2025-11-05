@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class StepType extends AbstractType
@@ -20,6 +21,9 @@ class StepType extends AbstractType
             ->add('durationMinutes', IntegerType::class, [
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-28', 'placeholder' => 'min'],
+            ])
+            ->add('pictogramUrl', HiddenType::class, [
+                'required' => false,
             ])
         ;
     }

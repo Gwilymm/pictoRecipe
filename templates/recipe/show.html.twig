@@ -43,10 +43,15 @@
 				{% if recipe.ingredients is not empty %}
 					<ul class="divide-y">
 						{% for ingredient in recipe.ingredients %}
-							<li class="py-2 flex items-center justify-between">
-								<div>
-									<strong>{{ ingredient.name }}</strong>
-									<div class="text-sm text-muted">{{ ingredient.amount }}{{ ingredient.unit ? ' ' ~ ingredient.unit : '' }}</div>
+							<li class="py-2 flex items-center justify-between gap-3">
+								<div class="flex items-center gap-3 flex-1">
+									{% if ingredient.pictogramUrl %}
+										<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" class="w-12 h-12 object-contain rounded-lg bg-base-200 p-1" loading="lazy"/>
+									{% endif %}
+									<div>
+										<strong>{{ ingredient.name }}</strong>
+										<div class="text-sm text-muted">{{ ingredient.amount }}{{ ingredient.unit ? ' ' ~ ingredient.unit : '' }}</div>
+									</div>
 								</div>
 								<div class="badge badge-outline">#{{ loop.index }}</div>
 							</li>
@@ -66,11 +71,16 @@
 						{% for step in recipe.steps %}
 							<li class="p-3 bg-base-200 rounded">
 								<div class="flex justify-between items-start gap-4">
-									<div class="prose">
-										{{ step.content }}
+									<div class="flex items-start gap-3 flex-1">
+										{% if step.pictogramUrl %}
+											<img src="{{ step.pictogramUrl }}" alt="Étape {{ loop.index }}" class="w-16 h-16 object-contain rounded-lg bg-base-100 p-1 shrink-0" loading="lazy"/>
+										{% endif %}
+										<div class="prose">
+											{{ step.content }}
+										</div>
 									</div>
 									{% if step.durationMinutes %}
-										<div class="text-sm badge badge-secondary">{{ step.durationMinutes }}
+										<div class="text-sm badge badge-secondary shrink-0">{{ step.durationMinutes }}
 											min</div>
 									{% endif %}
 								</div>

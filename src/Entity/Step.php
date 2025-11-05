@@ -26,6 +26,9 @@ class Step
     #[Assert\PositiveOrZero]
     private ?int $durationMinutes = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $pictogramUrl = null;
+
     #[ORM\ManyToOne(inversedBy: 'steps')]
     private ?Recipe $recipe = null;
 
@@ -78,6 +81,18 @@ class Step
     public function setRecipe(?Recipe $recipe): static
     {
         $this->recipe = $recipe;
+
+        return $this;
+    }
+
+    public function getPictogramUrl(): ?string
+    {
+        return $this->pictogramUrl;
+    }
+
+    public function setPictogramUrl(?string $pictogramUrl): static
+    {
+        $this->pictogramUrl = $pictogramUrl;
 
         return $this;
     }

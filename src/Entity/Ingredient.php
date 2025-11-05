@@ -30,6 +30,9 @@ class Ingredient
     #[Assert\PositiveOrZero]
     private ?int $position = null;
 
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $pictogramUrl = null;
+
     #[ORM\ManyToOne(inversedBy: 'ingredients')]
     private ?Recipe $recipe = null;
 
@@ -94,6 +97,18 @@ class Ingredient
     public function setRecipe(?Recipe $recipe): static
     {
         $this->recipe = $recipe;
+
+        return $this;
+    }
+
+    public function getPictogramUrl(): ?string
+    {
+        return $this->pictogramUrl;
+    }
+
+    public function setPictogramUrl(?string $pictogramUrl): static
+    {
+        $this->pictogramUrl = $pictogramUrl;
 
         return $this;
     }

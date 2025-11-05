@@ -1,0 +1,46 @@
+{#
+   Widget de recherche de pictogrammes ARASAAC
+   
+   Parameters:
+   - form_field: Le champ du formulaire (ex: ingredient.name ou step.content)
+   - url_field: Le champ hidden pour l'URL du pictogramme
+   - label: Label optionnel pour le champ de recherche
+   - placeholder: Placeholder pour le champ de recherche
+#}
+
+{% set fieldId = url_field.vars.id %}
+{% set searchId = fieldId ~ '_search' %}
+
+<div
+	class="pictogram-search-widget mt-2" data-controller="pictogram" data-pictogram-api-url-value="/api/pictograms/search">
+
+	{# Champ caché pour stocker l'URL du pictogramme sélectionné #}
+	{{ form_widget(url_field, {
+        'attr': {
+            'data-pictogram-target': 'urlInput'
+        }
+    }) }}
+
+	{# Barre de recherche #}
+	<div class="flex gap-2 items-center">
+		<input type="text" id="{{ searchId }}" placeholder="{{ placeholder|default('Rechercher un pictogramme...') }}" class="input input-bordered input-sm w-full max-w-xs" data-pictogram-target="searchInput" data-action="input->pictogram#onSearchInput"/>
+
+		<button type="button" class="btn btn-outline btn-primary btn-sm" data-action="click->pictogram#onSearchClick" data-pictogram-target="searchButton">
+			🔍 Rechercher
+		</button>
+
+		{# Spinner de chargement #}
+		<span class="loading loading-spinner text-primary hidden" data-pictogram-target="spinner"></span>
+	</div>
+
+	{# Aperçu du pictogramme sélectionné #}
+	<div class="mt-2" data-pictogram-target="preview"></div>
+
+	{# Container pour afficher les résultats #}
+	<div class="mt-3" data-pictogram-target="resultsContainer"></div>
+
+	{# Aide contextuelle #}
+	<div class="text-xs text-base-content/60 mt-1">
+		💡 Tapez au moins 2 caractères pour lancer la recherche
+	</div>
+</div>
