@@ -1,0 +1,8 @@
+framework:
+    http_client:
+        scoped_clients:
+            arasaac.client:
+                base_uri: "https://api.arasaac.org"
+                timeout: 10
+                headers:
+                    "Accept": "application/json"

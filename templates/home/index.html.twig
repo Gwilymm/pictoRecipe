@@ -1,0 +1,257 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recherche de Pictogrammes ARASAAC
+{% endblock %}
+
+{% block body %}
+	<div
+		class="min-h-screen bg-linear-to-br from-base-200 via-base-100 to-base-200">
+		{# En-tête moderne avec gradient #}
+		<div class="navbar bg-linear-to-r from-primary to-secondary text-primary-content shadow-2xl sticky top-0 z-50 backdrop-blur-lg bg-opacity-95">
+			<div class="flex-1">
+				<a href="{{ path('app_home') }}" class="btn btn-ghost text-xl gap-2 hover:scale-105 transition-transform">
+					<div class="avatar placeholder">
+						<div class="bg-primary-content text-primary rounded-full w-10">
+							<span class="text-2xl">🖼️</span>
+						</div>
+					</div>
+					<span class="font-bold">PictoRecipe</span>
+				</a>
+			</div>
+			<div class="flex-none gap-3 items-center">
+				<div class="badge badge-accent badge-lg gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+					</svg>
+					ARASAAC
+				</div>
+
+				{# Sélecteur de thème DaisyUI (Stimulus) #}
+				<select class="select select-sm select-bordered bg-base-100 text-base-content" data-controller="theme" data-theme-themes-value='["light","dark","cupcake"]' data-action="change->theme#select" aria-label="Sélecteur de thème">
+					<option value="light">🌞 Light</option>
+					<option value="dark">🌙 Dark</option>
+					<option value="cupcake">🧁 Cupcake</option>
+				</select>
+			</div>
+		</div>
+
+		{# Contenu principal #}
+		<div
+			class="container mx-auto px-4 py-8 max-w-7xl">
+			{# Hero section avec recherche intégrée #}
+			<div class="hero bg-linear-to-br from-primary/10 to-secondary/10 rounded-3xl shadow-2xl mb-8 border border-base-300">
+				<div class="hero-content w-full flex-col py-12">
+					<div class="text-center mb-6 space-y-4">
+						<div class="flex justify-center gap-2 text-4xl mb-4">
+							<span class="animate-bounce">🎨</span>
+							<span class="animate-bounce" style="animation-delay: 0.1s">📚</span>
+							<span class="animate-bounce" style="animation-delay: 0.2s">🌈</span>
+						</div>
+						<h1 class="text-5xl font-black bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+							Recherche de Pictogrammes
+						</h1>
+						<p class="text-lg text-base-content/80 max-w-2xl">
+							Explorez des milliers de pictogrammes gratuits depuis la base de données
+							<span class="font-bold text-primary">ARASAAC</span>
+						</p>
+					</div>
+
+					{# Formulaire de recherche moderne #}
+					<form method="get" action="{{ path('app_home') }}" class="w-full max-w-3xl">
+						<div class="join w-full shadow-xl">
+							<div class="relative flex-1">
+								<input type="text" name="q" value="{{ keyword }}" placeholder="🔍 Entrez un mot-clé : chat, manger, jouer..." class="input input-bordered input-lg w-full join-item focus:outline-offset-2 focus:outline-primary pr-12" required autofocus/>
+								{% if keyword %}
+									<a href="{{ path('app_home') }}" class="btn btn-ghost btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+										</svg>
+									</a>
+								{% endif %}
+							</div>
+							<button type="submit" class="btn btn-primary btn-lg join-item px-8 gap-2 hover:scale-105 transition-transform">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+								</svg>
+								<span class="hidden sm:inline">Rechercher</span>
+							</button>
+						</div>
+					</form>
+
+					{# Stats rapides #}
+					{% if pictograms is not empty %}
+						<div class="stats stats-vertical sm:stats-horizontal shadow-lg mt-6 bg-base-100">
+							<div class="stat">
+								<div class="stat-figure text-primary">
+									<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+									</svg>
+								</div>
+								<div class="stat-title">Résultats trouvés</div>
+								<div class="stat-value text-primary">{{ pictograms|length }}</div>
+								<div class="stat-desc">pour "{{ keyword }}"</div>
+							</div>
+						</div>
+					{% endif %}
+				</div>
+			</div>
+
+			{# Affichage des erreurs avec style moderne #}
+			{% if error %}
+				<div class="alert alert-error shadow-2xl mb-8 animate-pulse">
+					<div class="flex items-center gap-4">
+						<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-8 w-8" fill="none" viewbox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+						</svg>
+						<div>
+							<h3 class="font-bold text-lg">⚠️ Erreur de connexion</h3>
+							<div class="text-sm mt-1">{{ error }}</div>
+						</div>
+					</div>
+				</div>
+			{% endif %}
+
+			{# Résultats de la recherche #}
+			{% if searched %}
+				{% if pictograms is empty and not error %}
+					{# Aucun résultat trouvé avec design sympathique #}
+					<div class="hero bg-base-100 rounded-3xl shadow-xl min-h-[400px]">
+						<div class="hero-content text-center">
+							<div class="max-w-md">
+								<div class="text-8xl mb-6">🔍</div>
+								<h3 class="text-3xl font-bold mb-4">Aucun résultat trouvé</h3>
+								<p class="text-lg mb-6">
+									Nous n'avons pas trouvé de pictogrammes pour
+									<span class="badge badge-primary badge-lg">"{{ keyword }}"</span>
+								</p>
+								<div class="alert alert-info">
+									<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+									</svg>
+									<div class="text-left">
+										<p class="font-semibold">💡 Astuce :</p>
+										<p>Essayez avec un mot français simple (ex: chat, maison, manger)</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				{% elseif pictograms is not empty %}
+					{# Grille de pictogrammes avec design premium #}
+					<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+						{% for pictogram in pictograms %}
+							<div class="card bg-base-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-base-300 group">
+								<figure class="px-4 pt-4 bg-linear-to-br from-base-200 to-base-100">
+									<div class="avatar">
+										<div class="w-full rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2 group-hover:ring-secondary transition-colors">
+											<img src="{{ pictogram.imageUrl }}" alt="{{ pictogram.name }}" class="w-full h-32 object-contain p-2" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-32 text-4xl\'>❌</div>'"/>
+										</div>
+									</div>
+								</figure>
+								<div class="card-body p-4 text-center">
+									<div class="badge badge-outline badge-sm mx-auto mb-2">ID:
+										{{ pictogram.id }}</div>
+									<h3 class="font-bold text-sm line-clamp-2 min-h-10 flex items-center justify-center">
+										{{ pictogram.name }}
+									</h3>
+									<div class="card-actions justify-center mt-2">
+										<a href="{{ pictogram.detailUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary gap-2 hover:scale-110 transition-transform">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+											</svg>
+											Détails
+										</a>
+									</div>
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+
+					{# Bouton retour en haut #}
+					<div class="flex justify-center mt-12">
+						<a href="#" class="btn btn-circle btn-lg btn-primary shadow-xl hover:scale-110 transition-transform">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+							</svg>
+						</a>
+					</div>
+				{% endif %}
+			{% else %}
+				{# Page d'accueil élégante #}
+				<div class="grid md:grid-cols-3 gap-6 mb-8">
+					<div class="card bg-linear-to-br from-primary/20 to-primary/5 shadow-xl border border-primary/20">
+						<div class="card-body items-center text-center">
+							<div class="text-5xl mb-4">🎨</div>
+							<h3 class="card-title text-primary">Gratuit</h3>
+							<p class="text-sm">Accès illimité à des milliers de pictogrammes libres de droits</p>
+						</div>
+					</div>
+					<div class="card bg-linear-to-br from-secondary/20 to-secondary/5 shadow-xl border border-secondary/20">
+						<div class="card-body items-center text-center">
+							<div class="text-5xl mb-4">⚡</div>
+							<h3 class="card-title text-secondary">Rapide</h3>
+							<p class="text-sm">Recherche instantanée dans la base ARASAAC</p>
+						</div>
+					</div>
+					<div class="card bg-linear-to-br from-accent/20 to-accent/5 shadow-xl border border-accent/20">
+						<div class="card-body items-center text-center">
+							<div class="text-5xl mb-4">🌍</div>
+							<h3 class="card-title text-accent">Universel</h3>
+							<p class="text-sm">Pictogrammes pour la communication alternative</p>
+						</div>
+					</div>
+				</div>
+
+				{# Suggestions de recherche #}
+				<div class="card bg-base-100 shadow-xl border border-base-300">
+					<div class="card-body">
+						<h3 class="card-title justify-center mb-4">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+							</svg>
+							Essayez ces recherches populaires
+						</h3>
+						<div class="flex flex-wrap gap-2 justify-center">
+							{% for suggestion in ['chat', 'manger', 'jouer', 'maison', 'école', 'dormir', 'content', 'triste', 'famille', 'eau', 'livre', 'musique'] %}
+								<a href="{{ path('app_home', {q: suggestion}) }}" class="btn btn-outline btn-sm gap-2 hover:btn-primary">
+									{{ suggestion }}
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+									</svg>
+								</a>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			{% endif %}
+		</div>
+
+		{# Footer moderne et élégant #}
+		<footer class="footer footer-center p-10 bg-linear-to-r from-base-300 to-base-200 text-base-content mt-16 border-t border-base-300">
+			<aside>
+				<div class="avatar placeholder mb-4">
+					<div class="bg-primary text-primary-content rounded-full w-16">
+						<span class="text-3xl">🖼️</span>
+					</div>
+				</div>
+				<p class="font-bold text-lg">
+					PictoRecipe - Recherche de pictogrammes ARASAAC
+				</p>
+				<p class="max-w-md">
+					Pictogrammes fournis par
+					<a href="https://arasaac.org" target="_blank" rel="noopener noreferrer" class="link link-primary font-semibold hover:link-secondary">
+						ARASAAC
+					</a>
+					· Licence
+					<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer" class="link link-accent font-semibold hover:link-secondary">
+						CC BY-NC-SA 4.0
+					</a>
+				</p>
+				<div class="divider my-2"></div>
+				<p class="text-sm text-base-content/60">
+					Créé avec ❤️ en Symfony 7 · TailwindCSS · DaisyUI
+				</p>
+			</aside>
+		</footer>
+	</div>
+{% endblock %}
