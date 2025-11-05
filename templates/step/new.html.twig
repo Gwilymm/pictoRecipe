@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle étape
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">Ajouter une étape</h1>
+
+	<div class="mb-4">
+		{{ include('step/_form.html.twig') }}
+	</div>
+
+	<a href="{{ path('app_step_index') }}" class="btn btn-outline">Retour à la liste</a>
+{% endblock %}

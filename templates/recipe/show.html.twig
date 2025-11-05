@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recette
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">{{ recipe.title }}</h1>
+
+	<div class="card bg-base-100 shadow-sm mb-6">
+		<div class="card-body">
+			<h2 class="card-title">Détails</h2>
+			<p class="mb-2">{{ recipe.description }}</p>
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<strong>Portions:</strong>
+					{{ recipe.servings }}</div>
+				<div>
+					<strong>Préparation:</strong>
+					{{ recipe.prepTimeMinutes }}
+					min</div>
+				<div>
+					<strong>Cuisson:</strong>
+					{{ recipe.cookTimeMinutes }}
+					min</div>
+				<div>
+					<strong>Créé le:</strong>
+					{{ recipe.createdAt ? recipe.createdAt|date('Y-m-d') : '' }}</div>
+				<div>
+					<strong>MàJ:</strong>
+					{{ recipe.updatedAt ? recipe.updatedAt|date('Y-m-d') : '' }}</div>
+			</div>
+			<div class="card-actions justify-end mt-4">
+				<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour</a>
+				<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-warning">Modifier</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+		<div class="card bg-base-100 shadow-sm">
+			<div class="card-body">
+				<h3 class="card-title">🧂 Ingrédients</h3>
+				{% if recipe.ingredients is not empty %}
+					<ul class="divide-y">
+						{% for ingredient in recipe.ingredients %}
+							<li class="py-2 flex items-center justify-between">
+								<div>
+									<strong>{{ ingredient.name }}</strong>
+									<div class="text-sm text-muted">{{ ingredient.amount }}{{ ingredient.unit ? ' ' ~ ingredient.unit : '' }}</div>
+								</div>
+								<div class="badge badge-outline">#{{ loop.index }}</div>
+							</li>
+						{% endfor %}
+					</ul>
+				{% else %}
+					<p class="text-sm text-muted">Aucun ingrédient.</p>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="card bg-base-100 shadow-sm">
+			<div class="card-body">
+				<h3 class="card-title">👨‍🍳 Étapes</h3>
+				{% if recipe.steps is not empty %}
+					<ol class="list-decimal list-inside space-y-3">
+						{% for step in recipe.steps %}
+							<li class="p-3 bg-base-200 rounded">
+								<div class="flex justify-between items-start gap-4">
+									<div class="prose">
+										{{ step.content }}
+									</div>
+									{% if step.durationMinutes %}
+										<div class="text-sm badge badge-secondary">{{ step.durationMinutes }}
+											min</div>
+									{% endif %}
+								</div>
+							</li>
+						{% endfor %}
+					</ol>
+				{% else %}
+					<p class="text-sm text-muted">Aucune étape.</p>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<div>
+		{{ include('recipe/_delete_form.html.twig') }}
+	</div>
+{% endblock %}

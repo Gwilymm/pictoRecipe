@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recettes
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">Recettes</h1>
+
+	<div class="overflow-x-auto">
+		<table class="table table-zebra w-full">
+			<thead>
+				<tr>
+					<th>Id</th>
+					<th>Titre</th>
+					<th>Description</th>
+					<th>Portions</th>
+					<th>Préparation</th>
+					<th>Cuisson</th>
+					<th>Créé le</th>
+					<th>MàJ</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for recipe in recipes %}
+					<tr>
+						<td>{{ recipe.id }}</td>
+						<td class="font-medium">{{ recipe.title }}</td>
+						<td>{{ recipe.description }}</td>
+						<td>{{ recipe.servings }}</td>
+						<td>{{ recipe.prepTimeMinutes }}</td>
+						<td>{{ recipe.cookTimeMinutes }}</td>
+						<td>{{ recipe.createdAt ? recipe.createdAt|date('Y-m-d') : '' }}</td>
+						<td>{{ recipe.updatedAt ? recipe.updatedAt|date('Y-m-d') : '' }}</td>
+						<td class="space-x-2">
+							<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-sm btn-info">Voir</a>
+							<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="9" class="text-center">Aucune recette trouvée</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<a href="{{ path('app_recipe_new') }}" class="btn btn-success mt-6">Ajouter une recette</a>
+{% endblock %}

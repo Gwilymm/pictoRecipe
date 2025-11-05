@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\IngredientRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: IngredientRepository::class)]
 class Ingredient
@@ -15,15 +16,18 @@ class Ingredient
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 6, scale: 2)]
+    #[Assert\NotBlank]
     private ?string $amount = null;
 
-    #[ORM\Column(length: 32)]
+    #[ORM\Column(length: 32, nullable: true)]
     private ?string $unit = null;
 
     #[ORM\Column(type: Types::SMALLINT)]
+    #[Assert\PositiveOrZero]
     private ?int $position = null;
 
     #[ORM\ManyToOne(inversedBy: 'ingredients')]
@@ -63,12 +67,12 @@ class Ingredient
         return $this->unit;
     }
 
-    public function setUnit(string $unit): static
+    public function setUnit(?string $unit): self
     {
         $this->unit = $unit;
-
         return $this;
     }
+
 
     public function getPosition(): ?int
     {

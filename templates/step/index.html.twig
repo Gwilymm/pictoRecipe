@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Étapes
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">Étapes</h1>
+
+	<div class="overflow-x-auto">
+		<table class="table table-zebra w-full">
+			<thead>
+				<tr>
+					<th>Id</th>
+					<th>Position</th>
+					<th>Contenu</th>
+					<th>Durée (min)</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for step in steps %}
+					<tr>
+						<td>{{ step.id }}</td>
+						<td>{{ step.position }}</td>
+						<td>{{ step.content }}</td>
+						<td>{{ step.durationMinutes }}</td>
+						<td class="space-x-2">
+							<a href="{{ path('app_step_show', {'id': step.id}) }}" class="btn btn-sm btn-info">Voir</a>
+							<a href="{{ path('app_step_edit', {'id': step.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="5" class="text-center">Aucune étape trouvée</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<a href="{{ path('app_step_new') }}" class="btn btn-success mt-6">Ajouter une étape</a>
+{% endblock %}

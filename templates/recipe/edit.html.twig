@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier recette
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">Modifier la recette</h1>
+
+	<div class="mb-4">
+		{{ include('recipe/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+	</div>
+
+
+</div>{% endblock %}

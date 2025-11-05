@@ -1,0 +1,8 @@
+{{ form_start(form, {'attr': {'class': 'space-y-4'}}) }}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+	{{ form_widget(form) }}
+</div>
+<div class="mt-4">
+	<button class="btn btn-primary">{{ button_label|default('Enregistrer') }}</button>
+</div>
+{{ form_end(form) }}

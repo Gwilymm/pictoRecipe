@@ -1,0 +1,96 @@
+{# Recipe main form partial with embedded Ingredients and Steps collections
+	 Uses DaisyUI classes and a small Stimulus controller to add/remove collection items dynamically.
+#}
+
+{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+
+<div class="card bg-base-100 shadow p-4">
+	<div class="card-body">
+		<h2 class="card-title">Recette</h2>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div>
+				{{ form_row(form.title) }}
+			</div>
+			<div>
+				{{ form_row(form.servings) }}
+				<div class="flex gap-2 mt-2">
+					{{ form_row(form.prepTimeMinutes) }}
+					{{ form_row(form.cookTimeMinutes) }}
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-4">
+			{{ form_row(form.description) }}
+		</div>
+	</div>
+</div>
+
+<div
+	class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+	{# Ingredients section #}
+	<div class="card bg-base-100 shadow p-4">
+		<div class="card-body">
+			<h3 class="text-lg font-semibold">🧂 Ingrédients</h3>
+
+			{# list container: store prototype in data-prototype attribute (escaped) #}
+			<div data-controller="form-collection" data-form-collection-target="list" data-prototype="{{ form_widget(form.ingredients.vars.prototype)|e('html_attr') }}" class="mt-3 space-y-2">
+				{% for ingredient in form.ingredients %}
+					<div class="collection-item card bg-base-200 p-3 flex items-start gap-3">
+						<div class="flex-1 grid grid-cols-3 gap-2">
+							<div class="col-span-2">{{ form_widget(ingredient.name) }}</div>
+							<div class="col-span-1">{{ form_widget(ingredient.amount) }}</div>
+							<div class="col-span-1">{{ form_widget(ingredient.unit) }}</div>
+						</div>
+						<div class="flex items-start">
+							<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+						</div>
+					</div>
+				{% else %}
+					<p class="text-sm text-muted">Aucun ingrédient — ajoutez le premier.</p>
+				{% endfor %}
+			</div>
+
+			<div class="mt-3">
+				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-primary">Ajouter un ingrédient</button>
+			</div>
+		</div>
+	</div>
+
+	{# Steps section #}
+	<div class="card bg-base-100 shadow p-4">
+		<div class="card-body">
+			<h3 class="text-lg font-semibold">👨‍🍳 Étapes</h3>
+
+			<div data-controller="form-collection" data-form-collection-target="list" data-prototype="{{ form_widget(form.steps.vars.prototype)|e('html_attr') }}" class="mt-3 space-y-2">
+				{% for step in form.steps %}
+					<div class="collection-item card bg-base-200 p-3">
+						<div class="flex gap-3 items-start">
+							<div class="flex-1">{{ form_widget(step.content) }}</div>
+							<div class="w-28">{{ form_widget(step.durationMinutes) }}</div>
+							<div class="flex items-start">
+								<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+							</div>
+						</div>
+					</div>
+				{% else %}
+					<p class="text-sm text-muted">Aucune étape — ajoutez la première.</p>
+				{% endfor %}
+			</div>
+
+			<div class="mt-3">
+				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-secondary">Ajouter une étape</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="mt-4">
+	<button type="submit" class="btn btn-primary">{{ button_label|default('Enregistrer la recette') }}</button>
+
+	<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour à la liste</a>
+
+	{{ include('recipe/_delete_form.html.twig') }}
+</div>
+
+{{ form_end(form) }}

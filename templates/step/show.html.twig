@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Étape
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">Détail de l'étape</h1>
+
+	<div class="card bg-base-100 shadow-sm mb-6">
+		<div class="card-body">
+			<h2 class="card-title">Étape
+				{{ step.position }}</h2>
+			<p class="mb-2">{{ step.content }}</p>
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<strong>Durée:</strong>
+					{{ step.durationMinutes }}
+					min</div>
+				<div>
+					<strong>Id:</strong>
+					{{ step.id }}</div>
+			</div>
+			<div class="card-actions justify-end mt-4">
+				<a href="{{ path('app_step_index') }}" class="btn btn-outline">Retour</a>
+				<a href="{{ path('app_step_edit', {'id': step.id}) }}" class="btn btn-warning">Modifier</a>
+			</div>
+		</div>
+	</div>
+
+	<div>
+		{{ include('step/_delete_form.html.twig') }}
+	</div>
+{% endblock %}
