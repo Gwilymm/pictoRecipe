@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Service\ArasaacApiService;
+use App\Repository\PictogramRepository;
+use Symfony\Component\HttpFoundation\Request as HttpRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,7 +26,7 @@ class PictogramApiController extends AbstractController
 	 * @return JsonResponse
 	 */
 	#[Route('/api/pictograms/search', name: 'api_pictogram_search', methods: ['GET'])]
-	public function search(Request $request): JsonResponse
+	public function search(Request $request, PictogramRepository $pictogramRepository): JsonResponse
 	{
 		$keyword = $request->query->get('q', '');
 
@@ -36,21 +38,45 @@ class PictogramApiController extends AbstractController
 			], 400);
 		}
 
-		try {
-			$results = $this->arasaacService->search($keyword);
+		// Prepare aggregated results: local pictograms + ARASAAC
+		$aggregated = [];
 
-			return $this->json([
-				'success' => true,
-				'keyword' => $keyword,
-				'count' => count($results),
-				'results' => $results
-			]);
-		} catch (\Exception $e) {
-			return $this->json([
-				'success' => false,
-				'message' => 'Erreur lors de la recherche : ' . $e->getMessage(),
-				'results' => []
-			], 500);
+		// 1) Local pictograms matching the keyword (case-insensitive)
+		$qb = $pictogramRepository->createQueryBuilder('p');
+		$qb->andWhere($qb->expr()->like('LOWER(p.name)', ':kw'))
+			->setParameter('kw', '%' . mb_strtolower($keyword) . '%')
+			->setMaxResults(50);
+
+		$locals = $qb->getQuery()->getResult();
+
+		foreach ($locals as $local) {
+			$aggregated[] = [
+				'id' => 'local_' . $local->getId(),
+				'name' => $local->getName(),
+				'imageUrl' => '/' . ltrim($local->getFilePath(), '/'),
+				'source' => 'local',
+			];
 		}
+
+		// 2) ARASAAC results (best-effort). If ARASAAC fails, return only locals.
+		try {
+			$arasaac = $this->arasaacService->search($keyword);
+
+			// annotate source and append
+			foreach ($arasaac as $item) {
+				$item['source'] = 'arasaac';
+				$aggregated[] = $item;
+			}
+		} catch (\Exception $e) {
+			// log and continue — we'll still return local results
+			// (the service already logs internally)
+		}
+
+		return $this->json([
+			'success' => true,
+			'keyword' => $keyword,
+			'count' => count($aggregated),
+			'results' => $aggregated
+		]);
 	}
 }

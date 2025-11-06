@@ -23,13 +23,7 @@ class UtensilType extends AbstractType
 			->add('pictogramUrl', HiddenType::class, [
 				'required' => false,
 			])
-			->add('pictogram', EntityType::class, [
-				'class' => Pictogram::class,
-				'choice_label' => 'name',
-				'placeholder' => 'Choisir un pictogramme',
-				'required' => false,
-				'attr' => ['class' => 'select select-bordered w-full']
-			])
+			// pictogram relation intentionally not rendered as a form field here.
 		;
 	}
 

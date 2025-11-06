@@ -97,8 +97,28 @@
 			<tr>
 				{% for ingredient in recipe.ingredients %}
 					<td>
-						{% if ingredient.pictogramUrl %}
-							<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}">
+						{# Prefer a linked Pictogram entity (local), otherwise fall back to pictogramUrl.
+					   Local pictograms must be referenced with file://absolute_path so wkhtmltopdf can access them. #}
+						{% if ingredient.pictogram %}
+							{% set _key = (ingredient.pictogram.filePath|trim('/')) %}
+							{% if inline_images is defined and inline_images[_key] is defined %}
+								<img src="{{ inline_images[_key] }}" alt="{{ ingredient.name }}">
+							{% else %}
+								<img src="file://{{ (project_public_dir ~ '/' ~ _key) }}" alt="{{ ingredient.name }}">
+							{% endif %}
+						{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
+							{# If pictogramUrl is a remote URL (starts with http) keep it; if it's a local path or starts with '/', convert to file://
+							   Use a heuristic: if it starts with 'http' keep as-is, otherwise treat as local under public/ #}
+							{% if ingredient.pictogramUrl starts with('http') %}
+								<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}">
+							{% else %}
+								{% set _key2 = (ingredient.pictogramUrl|trim('/')) %}
+								{% if inline_images is defined and inline_images[_key2] is defined %}
+									<img src="{{ inline_images[_key2] }}" alt="{{ ingredient.name }}">
+								{% else %}
+									<img src="file://{{ (project_public_dir ~ '/' ~ _key2) }}" alt="{{ ingredient.name }}">
+								{% endif %}
+							{% endif %}
 						{% else %}
 							<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
 						{% endif %}
@@ -124,8 +144,24 @@
 			<tr>
 				{% for utensil in recipe.utensils %}
 					<td>
-						{% if utensil.pictogramUrl %}
-							<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}">
+						{% if utensil.pictogram %}
+							{% set _u = (utensil.pictogram.filePath|trim('/')) %}
+							{% if inline_images is defined and inline_images[_u] is defined %}
+								<img src="{{ inline_images[_u] }}" alt="{{ utensil.name }}">
+							{% else %}
+								<img src="file://{{ (project_public_dir ~ '/' ~ _u) }}" alt="{{ utensil.name }}">
+							{% endif %}
+						{% elseif utensil.pictogramUrl %}
+							{% if utensil.pictogramUrl starts with('http') %}
+								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}">
+							{% else %}
+								{% set _u2 = (utensil.pictogramUrl|trim('/')) %}
+								{% if inline_images is defined and inline_images[_u2] is defined %}
+									<img src="{{ inline_images[_u2] }}" alt="{{ utensil.name }}">
+								{% else %}
+									<img src="file://{{ (project_public_dir ~ '/' ~ _u2) }}" alt="{{ utensil.name }}">
+								{% endif %}
+							{% endif %}
 						{% else %}
 							<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
 						{% endif %}
@@ -147,11 +183,34 @@
 					<td class="num">{{ loop.index }}</td>
 					<td class="step-images">
 						{% if step.pictogramUrls and step.pictogramUrls is not empty %}
-							{% for url in step.pictogramUrls %}
-								<img src="{{ url }}" alt="picto">
-							{% endfor %}
+							{# Afficher les pictogrammes en 2 colonnes pour le PDF #}
+							<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;justify-items:center;align-items:center;">
+								{% for url in step.pictogramUrls %}
+									{% if url starts with('http') %}
+										<img src="{{ url }}" alt="picto" style="width:70px;height:70px;object-fit:contain;display:block;margin:0;" />
+									{% else %}
+										{% set _s = (url|trim('/')) %}
+										{% if inline_images is defined and inline_images[_s] is defined %}
+											<img src="{{ inline_images[_s] }}" alt="picto" style="width:70px;height:70px;object-fit:contain;display:block;margin:0;" />
+										{% else %}
+											<img src="file://{{ (project_public_dir ~ '/' ~ _s) }}" alt="picto" style="width:70px;height:70px;object-fit:contain;display:block;margin:0;" />
+										{% endif %}
+									{% endif %}
+								{% endfor %}
+							</div>
+						{% elseif step.pictogram %}
+							{% set _sf = (step.pictogram.filePath|trim('/')) %}
+							{% if inline_images is defined and inline_images[_sf] is defined %}
+								<img src="{{ inline_images[_sf] }}" alt="picto">
+							{% else %}
+								<img src="file://{{ (project_public_dir ~ '/' ~ _sf) }}" alt="picto">
+							{% endif %}
 						{% elseif step.pictogramUrl %}
-							<img src="{{ step.pictogramUrl }}" alt="picto">
+							{% if step.pictogramUrl starts with('http') %}
+								<img src="{{ step.pictogramUrl }}" alt="picto">
+							{% else %}
+								<img src="file://{{ (project_public_dir ~ '/' ~ (step.pictogramUrl|trim('/'))) }}" alt="picto">
+							{% endif %}
 						{% else %}
 							<div style="width:50px;height:50px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
 						{% endif %}

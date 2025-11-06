@@ -36,13 +36,7 @@ class StepType extends AbstractType
                 'required' => false,
                 'attr' => ['data-pictograms' => 'multiple'],
             ])
-            ->add('pictogram', EntityType::class, [
-                'class' => Pictogram::class,
-                'choice_label' => 'name',
-                'placeholder' => 'Choisir un pictogramme',
-                'required' => false,
-                'attr' => ['class' => 'select select-bordered w-full']
-            ])
+            // pictogram relation intentionally not rendered as a form field here.
         ;
 
         // Ajouter le transformer pour convertir JSON <-> Array

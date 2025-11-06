@@ -88,12 +88,17 @@
 
 
 
+
+
 document.querySelectorAll( '.utensil-card' ).forEach( ( label ) => {
+
+
 
 
 
 const input = label.querySelector( 'input[type="checkbox"]' );
 if ( ! input )
+
 
 
 return;
@@ -104,9 +109,13 @@ const setSelected = ( checked ) => {
 
 
 
+
+
 const img = label.querySelector( 'img' );
 if ( checked )
 {
+
+
 
 
 
@@ -116,8 +125,12 @@ if ( img )
 
 
 
+
+
 img.classList.remove( 'w-10', 'h-10' );
 img.classList.add( 'w-8', 'h-8' );
+
+
 
 
 
@@ -129,14 +142,20 @@ else
 
 
 
+
+
 label.classList.remove( 'bg-primary/5', 'text-primary-600', 'border-primary', 'shadow-md' );
 if ( img )
 {
 
 
 
+
+
 img.classList.remove( 'w-8', 'h-8' );
 img.classList.add( 'w-10', 'h-10' );
+
+
 
 
 
@@ -154,7 +173,11 @@ label.addEventListener( 'click', () => {
 
 
 
+
+
 setTimeout( () => {
+
+
 
 
 
@@ -164,7 +187,11 @@ input.dispatchEvent( new Event( 'change',
 
 
 
+
+
 }, 0 );
+
+
 
 
 
@@ -175,7 +202,11 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 
 
 
+
+
 } );
+
+
 
 
 
@@ -217,11 +248,11 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 
 						<div class="mt-3 pt-3 border-t border-base-300">
 							{{ include('partials/_pictogram_widget.html.twig', {
-																													'form_field': ingredient.name,
-																													'url_field': ingredient.pictogramUrl,
-																													'placeholder': 'Rechercher un pictogramme pour cet ingrédient...',
-																													'prefill': false
-																												}) }}
+								'form_field': ingredient.name,
+								'url_field': ingredient.pictogramUrl,
+								'placeholder': 'Rechercher un pictogramme pour cet ingrédient...',
+								'prefill': false
+							}) }}
 						</div>
 					</div>
 				{% else %}
@@ -380,4 +411,7 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 </section>{# Fallback submit actions (if user skips to bottom) #}<div class="mt-4 hidden">
 	<button type="submit" class="btn btn-primary">{{ submit_label }}</button>
 	<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour à la liste</a>
-</div>{# Render any remaining hidden fields (CSRF token, etc.) then close the form #}{{ form_rest(form) }}{{ form_end(form) }}
+</div>
+{# Render any remaining hidden fields (CSRF token, etc.) then close the form #}
+{{ form_rest(form) }}
+{{ form_end(form) }}

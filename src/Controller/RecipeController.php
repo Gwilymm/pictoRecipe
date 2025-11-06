@@ -25,7 +25,7 @@ final class RecipeController extends AbstractController
     }
 
     #[Route('/new', name: 'app_recipe_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, \App\Repository\PictogramRepository $pictogramRepository): Response
     {
         $recipe = new Recipe();
         $form = $this->createForm(RecipeType::class, $recipe);
@@ -42,6 +42,9 @@ final class RecipeController extends AbstractController
             foreach ($recipe->getSteps() as $step) {
                 $step->setPosition($position++);
             }
+
+            // Map submitted pictogramUrl fields to local Pictogram relations when applicable
+            $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
 
             $entityManager->persist($recipe);
             $entityManager->flush();
@@ -72,7 +75,7 @@ final class RecipeController extends AbstractController
     }
 
     #[Route('/preview/save', name: 'app_recipe_preview_save', methods: ['POST'])]
-    public function previewSave(Request $request, EntityManagerInterface $entityManager): Response
+    public function previewSave(Request $request, EntityManagerInterface $entityManager, \App\Repository\PictogramRepository $pictogramRepository): Response
     {
         // Determine if this is an update (id present) or a new recipe
         $data = $request->request->get('recipe');
@@ -102,6 +105,9 @@ final class RecipeController extends AbstractController
                 $step->setPosition($position++);
             }
 
+            // Map pictogramUrl -> Pictogram relation for local pictograms
+            $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
+
             $entityManager->persist($recipe);
             $entityManager->flush();
 
@@ -125,8 +131,54 @@ final class RecipeController extends AbstractController
     public function pdf(Recipe $recipe, Pdf $pdf): Response
     {
         // Rendre le template HTML pour le PDF
+        $projectPublic = rtrim($this->getParameter('kernel.project_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'public';
+
+        // Collect local image paths to inline as base64 (to avoid remote fetches and speed up rendering)
+        $localPaths = [];
+
+        foreach ($recipe->getIngredients() as $ingredient) {
+            if ($ingredient->getPictogram()) {
+                $localPaths[] = ltrim($ingredient->getPictogram()->getFilePath(), '/');
+            } elseif ($ingredient->getPictogramUrl() && !str_starts_with($ingredient->getPictogramUrl(), 'http')) {
+                $localPaths[] = ltrim(parse_url($ingredient->getPictogramUrl(), PHP_URL_PATH) ?: $ingredient->getPictogramUrl(), '/');
+            }
+        }
+
+        foreach ($recipe->getUtensils() as $utensil) {
+            if ($utensil->getPictogram()) {
+                $localPaths[] = ltrim($utensil->getPictogram()->getFilePath(), '/');
+            } elseif ($utensil->getPictogramUrl() && !str_starts_with($utensil->getPictogramUrl(), 'http')) {
+                $localPaths[] = ltrim(parse_url($utensil->getPictogramUrl(), PHP_URL_PATH) ?: $utensil->getPictogramUrl(), '/');
+            }
+        }
+
+        foreach ($recipe->getSteps() as $step) {
+            if ($step->getPictogram()) {
+                $localPaths[] = ltrim($step->getPictogram()->getFilePath(), '/');
+            }
+            if ($step->getPictogramUrl() && !str_starts_with($step->getPictogramUrl(), 'http')) {
+                $localPaths[] = ltrim(parse_url($step->getPictogramUrl(), PHP_URL_PATH) ?: $step->getPictogramUrl(), '/');
+            }
+            if ($step->getPictogramUrls()) {
+                foreach ($step->getPictogramUrls() as $u) {
+                    if ($u && !str_starts_with($u, 'http')) {
+                        $localPaths[] = ltrim(parse_url($u, PHP_URL_PATH) ?: $u, '/');
+                    }
+                }
+            }
+        }
+
+        // Unique and filter
+        $localPaths = array_values(array_unique(array_filter($localPaths)));
+
+        $inlineImages = $this->buildInlineImages($localPaths, $projectPublic);
+
         $html = $this->renderView('recipe/pdf.html.twig', [
             'recipe' => $recipe,
+            // fournir le chemin absolu du dossier public pour permettre l'accès aux fichiers locaux via file:// si nécessaire
+            'project_public_dir' => $projectPublic,
+            // map of relative path => data:image... base64
+            'inline_images' => $inlineImages,
         ]);
 
         // Générer le PDF avec le nom de la recette
@@ -165,7 +217,7 @@ final class RecipeController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_recipe_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Recipe $recipe, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, Recipe $recipe, EntityManagerInterface $entityManager, \App\Repository\PictogramRepository $pictogramRepository): Response
     {
         $form = $this->createForm(RecipeType::class, $recipe);
         $form->handleRequest($request);
@@ -182,6 +234,9 @@ final class RecipeController extends AbstractController
                 $step->setPosition($position++);
             }
 
+            // Map pictogramUrl -> Pictogram relation for local pictograms
+            $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
+
             $entityManager->flush();
 
             // Après mise à jour, afficher la prévisualisation avec les informations à jour
@@ -192,6 +247,130 @@ final class RecipeController extends AbstractController
             'recipe' => $recipe,
             'form' => $form,
         ]);
+    }
+
+    private function mapPictogramsOnRecipe(Recipe $recipe, \App\Repository\PictogramRepository $pictogramRepository): void
+    {
+        foreach ($recipe->getIngredients() as $ingredient) {
+            $url = $ingredient->getPictogramUrl();
+            if (! $url) {
+                $ingredient->setPictogram(null);
+                continue;
+            }
+
+            // Local pictograms are served from /uploads/pictograms/<file>
+            if (str_contains($url, 'uploads/pictograms')) {
+                // normalize to stored filePath (no leading slash)
+                $filePath = ltrim(parse_url($url, PHP_URL_PATH) ?: $url, '/');
+                $local = $pictogramRepository->findOneBy(['filePath' => $filePath]);
+                if ($local) {
+                    $ingredient->setPictogram($local);
+                }
+            } else {
+                // External ARASAAC URL — do not set a local relation
+                $ingredient->setPictogram(null);
+            }
+        }
+
+        // Steps may contain multiple pictogramUrls (array) or single pictogramUrl — handle only single URL mapping on step.pictogramUrl
+        foreach ($recipe->getSteps() as $step) {
+            $url = $step->getPictogramUrl();
+            if (! $url) {
+                $step->setPictogram(null);
+                continue;
+            }
+
+            if (str_contains($url, 'uploads/pictograms')) {
+                $filePath = ltrim(parse_url($url, PHP_URL_PATH) ?: $url, '/');
+                $local = $pictogramRepository->findOneBy(['filePath' => $filePath]);
+                if ($local) {
+                    $step->setPictogram($local);
+                }
+            } else {
+                $step->setPictogram(null);
+            }
+        }
+
+        // Utensils are managed separately (in form they are a collection of choices), but if any utensil entity has a pictogramUrl field we map it similarly — check for method existence
+        if (method_exists($recipe, 'getUtensils')) {
+            foreach ($recipe->getUtensils() as $utensil) {
+                if (! method_exists($utensil, 'getPictogramUrl')) {
+                    continue;
+                }
+                $url = $utensil->getPictogramUrl();
+                if (! $url) {
+                    $utensil->setPictogram(null);
+                    continue;
+                }
+                if (str_contains($url, 'uploads/pictograms')) {
+                    $filePath = ltrim(parse_url($url, PHP_URL_PATH) ?: $url, '/');
+                    $local = $pictogramRepository->findOneBy(['filePath' => $filePath]);
+                    if ($local) {
+                        $utensil->setPictogram($local);
+                    }
+                } else {
+                    $utensil->setPictogram(null);
+                }
+            }
+        }
+    }
+
+    /**
+     * Build a map of relative file path => data URI (base64) for small local images.
+     * This avoids multiple file:// reads and remote HTTP fetches when generating PDFs.
+     * We limit inlining to files under public and with a reasonable size to avoid blowing HTML memory.
+     *
+     * @param string[] $relativePaths
+     * @param string $projectPublicDir
+     * @return array<string,string>
+     */
+    private function buildInlineImages(array $relativePaths, string $projectPublicDir): array
+    {
+        $map = [];
+        $maxBytes = 200 * 1024; // 200 KB max per image to inline
+
+        foreach ($relativePaths as $rel) {
+            $clean = ltrim($rel, '/');
+            $abs = $projectPublicDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $clean);
+            if (!file_exists($abs) || !is_readable($abs)) {
+                continue;
+            }
+            $size = filesize($abs);
+            if ($size === false || $size > $maxBytes) {
+                // skip large files
+                continue;
+            }
+
+            // detect mime type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo ? finfo_file($finfo, $abs) : mime_content_type($abs);
+            if ($finfo) {
+                finfo_close($finfo);
+            }
+
+            if (! $mime) {
+                // fallback by extension
+                $ext = strtolower(pathinfo($abs, PATHINFO_EXTENSION));
+                switch ($ext) {
+                    case 'svg': $mime = 'image/svg+xml'; break;
+                    case 'png': $mime = 'image/png'; break;
+                    case 'jpg': case 'jpeg': $mime = 'image/jpeg'; break;
+                    case 'webp': $mime = 'image/webp'; break;
+                    case 'gif': $mime = 'image/gif'; break;
+                    default: $mime = 'application/octet-stream';
+                }
+            }
+
+            $data = file_get_contents($abs);
+            if ($data === false) {
+                continue;
+            }
+
+            $base = base64_encode($data);
+            $map[$clean] = sprintf('data:%s;base64,%s', $mime, $base);
+        }
+
+        return $map;
     }
 
     #[Route('/{id}', name: 'app_recipe_delete', methods: ['POST'])]

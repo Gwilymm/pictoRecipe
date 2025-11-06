@@ -28,8 +28,12 @@ class PictogramType extends AbstractType
 						'mimeTypes' => [
 							'image/png',
 							'image/svg+xml',
+							'image/jpeg',
+							'image/jpg',
+							'image/webp',
+							'image/gif',
 						],
-						'mimeTypesMessage' => 'Veuillez uploader un fichier PNG ou SVG valide.',
+						'mimeTypesMessage' => 'Veuillez uploader une image (PNG, SVG, JPEG, WEBP, GIF). Les formats raster seront convertis en PNG si nécessaire.',
 					])
 				],
 				'attr' => ['class' => 'file-input file-input-bordered w-full max-w-xs']
