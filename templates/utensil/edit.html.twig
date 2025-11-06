@@ -22,17 +22,11 @@
 						'form_field': form.name,
 						'url_field': form.pictogramUrl,
 						'placeholder': 'Rechercher un pictogramme pour cet ustensile...'
+						
 					}) }}
 				</div>
 
-				<div class="card-actions justify-between mt-4">
-					<form method="post" action="{{ path('app_utensil_delete', {'id': utensil.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet ustensile ?');">
-						<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ utensil.id) }}">
-						<button type="submit" class="btn btn-error">
-							🗑️ Supprimer
-						</button>
-					</form>
-
+				<div class="card-actions justify-end mt-4">
 					<div class="flex gap-2">
 						<a href="{{ path('app_utensil_index') }}" class="btn btn-outline">
 							Annuler
@@ -46,5 +40,13 @@
 		</div>
 
 		{{ form_end(form) }}
+
+		{# Delete form moved outside the item form to avoid nested forms which can break CSRF or submission #}
+		<form method="post" action="{{ path('app_utensil_delete', {'id': utensil.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet ustensile ?');" class="mt-4">
+			<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ utensil.id) }}">
+			<button type="submit" class="btn btn-error">
+				🗑️ Supprimer
+			</button>
+		</form>
 	</div>
 {% endblock %}

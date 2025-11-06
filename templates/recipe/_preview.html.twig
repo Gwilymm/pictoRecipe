@@ -4,44 +4,59 @@
   Utilisé dans le stepper (étape 5) et dans la page de prévisualisation complète
 #}
 
-<div
-	class="recipe-preview max-w-4xl mx-auto">
-	{# En-tête de la recette #}
-	<div class="card bg-linear-to-br from-primary/10 to-accent/10 shadow-lg mb-6">
-		<div class="card-body">
-			<h2 class="card-title text-3xl font-bold text-primary">
-				{{ recipe.title|default('Titre de la recette') }}
-			</h2>
+{# En-tête de la recette #}
+<div class="card bg-linear-to-br from-primary/10 to-accent/10 shadow-lg mb-6">
+	<div class="card-body">
+		<h2 class="card-title text-3xl font-bold text-primary">
+			{{ recipe.title|default('Titre de la recette') }}
+		</h2>
 
-			{% if recipe.description %}
-				<p class="text-base-content/80 mt-2">{{ recipe.description }}</p>
-			{% endif %}
+			<div class="md:flex md:justify-between md:items-start gap-4 mt-2">
+				<div class="md:flex-1">
+					{% if recipe.description %}
+						<p class="text-base-content/80 mt-2">{{ recipe.description }}</p>
+					{% endif %}
+				</div>
 
-			{# Informations rapides #}
-			<div class="flex flex-wrap gap-4 mt-4">
-				{% if recipe.servings %}
-					<div class="badge badge-lg badge-primary gap-2">
-						<span class="text-xl">👥</span>
-						<span>{{ recipe.servings }}
-							portion(s)</span>
+				{# Compact info box on the right #}
+				<div class="mt-4 md:mt-0 ml-0 md:ml-6">
+					<div class="shadow rounded-lg p-3 bg-base-100 text-sm text-base-content/80">
+						<div class="flex items-center gap-3 mb-2">
+							{% if recipe.servings %}
+								<div class="flex items-center gap-2">
+									<span class="text-xl">👥</span>
+									<span>{{ recipe.servings }}
+										part{{ recipe.servings>1 ? 's' : '' }}</span>
+								</div>
+							{% endif %}
+							{% if recipe.prepTimeMinutes %}
+								<div class="flex items-center gap-2">
+									<span class="text-xl">⏱️</span>
+									<span>{{ recipe.prepTimeMinutes }}
+										min</span>
+								</div>
+							{% endif %}
+							{% if recipe.cookTimeMinutes %}
+								<div class="flex items-center gap-2">
+									<span class="text-xl">🔥</span>
+									<span>{{ recipe.cookTimeMinutes }}
+										min</span>
+								</div>
+							{% endif %}
+						</div>
+
+						<div class="text-xs text-base-content/60 mt-2">
+							{% if recipe.createdAt %}
+								<div>Créé le :
+									{{ recipe.createdAt|date('Y-m-d') }}</div>
+							{% endif %}
+							{% if recipe.updatedAt %}
+								<div>MàJ :
+									{{ recipe.updatedAt|date('Y-m-d') }}</div>
+							{% endif %}
+						</div>
 					</div>
-				{% endif %}
-
-				{% if recipe.prepTimeMinutes %}
-					<div class="badge badge-lg badge-secondary gap-2">
-						<span class="text-xl">⏱️</span>
-						<span>{{ recipe.prepTimeMinutes }}
-							min préparation</span>
-					</div>
-				{% endif %}
-
-				{% if recipe.cookTimeMinutes %}
-					<div class="badge badge-lg badge-accent gap-2">
-						<span class="text-xl">🔥</span>
-						<span>{{ recipe.cookTimeMinutes }}
-							min cuisson</span>
-					</div>
-				{% endif %}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -50,7 +65,7 @@
 
 	{# Section Ingrédients #}
 	{% if recipe.ingredients is not empty %}
-		<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6" id="preview-ingredients-container">
 			{% for ingredient in recipe.ingredients %}
 				<div class="card bg-base-200 shadow hover:shadow-lg transition-shadow">
 					<div
@@ -79,7 +94,7 @@
 			{% endfor %}
 		</div>
 	{% else %}
-		<div class="alert alert-info mb-6">
+		<div class="alert alert-info mb-6" id="preview-ingredients-container">
 			<span>Aucun ingrédient défini pour cette recette.</span>
 		</div>
 	{% endif %}
@@ -88,7 +103,7 @@
 
 	{# Section Ustensiles #}
 	{% if recipe.utensils is not empty %}
-		<div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" id="preview-utensils-container">
 			{% for utensil in recipe.utensils %}
 				<div class="card bg-base-200 shadow hover:shadow-lg transition-shadow">
 					<div
@@ -112,7 +127,7 @@
 			{% endfor %}
 		</div>
 	{% else %}
-		<div class="alert alert-info mb-6">
+		<div class="alert alert-info mb-6" id="preview-utensils-container">
 			<span>Aucun ustensile spécifié.</span>
 		</div>
 	{% endif %}
@@ -121,7 +136,7 @@
 
 	{# Section Étapes de préparation #}
 	{% if recipe.steps is not empty %}
-		<div class="space-y-4 mb-6">
+		<div class="space-y-4 mb-6" id="preview-steps-container">
 			{% for step in recipe.steps %}
 				<div class="card bg-base-100 shadow-md border-l-4 border-primary hover:shadow-lg transition-shadow">
 					<div class="card-body p-4">
@@ -168,7 +183,7 @@
 			{% endfor %}
 		</div>
 	{% else %}
-		<div class="alert alert-info mb-6">
+		<div class="alert alert-info mb-6" id="preview-steps-container">
 			<span>Aucune étape de préparation définie.</span>
 		</div>
 	{% endif %}
@@ -180,4 +195,3 @@
 			<p class="text-base-content/70">Votre recette illustrée est prête.</p>
 		</div>
 	</div>
-</div>

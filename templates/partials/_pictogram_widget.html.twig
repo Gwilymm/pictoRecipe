@@ -22,8 +22,16 @@
     }) }}
 
 	{# Barre de recherche #}
+	{# Decide whether to prefill the search input (default: true). Callers can pass `prefill=false` to opt-out (used for ingredients).
+		   We compute the initial value in `searchValue` so callers that disable prefill get an empty input. #}
+		{% if prefill is defined and prefill == false %}
+		{% set searchValue = '' %}
+	{% else %}
+		{% set searchValue = form_field.vars.value|default('')|lower %}
+	{% endif %}
+
 	<div class="flex gap-2 items-center">
-		<input type="text" id="{{ searchId }}" placeholder="{{ placeholder|default('Rechercher un pictogramme...') }}" class="input input-bordered input-sm w-full max-w-xs" data-pictogram-target="searchInput" data-action="input->pictogram#onSearchInput"/>
+		<input type="text" id="{{ searchId }}" value="{{ searchValue|e }}" placeholder="{{ placeholder|default('Rechercher un pictogramme...') }}" class="input input-bordered input-sm w-full max-w-xs" data-pictogram-target="searchInput" data-action="input->pictogram#onSearchInput"/>
 
 		<button type="button" class="btn btn-outline btn-primary btn-sm" data-action="click->pictogram#onSearchClick" data-pictogram-target="searchButton">
 			🔍 Rechercher

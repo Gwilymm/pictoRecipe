@@ -67,7 +67,10 @@ class UtensilController extends AbstractController
 	#[Route('/{id}', name: 'app_utensil_delete', methods: ['POST'])]
 	public function delete(Request $request, Utensil $utensil, EntityManagerInterface $entityManager): Response
 	{
-		if ($this->isCsrfTokenValid('delete' . $utensil->getId(), $request->getPayload()->getString('_token'))) {
+		// Use the POST request parameters to retrieve the CSRF token (standard behavior)
+		$token = $request->request->get('_token');
+
+		if ($this->isCsrfTokenValid('delete' . $utensil->getId(), $token)) {
 			$entityManager->remove($utensil);
 			$entityManager->flush();
 

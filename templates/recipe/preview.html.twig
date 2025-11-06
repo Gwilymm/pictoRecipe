@@ -8,9 +8,9 @@
 {% block body %}
 	<div
 		class="container mx-auto px-4 py-6">
-		{# Barre d'actions en haut #}
+		{# Barre d'actions en haut: ajout d'un bouton Enregistrer et réorganisation #}
 		<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
-			<div>
+			<div class="flex items-center gap-3">
 				<a href="{{ path('app_recipe_index') }}" class="btn btn-outline btn-sm">
 					← Retour à la liste
 				</a>
@@ -18,7 +18,26 @@
 					✏️ Modifier
 				</a>
 			</div>
-			<div>
+			<div
+				class="flex items-center gap-3">
+				{# Hidden save form: renders all fields inside a hidden container so the visible save buttons can submit it via form attribute #}
+				{{ form_start(form, {'action': path('app_recipe_preview_save'), 'attr': {'id': 'preview-save-form'}}) }}
+				<div
+					style="display:none;">
+					{# ensure the id is sent when editing existing recipes #}
+					{% if recipe.id is defined and recipe.id %}
+						<input type="hidden" name="recipe[id]" value="{{ recipe.id }}"/>
+					{% endif %}
+					{{ form_widget(form) }}
+				</div>
+				{{ form_end(form) }}
+
+				<button form="preview-save-form" class="btn btn-success btn-sm" title="Enregistrer la recette (reste sur la prévisualisation)">
+					💾
+					{% if recipe.id %}Mettre à jour{% else %}Enregistrer
+					{% endif %}
+				</button>
+
 				<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-primary btn-sm gap-2">
 					📄 Télécharger en PDF
 				</a>
@@ -28,15 +47,17 @@
 		{# Inclusion du template de prévisualisation #}
 		{{ include('recipe/_preview.html.twig', { recipe: recipe }) }}
 
-		{# Actions en bas #}
+		{# Actions en bas: Enregistrer en évidence #}
 		<div class="flex flex-wrap gap-3 mt-6 justify-center">
 			<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">
 				← Retour à la liste
 			</a>
-			<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-primary">
-				✏️ Modifier la recette
-			</a>
-			<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-success gap-2">
+			<button form="preview-save-form" class="btn btn-success">
+				💾
+				{% if recipe.id %}Mettre à jour{% else %}Enregistrer la recette
+				{% endif %}
+			</button>
+			<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-primary">
 				📄 Télécharger en PDF
 			</a>
 		</div>

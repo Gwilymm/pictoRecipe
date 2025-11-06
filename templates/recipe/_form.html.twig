@@ -4,7 +4,8 @@
 
 {{ form_start(form, {'attr': {'class': 'space-y-6', 'data-controller': 'stepper'}}) }}
 
-{# Capture prototypes into variables to avoid rendering them more than once (#\n   prevents "Field \"__name__\" has already been rendered" when embedding in attributes) #}
+{# Determine submit label: prefer explicit `button_label`, otherwise infer from bound entity (has id => update) #}
+{% set submit_label = (button_label is defined) ? button_label : ((form.vars.data is defined and form.vars.data.id) ? 'Mettre à jour' : 'Enregistrer la recette') %}
 {% if form.ingredients is defined and form.ingredients.vars.prototype is defined %}
 	{% set ingredient_prototype %}{{ form_widget(form.ingredients.vars.prototype.position) }}<div class="flex items-start gap-3">
 		<div class="flex-1 grid grid-cols-3 gap-2">
@@ -16,7 +17,7 @@
 			<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
 		</div>
 	</div>
-	<div class="mt-3 pt-3 border-t border-base-300">{{ include('partials/_pictogram_widget.html.twig', {'form_field': form.ingredients.vars.prototype.name, 'url_field': form.ingredients.vars.prototype.pictogramUrl, 'placeholder': 'Rechercher un pictogramme pour cet ingrédient...'}) }}</div>
+	<div class="mt-3 pt-3 border-t border-base-300">{{ include('partials/_pictogram_widget.html.twig', {'form_field': form.ingredients.vars.prototype.name, 'url_field': form.ingredients.vars.prototype.pictogramUrl, 'placeholder': 'Rechercher un pictogramme pour cet ingrédient...', 'prefill': false}) }}</div>
 	{% endset %}
 {% else %}
 	{% set ingredient_prototype = '' %}
@@ -80,6 +81,106 @@
 				</div>
 			</div>
 		</div>
+
+		{# Small JS enhancement: make utensil cards toggle the checkbox reliably and apply selected classes #}
+		<script>
+			document.addEventListener( 'DOMContentLoaded', () => {
+
+
+
+document.querySelectorAll( '.utensil-card' ).forEach( ( label ) => {
+
+
+
+const input = label.querySelector( 'input[type="checkbox"]' );
+if ( ! input )
+
+
+return;
+
+
+
+const setSelected = ( checked ) => {
+
+
+
+const img = label.querySelector( 'img' );
+if ( checked )
+{
+
+
+
+label.classList.add( 'bg-primary/5', 'text-primary-600', 'border-primary', 'shadow-md' );
+if ( img )
+{
+
+
+
+img.classList.remove( 'w-10', 'h-10' );
+img.classList.add( 'w-8', 'h-8' );
+
+
+
+}
+
+}
+else
+{
+
+
+
+label.classList.remove( 'bg-primary/5', 'text-primary-600', 'border-primary', 'shadow-md' );
+if ( img )
+{
+
+
+
+img.classList.remove( 'w-8', 'h-8' );
+img.classList.add( 'w-10', 'h-10' );
+
+
+
+}
+
+}
+
+};
+
+// initialize visual state
+setSelected( input.checked );
+
+// clicking the label toggles the input; wait a tick to read its state
+label.addEventListener( 'click', () => {
+
+
+
+setTimeout( () => {
+
+
+
+setSelected( input.checked );
+input.dispatchEvent( new Event( 'change',
+{ bubbles: true } ) );
+
+
+
+}, 0 );
+
+
+
+} );
+
+// keep visuals in sync when input changes directly
+input.addEventListener( 'change', () => setSelected( input.checked ) );
+
+
+
+} );
+
+
+
+} );
+		</script>
 		<div class="mt-4">
 			{{ form_row(form.description) }}
 		</div>
@@ -91,10 +192,7 @@
 			</button>
 		</div>
 	</div>
-</section>
-
-{# Step 2: Ingredients #}
-<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
+</section>{# Step 2: Ingredients #}<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
 	<div class="card-body">
 		<h3 class="text-lg font-semibold">🧂 Ingrédients</h3>
 
@@ -119,10 +217,11 @@
 
 						<div class="mt-3 pt-3 border-t border-base-300">
 							{{ include('partials/_pictogram_widget.html.twig', {
-								'form_field': ingredient.name,
-								'url_field': ingredient.pictogramUrl,
-								'placeholder': 'Rechercher un pictogramme pour cet ingrédient...'
-							}) }}
+																													'form_field': ingredient.name,
+																													'url_field': ingredient.pictogramUrl,
+																													'placeholder': 'Rechercher un pictogramme pour cet ingrédient...',
+																													'prefill': false
+																												}) }}
 						</div>
 					</div>
 				{% else %}
@@ -145,10 +244,7 @@
 			</button>
 		</div>
 	</div>
-</section>
-
-{# Step 3: Steps #}
-<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
+</section>{# Step 3: Steps #}<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
 	<div class="card-body">
 		<h3 class="text-lg font-semibold">👨‍🍳 Étapes</h3>
 
@@ -172,10 +268,10 @@
 						<div class="mt-3 pt-3 border-t border-base-300">
 							<div class="mb-2 font-semibold text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
 							{{ include('partials/_pictogram_multiple_widget.html.twig', {
-								'form_field': step.content,
-								'urls_field': step.pictogramUrls,
-								'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'
-							}) }}
+																													'form_field': step.content,
+																													'urls_field': step.pictogramUrls,
+																													'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'
+																												}) }}
 						</div>
 					</div>
 				{% else %}
@@ -198,10 +294,7 @@
 			</button>
 		</div>
 	</div>
-</section>
-
-{# Step 4: Utensils #}
-<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
+</section>{# Step 4: Utensils #}<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
 	<div class="card-body">
 		<h3 class="text-lg font-semibold">🍴 Ustensiles</h3>
 		<p class="text-sm text-base-content/70 mb-4">Sélectionnez les ustensiles utilisés dans cette recette.</p>
@@ -217,12 +310,11 @@
 				{% for child in form.utensils %}
 					{# pictogram URL is exposed as a data attribute on the input via choice_attr in the form type #}
 					{% set pictogram = child.vars.attr['data-pictogram']|default(null) %}
-					{# Render the checkbox input before the label and use its id as the label's for= to allow the label to be styled
-					   via peer-checked utilities. The input is visually hidden but remains a peer for Tailwind. #}
-					{{ form_widget(child, {'attr': {'class': 'peer sr-only'}}) }}
-					<label
-					<label for="{{ child.vars.id }}" class="utensil-card flex items-center gap-3 p-2 border rounded cursor-pointer hover:shadow-sm bg-base-100 transition-colors peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary peer-checked:ring-2 peer-checked:ring-primary/30">
-
+					{# Render the checkbox input inside the label so clicking anywhere toggles it reliably #}
+					<label class="utensil-card relative flex items-center gap-3 p-2 pl-4 border rounded-lg cursor-pointer hover:shadow-sm bg-white transition-colors peer-checked:bg-primary/5 peer-checked:text-primary-600 peer-checked:border-primary">
+						{{ form_widget(child, {'attr': {'class': 'peer sr-only'}}) }}
+						{# Colored left indicator visible when selected #}
+						<span class="absolute left-0 top-0 bottom-0 w-1 rounded-r bg-primary/70 opacity-0 transition-opacity duration-150 peer-checked:opacity-100" aria-hidden="true"></span>
 						{% if pictogram %}
 							<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-10 h-10 object-contain rounded transition-all peer-checked:w-8 peer-checked:h-8"/>
 						{% else %}
@@ -264,14 +356,13 @@
 		</div>
 	</div>
 </section>
-
-{# Step 5: Preview #}
 <section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
 	<div class="card-body">
 		<h3 class="text-lg font-semibold">Aperçu</h3>
 		<p class="text-sm text-base-content/70 mb-4">Aperçu de la fiche avant enregistrement (basé sur les valeurs du formulaire).</p>
-		{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
-
+		<div class="recipe-preview max-w-4xl mx-auto">
+			{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
+		</div>
 		{# Boutons de navigation et enregistrement #}
 		<div class="flex justify-between gap-2 mt-6 pt-4 border-t">
 			<button type="button" class="btn btn-outline" data-action="stepper#prev">
@@ -281,19 +372,12 @@
 				<a href="{{ path('app_recipe_index') }}" class="btn btn-ghost">Annuler</a>
 				<button type="submit" class="btn btn-success gap-2">
 					💾
-					{{ button_label|default('Enregistrer la recette') }}
+					{{ submit_label }}
 				</button>
 			</div>
 		</div>
 	</div>
-</section>
-
-{# Fallback submit actions (if user skips to bottom) #}
-<div class="mt-4 hidden">
-	<button type="submit" class="btn btn-primary">{{ button_label|default('Enregistrer la recette') }}</button>
+</section>{# Fallback submit actions (if user skips to bottom) #}<div class="mt-4 hidden">
+	<button type="submit" class="btn btn-primary">{{ submit_label }}</button>
 	<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour à la liste</a>
-</div>
-
-{# Render any remaining hidden fields (CSRF token, etc.) then close the form #}
-{{ form_rest(form) }}
-{{ form_end(form) }}
+</div>{# Render any remaining hidden fields (CSRF token, etc.) then close the form #}{{ form_rest(form) }}{{ form_end(form) }}

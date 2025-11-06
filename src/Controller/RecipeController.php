@@ -46,7 +46,7 @@ final class RecipeController extends AbstractController
             $entityManager->persist($recipe);
             $entityManager->flush();
 
-            // Rediriger vers la prévisualisation de la recette créée
+            // Après création, afficher la prévisualisation avec les informations à jour
             return $this->redirectToRoute('app_recipe_preview', ['id' => $recipe->getId()], Response::HTTP_SEE_OTHER);
         }
 
@@ -62,8 +62,58 @@ final class RecipeController extends AbstractController
     #[Route('/{id}/preview', name: 'app_recipe_preview', methods: ['GET'])]
     public function preview(Recipe $recipe): Response
     {
+        // build a form populated with the current recipe so the preview can submit it (save/update)
+        $form = $this->createForm(RecipeType::class, $recipe);
+
         return $this->render('recipe/preview.html.twig', [
             'recipe' => $recipe,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/preview/save', name: 'app_recipe_preview_save', methods: ['POST'])]
+    public function previewSave(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        // Determine if this is an update (id present) or a new recipe
+        $data = $request->request->get('recipe');
+        $id = is_array($data) && array_key_exists('id', $data) ? $data['id'] : null;
+
+        if ($id) {
+            $recipe = $entityManager->getRepository(Recipe::class)->find($id);
+            if (! $recipe) {
+                $this->addFlash('error', 'Recette introuvable.');
+                return $this->redirectToRoute('app_recipe_index');
+            }
+        } else {
+            $recipe = new Recipe();
+        }
+
+        $form = $this->createForm(RecipeType::class, $recipe);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // ensure positions are set
+            $position = 0;
+            foreach ($recipe->getIngredients() as $ingredient) {
+                $ingredient->setPosition($position++);
+            }
+            $position = 0;
+            foreach ($recipe->getSteps() as $step) {
+                $step->setPosition($position++);
+            }
+
+            $entityManager->persist($recipe);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Recette enregistrée.');
+
+            return $this->redirectToRoute('app_recipe_preview', ['id' => $recipe->getId()]);
+        }
+
+        // If invalid, re-render preview with the form (errors will be visible in form if template shows them)
+        return $this->render('recipe/preview.html.twig', [
+            'recipe' => $recipe,
+            'form' => $form->createView(),
         ]);
     }
 
@@ -79,8 +129,8 @@ final class RecipeController extends AbstractController
             'recipe' => $recipe,
         ]);
 
-        // Générer le PDF avec options
-        $filename = sprintf('recette-%s.pdf', $recipe->getId());
+        // Générer le PDF avec le nom de la recette
+        $filename = sprintf($recipe->getTitle());
 
         return new Response(
             $pdf->getOutputFromHtml($html, [
@@ -128,7 +178,7 @@ final class RecipeController extends AbstractController
 
             $entityManager->flush();
 
-            // Rediriger vers la prévisualisation
+            // Après mise à jour, afficher la prévisualisation avec les informations à jour
             return $this->redirectToRoute('app_recipe_preview', ['id' => $recipe->getId()], Response::HTTP_SEE_OTHER);
         }
 

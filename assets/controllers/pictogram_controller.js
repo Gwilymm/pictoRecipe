@@ -55,6 +55,16 @@ export default class extends Controller {
 			}
 		}
 
+		// If a search input already contains a value (e.g. utensil name), automatically perform a search
+		if (this.hasSearchInputTarget) {
+			let initial = this.searchInputTarget.value?.trim() || '';
+			initial = initial.toLowerCase();
+			if (initial.length >= 2) {
+				// use performSearch which handles fetching and rendering compact results
+				this.performSearch(initial);
+			}
+		}
+
 		// Mode multiple : charger les pictogrammes existants
 		if (this.modeValue === 'multiple') {
 			this.loadExistingPictograms();
@@ -72,6 +82,8 @@ export default class extends Controller {
 	 * Recherche automatique avec debounce
 	 */
 	onSearchInput(event) {
+		// Force lowercase while typing and use lowercase keyword for search
+		event.target.value = event.target.value.toLowerCase();
 		const keyword = event.target.value.trim();
 
 		if (this.debounceTimer) {
@@ -93,6 +105,8 @@ export default class extends Controller {
 	 */
 	onSearchClick(event) {
 		event.preventDefault();
+		// ensure we search with lowercase text
+		this.searchInputTarget.value = this.searchInputTarget.value.toLowerCase();
 		const keyword = this.searchInputTarget.value.trim();
 
 		if (keyword.length >= 2) {
