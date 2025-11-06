@@ -12,26 +12,52 @@ import { Controller } from '@hotwired/stimulus';
  */
 export default class extends Controller {
 	static targets = [
-		'searchInput',      // Champ de recherche
-		'searchButton',     // Bouton de recherche
-		'resultsContainer', // Conteneur des résultats
-		'spinner',          // Spinner de chargement
-		'urlInput',         // Input caché pour l'URL
-		'preview'           // Aperçu du picto sélectionné
+		'search',            // Champ de recherche (simplifié)
+		'results',           // Conteneur des résultats
+		'resultsList',       // Liste des résultats
+		'selectedContainer', // Conteneur des pictogrammes sélectionnés (mode multiple)
+		'emptyMessage',      // Message "Aucun pictogramme sélectionné"
+		'searchZone',        // Zone de recherche collapsible
+		'searchToggle',      // Toggle du collapse
+		'searchInput',       // Champ de recherche (ancien nom, compatibilité)
+		'searchButton',      // Bouton de recherche
+		'resultsContainer',  // Conteneur des résultats (ancien nom)
+		'spinner',           // Spinner de chargement
+		'urlInput',          // Input caché pour l'URL (mode simple)
+		'preview'            // Aperçu du picto sélectionné (mode simple)
 	];
 
 	static values = {
 		apiUrl: { type: String, default: '/api/pictograms/search' },
-		debounceDelay: { type: Number, default: 500 }
+		debounceDelay: { type: Number, default: 500 },
+		mode: { type: String, default: 'single' }, // 'single' ou 'multiple'
+		target: { type: String, default: '' }      // ID du champ hidden pour mode multiple
 	};
 
 	connect() {
 		this.debounceTimer = null;
-		this.selectedPictogramUrl = this.urlInputTarget?.value || null;
 
-		// Afficher l'aperçu si un pictogramme est déjà sélectionné
-		if (this.selectedPictogramUrl && this.hasPreviewTarget) {
-			this.showPreview(this.selectedPictogramUrl);
+		// Déterminer le mode depuis l'attribut data
+		if (this.element.dataset.pictogramMode) {
+			this.modeValue = this.element.dataset.pictogramMode;
+		}
+
+		// Récupérer l'ID du target field pour le mode multiple
+		if (this.element.dataset.pictogramTargetValue) {
+			this.targetValue = this.element.dataset.pictogramTargetValue;
+		}
+
+		// Mode simple : afficher l'aperçu si déjà sélectionné
+		if (this.modeValue === 'single') {
+			this.selectedPictogramUrl = this.urlInputTarget?.value || null;
+			if (this.selectedPictogramUrl && this.hasPreviewTarget) {
+				this.showPreview(this.selectedPictogramUrl);
+			}
+		}
+
+		// Mode multiple : charger les pictogrammes existants
+		if (this.modeValue === 'multiple') {
+			this.loadExistingPictograms();
 		}
 	}
 
@@ -109,16 +135,26 @@ export default class extends Controller {
 	 * Affiche les résultats dans une grille DaisyUI
 	 */
 	displayResults(results) {
+		// Créer un conteneur avec scroll
+		const container = document.createElement('div');
+		container.className = 'card bg-base-100 shadow-lg max-h-64 overflow-y-auto mt-2';
+
+		const cardBody = document.createElement('div');
+		cardBody.className = 'card-body p-2';
+
 		const grid = document.createElement('div');
-		grid.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 mt-4';
+		grid.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2';
 
 		results.forEach(pictogram => {
 			const card = this.createPictogramCard(pictogram);
 			grid.appendChild(card);
 		});
 
+		cardBody.appendChild(grid);
+		container.appendChild(cardBody);
+
 		this.resultsContainerTarget.innerHTML = '';
-		this.resultsContainerTarget.appendChild(grid);
+		this.resultsContainerTarget.appendChild(container);
 	}
 
 	/**
@@ -163,6 +199,11 @@ export default class extends Controller {
 	 * Sélectionne un pictogramme
 	 */
 	selectPictogram(pictogram, cardElement) {
+		console.log('selectPictogram called', {
+			pictogram: pictogram.name,
+			hasResultsContainerTarget: this.hasResultsContainerTarget
+		});
+
 		// Retirer la sélection précédente
 		this.resultsContainerTarget.querySelectorAll('.ring').forEach(el => {
 			el.classList.remove('ring', 'ring-primary', 'ring-offset-2');
@@ -185,6 +226,13 @@ export default class extends Controller {
 
 		// Notification visuelle
 		this.showSuccessToast(pictogram.name || 'Pictogramme sélectionné');
+
+		console.log('About to clear results...');
+
+		// Masquer les résultats après sélection
+		this.clearResults();
+
+		console.log('Results cleared!');
 	}
 
 	/**
@@ -277,7 +325,18 @@ export default class extends Controller {
 	 * Efface les résultats
 	 */
 	clearResults() {
-		this.resultsContainerTarget.innerHTML = '';
+		if (this.hasResultsContainerTarget) {
+			// Vider complètement le conteneur
+			this.resultsContainerTarget.innerHTML = '';
+			// Masquer aussi le conteneur si besoin
+			this.resultsContainerTarget.classList.add('hidden');
+			// Réafficher immédiatement (au cas où on recherche à nouveau)
+			setTimeout(() => {
+				if (this.hasResultsContainerTarget) {
+					this.resultsContainerTarget.classList.remove('hidden');
+				}
+			}, 100);
+		}
 	}
 
 	/**
@@ -297,5 +356,223 @@ export default class extends Controller {
 		setTimeout(() => {
 			toast.remove();
 		}, 2000);
+	}
+
+	// ============== MODE MULTIPLE ==============
+
+	/**
+	 * Charge les pictogrammes existants depuis le champ hidden JSON
+	 */
+	loadExistingPictograms() {
+		if (!this.targetValue) return;
+
+		const hiddenField = document.getElementById(this.targetValue);
+		if (!hiddenField || !hiddenField.value) return;
+
+		try {
+			const urls = JSON.parse(hiddenField.value);
+			if (Array.isArray(urls)) {
+				urls.forEach(url => this.addSelectedPictogram(url));
+			}
+		} catch (e) {
+			console.error('Erreur lors du chargement des pictogrammes:', e);
+		}
+	}
+
+	/**
+	 * Sélectionne un pictogramme en mode multiple
+	 */
+	selectPictogramMultiple(pictogram) {
+		this.addSelectedPictogram(pictogram.imageUrl, pictogram.name);
+		this.updateHiddenField();
+		this.showSuccessToast(`${pictogram.name || 'Pictogramme'} ajouté`);
+	}
+
+	/**
+	 * Ajoute visuellement un pictogramme sélectionné
+	 */
+	addSelectedPictogram(imageUrl, name = '') {
+		if (!this.hasSelectedContainerTarget) return;
+
+		// Masquer le message "Aucun pictogramme sélectionné"
+		if (this.hasEmptyMessageTarget) {
+			this.emptyMessageTarget.classList.add('hidden');
+		}
+
+		const badge = document.createElement('div');
+		badge.className = 'badge badge-lg badge-primary gap-2 p-3';
+		badge.dataset.pictogramUrl = imageUrl;
+		badge.innerHTML = `
+			<img src="${imageUrl}" alt="${name}" class="w-8 h-8 object-contain" />
+			<span class="text-xs max-w-[100px] truncate">${name}</span>
+			<button type="button" class="btn btn-ghost btn-xs btn-circle" data-url="${imageUrl}">✕</button>
+		`;
+
+		// Événement pour retirer le pictogramme
+		const removeBtn = badge.querySelector('button');
+		removeBtn.addEventListener('click', () => {
+			badge.remove();
+			this.updateHiddenField();
+			this.checkEmptyState();
+		});
+
+		this.selectedContainerTarget.appendChild(badge);
+	}
+
+	/**
+	 * Met à jour le champ hidden avec les URLs en JSON
+	 */
+	updateHiddenField() {
+		if (!this.targetValue) return;
+
+		const hiddenField = document.getElementById(this.targetValue);
+		if (!hiddenField) return;
+
+		const urls = Array.from(this.selectedContainerTarget.querySelectorAll('[data-pictogram-url]'))
+			.map(badge => badge.dataset.pictogramUrl);
+
+		hiddenField.value = JSON.stringify(urls);
+		hiddenField.dispatchEvent(new Event('change', { bubbles: true }));
+	}
+
+	/**
+	 * Recherche déclenchée par input (compatible mode simple et multiple)
+	 */
+	search(event) {
+		const keyword = this.hasSearchTarget ? this.searchTarget.value.trim() :
+			this.hasSearchInputTarget ? this.searchInputTarget.value.trim() : '';
+
+		if (keyword.length < 2) {
+			this.hideResults();
+			return;
+		}
+
+		if (this.debounceTimer) {
+			clearTimeout(this.debounceTimer);
+		}
+
+		this.debounceTimer = setTimeout(() => {
+			this.performSearch(keyword);
+		}, this.debounceDelayValue);
+	}
+
+	/**
+	 * Effectue la recherche (compatible mode simple et multiple)
+	 */
+	async performSearch(keyword) {
+		try {
+			const url = `${this.apiUrlValue}?q=${encodeURIComponent(keyword)}`;
+			const response = await fetch(url);
+
+			if (!response.ok) {
+				throw new Error(`Erreur HTTP: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			if (data.success && data.results.length > 0) {
+				this.displayResultsCompact(data.results);
+			} else {
+				this.hideResults();
+			}
+		} catch (error) {
+			console.error('Erreur lors de la recherche:', error);
+			this.hideResults();
+		}
+	}
+
+	/**
+	 * Affiche les résultats de manière compacte
+	 */
+	displayResultsCompact(results) {
+		const container = this.hasResultsTarget ? this.resultsTarget :
+			this.hasResultsContainerTarget ? this.resultsContainerTarget : null;
+
+		if (!container) return;
+
+		// create a scrollable card to contain a compact grid
+		const wrapper = document.createElement('div');
+		wrapper.className = 'card bg-base-100 shadow-lg max-h-48 overflow-y-auto mt-2';
+
+		const body = document.createElement('div');
+		body.className = 'card-body p-2';
+
+		const grid = document.createElement('div');
+		grid.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 items-center justify-items-center';
+
+		results.forEach(pictogram => {
+			const card = document.createElement('div');
+			card.className = 'cursor-pointer transition p-1 flex items-center justify-center rounded';
+			card.innerHTML = `<img src="${pictogram.imageUrl}" alt="${pictogram.name}" class="w-12 h-12 object-contain" title="${pictogram.name}" />`;
+
+			card.addEventListener('click', () => {
+				if (this.modeValue === 'multiple') {
+					this.selectPictogramMultiple(pictogram);
+				} else {
+					this.selectPictogram(pictogram, card);
+				}
+			});
+
+			grid.appendChild(card);
+		});
+
+		body.appendChild(grid);
+		wrapper.appendChild(body);
+
+		container.innerHTML = '';
+		container.appendChild(wrapper);
+
+		if (this.hasResultsTarget) {
+			this.resultsTarget.classList.remove('hidden');
+		}
+	}
+
+	/**
+	 * Masque les résultats
+	 */
+	hideResults() {
+		if (this.hasResultsTarget) {
+			this.resultsTarget.classList.add('hidden');
+		}
+	}
+
+	/**
+	 * Ferme la zone de recherche (mode multiple)
+	 */
+	closeSearch(event) {
+		event?.preventDefault();
+
+		// Vider le champ de recherche
+		if (this.hasSearchTarget) {
+			this.searchTarget.value = '';
+		}
+
+		// Masquer les résultats
+		this.hideResults();
+
+		// Fermer le collapse
+		if (this.hasSearchToggleTarget) {
+			this.searchToggleTarget.checked = false;
+		}
+
+		// Scroll smooth vers la zone pour voir qu'elle est fermée
+		if (this.hasSearchZoneTarget) {
+			this.searchZoneTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		}
+	}
+
+	/**
+	 * Vérifie si des pictogrammes sont sélectionnés et affiche/masque le message
+	 */
+	checkEmptyState() {
+		if (!this.hasSelectedContainerTarget || !this.hasEmptyMessageTarget) return;
+
+		const hasPictograms = this.selectedContainerTarget.querySelectorAll('[data-pictogram-url]').length > 0;
+
+		if (hasPictograms) {
+			this.emptyMessageTarget.classList.add('hidden');
+		} else {
+			this.emptyMessageTarget.classList.remove('hidden');
+		}
 	}
 }

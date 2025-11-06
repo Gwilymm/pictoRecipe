@@ -26,6 +26,10 @@ class IngredientType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-32', 'placeholder' => 'g, ml, pcs...'],
             ])
+            ->add('position', HiddenType::class, [
+                'required' => false,
+                'attr' => ['class' => 'position-field'],
+            ])
             ->add('pictogramUrl', HiddenType::class, [
                 'required' => false,
             ])

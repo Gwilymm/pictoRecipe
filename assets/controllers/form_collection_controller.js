@@ -15,6 +15,13 @@ export default class extends Controller {
 		this.list = this.hasListTarget ? this.listTarget : this.element;
 		// Read prototype from data-prototype on the element or the list target
 		this.prototype = this.list.dataset.prototype || this.element.dataset.prototype || '';
+
+		console.log('form-collection: connected', {
+			list: this.list,
+			hasPrototype: !!this.prototype,
+			prototypeLength: this.prototype.length
+		});
+
 		// Start index as number of children
 		this.index = this.list.querySelectorAll('.collection-item').length || 0;
 
@@ -23,14 +30,28 @@ export default class extends Controller {
 			const btn = e.target.closest('.js-remove');
 			if (!btn) return;
 			const item = btn.closest('.collection-item');
-			if (item) item.remove();
+			if (item) {
+				item.remove();
+				// Recalculer les positions après suppression
+				this.updatePositions();
+			}
 		};
 
 		this.list.addEventListener('click', this._onRemoveClick);
+
+		// Initialiser les positions au chargement
+		this.updatePositions();
 	}
 
 	add(event) {
 		event && event.preventDefault();
+
+		console.log('form-collection: add called', {
+			hasPrototype: !!this.prototype,
+			prototypePreview: this.prototype.substring(0, 100),
+			currentIndex: this.index
+		});
+
 		if (!this.prototype) {
 			console.warn('form-collection: prototype not found');
 			return;
@@ -39,6 +60,7 @@ export default class extends Controller {
 		// Replace the Symfony __name__ placeholder with the current index
 		let newForm = this.prototype.replace(/__name__/g, this.index);
 
+		console.log('form-collection: newForm preview', newForm.substring(0, 200));
 
 		// Create wrapper element matching the existing items' structure
 		const wrapper = document.createElement('div');
@@ -47,18 +69,26 @@ export default class extends Controller {
 		// Insert the form HTML
 		wrapper.innerHTML = newForm;
 
-		// Add a subtle remove button (relies on delegated handler)
-		const removeBtn = document.createElement('button');
-		removeBtn.type = 'button';
-		removeBtn.className = 'btn btn-ghost btn-sm btn-circle js-remove ml-2';
-		removeBtn.setAttribute('title', 'Supprimer');
-		removeBtn.innerHTML = '🗑';
+		// Vérifier si un bouton de suppression existe déjà dans le prototype
+		const existingRemoveBtn = wrapper.querySelector('.js-remove');
 
-		// Insert remove button at the end (if prototype already contains structure this will append)
-		wrapper.appendChild(removeBtn);
+		// Si pas de bouton de suppression, en ajouter un
+		if (!existingRemoveBtn) {
+			console.log('form-collection: no remove button found, adding one');
+			const removeBtn = document.createElement('button');
+			removeBtn.type = 'button';
+			removeBtn.className = 'btn btn-ghost btn-sm btn-circle js-remove ml-2';
+			removeBtn.setAttribute('title', 'Supprimer');
+			removeBtn.innerHTML = '🗑';
+			wrapper.appendChild(removeBtn);
+		} else {
+			console.log('form-collection: remove button already exists');
+		}
 
 		// Append to the list
 		this.list.appendChild(wrapper);
+
+		console.log('form-collection: item appended to list');
 
 		// Trigger enter animation
 		requestAnimationFrame(() => {
@@ -67,5 +97,23 @@ export default class extends Controller {
 
 		// increment index for next insertion
 		this.index++;
+
+		// Mettre à jour les positions de tous les éléments
+		this.updatePositions();
+	}
+
+	/**
+	 * Met à jour les champs position de tous les éléments de la collection
+	 * pour maintenir l'ordre correct
+	 */
+	updatePositions() {
+		const items = this.list.querySelectorAll('.collection-item');
+		items.forEach((item, index) => {
+			// Chercher le champ position dans l'item
+			const positionField = item.querySelector('input.position-field, input[id$="_position"]');
+			if (positionField) {
+				positionField.value = index;
+			}
+		});
 	}
 }

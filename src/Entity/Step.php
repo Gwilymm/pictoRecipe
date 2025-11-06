@@ -29,6 +29,9 @@ class Step
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $pictogramUrl = null;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $pictogramUrls = null;
+
     #[ORM\ManyToOne(inversedBy: 'steps')]
     private ?Recipe $recipe = null;
 
@@ -93,6 +96,43 @@ class Step
     public function setPictogramUrl(?string $pictogramUrl): static
     {
         $this->pictogramUrl = $pictogramUrl;
+
+        return $this;
+    }
+
+    public function getPictogramUrls(): ?array
+    {
+        return $this->pictogramUrls;
+    }
+
+    public function setPictogramUrls(?array $pictogramUrls): static
+    {
+        $this->pictogramUrls = $pictogramUrls;
+
+        return $this;
+    }
+
+    public function addPictogramUrl(string $url): static
+    {
+        if ($this->pictogramUrls === null) {
+            $this->pictogramUrls = [];
+        }
+
+        if (!in_array($url, $this->pictogramUrls, true)) {
+            $this->pictogramUrls[] = $url;
+        }
+
+        return $this;
+    }
+
+    public function removePictogramUrl(string $url): static
+    {
+        if ($this->pictogramUrls !== null) {
+            $this->pictogramUrls = array_values(array_filter(
+                $this->pictogramUrls,
+                fn($item) => $item !== $url
+            ));
+        }
 
         return $this;
     }

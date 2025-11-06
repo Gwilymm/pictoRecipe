@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter un Ustensile
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-6 max-w-2xl">
+		<h1 class="text-3xl font-bold mb-6">➕ Ajouter un Ustensile</h1>
+
+		{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+
+		<div class="card bg-base-100 shadow">
+			<div class="card-body">
+				<div class="form-control">
+					{{ form_row(form.name) }}
+				</div>
+
+				<div class="divider">Pictogramme</div>
+
+				<div class="form-control">
+					{{ include('partials/_pictogram_widget.html.twig', {
+						'form_field': form.name,
+						'url_field': form.pictogramUrl,
+						'placeholder': 'Rechercher un pictogramme pour cet ustensile...'
+					}) }}
+				</div>
+
+				<div class="card-actions justify-end mt-4">
+					<a href="{{ path('app_utensil_index') }}" class="btn btn-outline">
+						Annuler
+					</a>
+					<button type="submit" class="btn btn-primary">
+						💾 Enregistrer
+					</button>
+				</div>
+			</div>
+		</div>
+
+		{{ form_end(form) }}
+	</div>
+{% endblock %}

@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Step;
+use App\Form\DataTransformer\JsonToArrayTransformer;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -22,10 +23,22 @@ class StepType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-28', 'placeholder' => 'min'],
             ])
+            ->add('position', HiddenType::class, [
+                'required' => false,
+                'attr' => ['class' => 'position-field'],
+            ])
             ->add('pictogramUrl', HiddenType::class, [
                 'required' => false,
             ])
+            ->add('pictogramUrls', HiddenType::class, [
+                'required' => false,
+                'attr' => ['data-pictograms' => 'multiple'],
+            ])
         ;
+
+        // Ajouter le transformer pour convertir JSON <-> Array
+        $builder->get('pictogramUrls')
+            ->addModelTransformer(new JsonToArrayTransformer());
     }
 
     public function configureOptions(OptionsResolver $resolver): void

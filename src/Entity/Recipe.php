@@ -8,6 +8,7 @@ use App\Repository\RecipeRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Entity\Utensil;
 
 #[ORM\Entity(repositoryClass: RecipeRepository::class)]
 class Recipe
@@ -45,20 +46,28 @@ class Recipe
     /**
      * @var Collection<int, Ingredient>
      */
-    #[ORM\OneToMany(targetEntity: Ingredient::class, mappedBy: 'recipe')]
+    #[ORM\OneToMany(targetEntity: Ingredient::class, mappedBy: 'recipe', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $ingredients;
 
     /**
      * @var Collection<int, Step>
      */
-    #[ORM\OneToMany(targetEntity: Step::class, mappedBy: 'recipe')]
+    #[ORM\OneToMany(targetEntity: Step::class, mappedBy: 'recipe', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $steps;
+
+    /**
+     * @var Collection<int, Utensil>
+     */
+    #[ORM\ManyToMany(targetEntity: Utensil::class, inversedBy: 'recipes')]
+    #[ORM\JoinTable(name: 'recipe_utensil')]
+    private Collection $utensils;
 
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->ingredients = new ArrayCollection();
         $this->steps = new ArrayCollection();
+        $this->utensils = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -192,6 +201,29 @@ class Recipe
             }
         }
 
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Utensil>
+     */
+    public function getUtensils(): Collection
+    {
+        return $this->utensils;
+    }
+
+    public function addUtensil(Utensil $utensil): static
+    {
+        if (!$this->utensils->contains($utensil)) {
+            $this->utensils->add($utensil);
+        }
+
+        return $this;
+    }
+
+    public function removeUtensil(Utensil $utensil): static
+    {
+        $this->utensils->removeElement($utensil);
         return $this;
     }
 }

@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+	{{ recipe.title }}
+	- Prévisualisation
+{% endblock %}
+
+{% block body %}
+	<div
+		class="container mx-auto px-4 py-6">
+		{# Barre d'actions en haut #}
+		<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
+			<div>
+				<a href="{{ path('app_recipe_index') }}" class="btn btn-outline btn-sm">
+					← Retour à la liste
+				</a>
+				<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-outline btn-primary btn-sm">
+					✏️ Modifier
+				</a>
+			</div>
+			<div>
+				<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-primary btn-sm gap-2">
+					📄 Télécharger en PDF
+				</a>
+			</div>
+		</div>
+
+		{# Inclusion du template de prévisualisation #}
+		{{ include('recipe/_preview.html.twig', { recipe: recipe }) }}
+
+		{# Actions en bas #}
+		<div class="flex flex-wrap gap-3 mt-6 justify-center">
+			<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">
+				← Retour à la liste
+			</a>
+			<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-primary">
+				✏️ Modifier la recette
+			</a>
+			<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-success gap-2">
+				📄 Télécharger en PDF
+			</a>
+		</div>
+	</div>
+{% endblock %}

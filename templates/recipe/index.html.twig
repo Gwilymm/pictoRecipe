@@ -34,6 +34,7 @@
 						<td>{{ recipe.updatedAt ? recipe.updatedAt|date('Y-m-d') : '' }}</td>
 						<td class="space-x-2">
 							<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-sm btn-info">Voir</a>
+							<a href="{{ path('app_recipe_preview', {'id': recipe.id}) }}" class="btn btn-sm btn-primary">👁️ Prévisualiser</a>
 							<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
 						</td>
 					</tr>

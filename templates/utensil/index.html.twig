@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Ustensiles
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-6">
+		<div class="flex justify-between items-center mb-6">
+			<h1 class="text-3xl font-bold">🍴 Mes Ustensiles de Cuisine</h1>
+			<a href="{{ path('app_utensil_new') }}" class="btn btn-primary">
+				➕ Ajouter un ustensile
+			</a>
+		</div>
+
+		{% if utensils is empty %}
+			<div class="alert alert-info">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+				</svg>
+				<span>Aucun ustensile trouvé. Commencez par en ajouter un !</span>
+			</div>
+		{% else %}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+				{% for utensil in utensils %}
+					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+						<div
+							class="card-body p-4 flex items-center gap-4">
+							{# pictogram on the left #}
+							{% if utensil.pictogramUrl %}
+								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" class="w-12 h-12 object-contain rounded">
+							{% else %}
+								<div class="w-12 h-12 rounded bg-base-200 flex items-center justify-center text-xl">
+									🔪
+								</div>
+							{% endif %}
+
+							<div class="flex-1 text-left">
+								<h3 class="font-semibold text-sm">{{ utensil.name }}</h3>
+							</div>
+
+							<div class="card-actions">
+								<a href="{{ path('app_utensil_edit', {id: utensil.id}) }}" class="btn btn-xs btn-outline">
+									✏️ Modifier
+								</a>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}
