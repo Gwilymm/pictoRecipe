@@ -130,7 +130,13 @@ final class RecipeController extends AbstractController
         ]);
 
         // Générer le PDF avec le nom de la recette
-        $filename = sprintf($recipe->getTitle());
+        $rawTitle = (string) $recipe->getTitle();
+        // Sanitize filename for filesystem / headers: keep letters, numbers, dash and underscore
+        $safe = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($rawTitle)) ?: 'recipe';
+        $filename = $safe . '.pdf';
+
+        // Use filename* for UTF-8 compatibility while keeping a safe ASCII filename
+        $disposition = sprintf('attachment; filename="%s"; filename*=UTF-8\'\'%s', $filename, rawurlencode($rawTitle . '.pdf'));
 
         return new Response(
             $pdf->getOutputFromHtml($html, [
@@ -145,7 +151,7 @@ final class RecipeController extends AbstractController
             200,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => sprintf('attachment; filename="%s"', $filename),
+                'Content-Disposition' => $disposition,
             ]
         );
     }

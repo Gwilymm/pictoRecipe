@@ -215,16 +215,22 @@ export default class extends Controller {
 			stepsContainer.innerHTML = steps.map(step => `
 				<div class="card bg-base-200/30 shadow-sm">
 					<div class="card-body p-4">
-						<div class="flex items-start gap-4">
-							<div class="badge badge-lg badge-primary font-bold">${step.position}</div>
+						<div class="flex gap-4 items-start">
+							<div class="flex flex-col items-center gap-3 shrink-0 w-28">
+								<div class="badge badge-lg badge-primary font-bold">${step.position}</div>
+								<div class="mt-2">
+									${step.pictogramUrls.length > 0 ? `
+										<div class="flex flex-col items-center gap-2">
+											${step.pictogramUrls.map(url => `<img src="${url}" alt="Picto" class="w-16 h-16 object-contain rounded-lg bg-base-200 p-1">`).join('')}
+										</div>
+									` : (step.pictogramUrls.length === 0 && step.pictogramUrls !== undefined ? '' : '')}
+								</div>
+							</div>
 							<div class="flex-1">
+								<div class="flex items-center gap-2 mb-2">
+									${step.duration ? `<span class="badge badge-ghost gap-1">⏱️ ${step.duration} minutes</span>` : ''}
+								</div>
 								<p class="text-base leading-relaxed">${step.content}</p>
-								${step.duration ? `<div class="mt-2 text-sm text-base-content/70">⏱️ ${step.duration} minutes</div>` : ''}
-								${step.pictogramUrls.length > 0 ? `
-									<div class="mt-3 flex flex-wrap gap-2">
-										${step.pictogramUrls.map(url => `<img src="${url}" alt="Pictogramme" class="w-10 h-10 object-contain bg-white rounded p-1">`).join('')}
-									</div>
-								` : ''}
 							</div>
 						</div>
 					</div>

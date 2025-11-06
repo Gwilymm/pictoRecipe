@@ -4,252 +4,168 @@
 		<meta charset="UTF-8">
 		<title>{{ recipe.title }}</title>
 		<style>
-			/* Styles inline pour PDF - CSS simplifié pour wkhtmltopdf */
 			*
-			{margin:0;padding:0;box-sizing:border-box
+			{box-sizing:border-box;margin:0;padding:0
 			}
-
 			body
-			{font-family:'DejaVu Sans',Arial,sans-serif;font-size:12pt;line-height:1.5;color:#333;padding:20px
+			{font-family:'DejaVu Sans',Arial,sans-serif;font-size:10pt;line-height:1.4;color:#000;padding:20px
 			}
 
 			h1
-			{font-size:24pt;color:#2563eb;margin-bottom:10px;border-bottom:3px solid #2563eb;padding-bottom:10px
+			{text-align:center;font-size:22pt;color:#222;margin-bottom:20px;text-transform:uppercase;border-bottom:3px solid #222;padding-bottom:6px
 			}
 
+			/* TITRES DE SECTION */
 			h2
-			{font-size:18pt;color:#1e40af;margin-top:20px;margin-bottom:10px;border-left:4px solid #3b82f6;padding-left:10px
+			{background:#f3f4f6;border-left:6px solid #2563eb;padding:6px 10px;font-size:13pt;margin:18px 0 8px
 			}
 
-			.info-badge
-			{display:inline-block;background-color:#dbeafe;color:#1e40af;padding:5px 12px;border-radius:15px;margin-right:10px;margin-bottom:5px;font-weight:bold
+			/* --- GRILLES INGREDIENTS & USTENSILES --- */
+			.grid
+			{width:100%;border-collapse:collapse;margin-bottom:15px
 			}
 
-			.description
-			{background-color:#f8fafc;padding:15px;border-radius:8px;margin:15px 0;font-style:italic
+			.grid td
+			{border:2px solid #ddd;text-align:center;padding:8px;width:14%;vertical-align:top
 			}
 
-			.ingredients-grid
-			{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0
+			.grid img
+			{width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 5px
 			}
 
-			.ingredient-item
-			{flex:0 0 23%;background-color:#f1f5f9;border:2px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center
-			}
+			<!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <title>{{recipe.title}}</title > <style > *
+			{box-sizing:border-box;margin:0;padding:0}
+			body
+			{font-family:'DejaVu Sans',Arial,sans-serif;font-size:10pt;line-height:1.4;color:#000;padding:20px}
 
-			.ingredient-item img
-			{width:50px;height:50px;object-fit:contain;margin:0 auto 8px;display:block
-			}
+			h1
+			{text-align:center;font-size:22pt;color:#222;margin-bottom:20px;text-transform:uppercase;border-bottom:3px solid #222;padding-bottom:6px}
 
-			.ingredient-name
-			{font-weight:bold;font-size:11pt;margin-bottom:5px
-			}
+			/* TITRES DE SECTION */
+			h2
+			{background:#f3f4f6;border-left:6px solid #2563eb;padding:6px 10px;font-size:13pt;margin:18px 0 8px}
 
-			.ingredient-quantity
-			{color:#2563eb;font-weight:bold
-			}
+			/* --- GRILLES INGREDIENTS & USTENSILES --- */
+			.grid
+			{width:100%;border-collapse:collapse;margin-bottom:15px}
 
-			.utensils-grid
-			{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0
-			}
+			.grid td
+			{border:2px solid #ddd;text-align:center;padding:8px;width:14%;vertical-align:top}
 
-			.utensil-item
-			{flex:0 0 15%;background-color:#fef3c7;border:2px solid #fbbf24;border-radius:8px;padding:8px;text-align:center
-			}
+			.grid img
+			{width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 5px}
 
-			.utensil-item img
-			{width:40px;height:40px;object-fit:contain;margin:0 auto 5px;display:block
-			}
+			.grid span
+			{display:block;font-size:9pt;font-weight:bold;color:#333}
 
-			.utensil-name
-			{font-size:9pt;font-weight:bold
-			}
+			/* --- TABLEAU ÉTAPES --- */
+			.steps
+			{width:100%;border-collapse:collapse;margin-top:10px}
 
-			.step-item
-			{background-color:#fff;border:2px solid #e5e7eb;border-left:5px solid #3b82f6;border-radius:8px;padding:15px;margin-bottom:15px;display:flex;align-items:flex-start;gap:15px;page-break-inside:avoid
-			}
+			.steps tr
+			{border:2px solid #000;page-break-inside:avoid;/* avoid row split */
+				break-inside:avoid;-webkit-column-break-inside:avoid;-webkit-page-break-inside:avoid}
 
-			.step-picto
-			{flex-shrink:0;width:70px;height:70px;background-color:#f1f5f9;border-radius:8px;padding:5px;text-align:center;display:flex;align-items:center;justify-content:center
-			}
+			.steps td
+			{border:2px solid #000;vertical-align:top;padding:10px;page-break-inside:avoid;break-inside:avoid}
 
-			.step-picto img
-			{max-width:60px;max-height:60px;object-fit:contain
-			}
+			.num
+			{width:60px;text-align:center;font-size:12pt;font-weight:bold;background:#dbeafe}
 
-			.step-number
-			{font-size:36pt;font-weight:bold;color:#3b82f6
-			}
+			.step-images
+			{text-align:center;width:180px}
 
-			.step-content
-			{flex:1
-			}
+			.step-images img
+			{width:70px;/* larger */
+				height:70px;margin:4px;object-fit:contain;display:inline-block}
 
-			.step-badge
-			{background-color:#3b82f6;color:white;padding:4px 10px;border-radius:12px;font-size:10pt;font-weight:bold;display:inline-block;margin-bottom:8px
-			}
+			.text
+			{font-size:10pt;line-height:1.5}
 
-			.step-duration
-			{background-color:#fbbf24;color:#78350f;padding:3px 8px;border-radius:10px;font-size:9pt;display:inline-block;margin-left:8px
-			}
-
-			.step-text
-			{font-size:11pt;line-height:1.6
-			}
-
+			/* FOOTER */
 			.footer
-			{margin-top:30px;padding-top:15px;border-top:2px solid #e5e7eb;text-align:center;color:#6b7280;font-size:10pt
-			}
-
-			.success-box
-			{background-color:#dcfce7;border:2px solid #22c55e;border-radius:10px;padding:20px;text-align:center;margin-top:30px
-			}
-
-			.success-box h3
-			{color:#15803d;font-size:20pt;margin-bottom:10px
-			}
-
-			.icon
-			{font-size:14pt;margin-right:5px
-			}
+			{text-align:center;margin-top:20px;font-size:9pt;color:#555}
 		</style>
 	</head>
 	<body>
-		{# En-tête de la recette #}
-		<div class="header">
-			<h1>{{ recipe.title|default('Titre de la recette') }}</h1>
 
-			{% if recipe.description %}
-				<div class="description">{{ recipe.description }}</div>
-			{% endif %}
+		<h1>{{ recipe.title|upper }}</h1>
 
-			<div style="margin: 15px 0;">
-				{% if recipe.servings %}
-					<span class="info-badge">
-						<span class="icon">👥</span>
-						{{ recipe.servings }}
-						portion(s)
-					</span>
-				{% endif %}
-
-				{% if recipe.prepTimeMinutes %}
-					<span class="info-badge">
-						<span class="icon">⏱️</span>
-						{{ recipe.prepTimeMinutes }}
-						min préparation
-					</span>
-				{% endif %}
-
-				{% if recipe.cookTimeMinutes %}
-					<span class="info-badge">
-						<span class="icon">🔥</span>
-						{{ recipe.cookTimeMinutes }}
-						min cuisson
-					</span>
-				{% endif %}
-			</div>
-		</div>
-
-		{# Section Ingrédients #}
-		<h2>
-			<span class="icon">🧂</span>
-			Ingrédients</h2>
-
-		{% if recipe.ingredients is not empty %}
-			<div class="ingredients-grid">
+		{# -- Ingrédients -- #}
+		<h2>Ingrédients</h2>
+		<table class="grid">
+			<tr>
 				{% for ingredient in recipe.ingredients %}
-					<div class="ingredient-item">
+					<td>
 						{% if ingredient.pictogramUrl %}
 							<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}">
 						{% else %}
-							<div style="width: 50px; height: 50px; margin: 0 auto 8px; background-color: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24pt;">🍴</div>
+							<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
 						{% endif %}
-
-						<div class="ingredient-name">{{ ingredient.name }}</div>
-						<div class="ingredient-quantity">
-							{{ ingredient.amount }}
-							{{ ingredient.unit|default('') }}
-						</div>
-					</div>
+						<span>{{ ingredient.name }}</span>
+						{% if ingredient.amount %}
+							<div style="font-size:8.5pt;color:#2563eb;">
+								{{ ingredient.amount }}
+								{{ ingredient.unit|default('') }}
+							</div>
+						{% endif %}
+					</td>
+					{% if loop.index is divisible by(6) %}
+					</tr>
+					<tr>
+					{% endif %}
 				{% endfor %}
-			</div>
-		{% else %}
-			<p style="color: #64748b; font-style: italic;">Aucun ingrédient défini.</p>
-		{% endif %}
+			</tr>
+		</table>
 
-		{# Section Ustensiles #}
-		<h2>
-			<span class="icon">🍴</span>
-			Ustensiles</h2>
-
-		{% if recipe.utensils is not empty %}
-			<div class="utensils-grid">
+		{# -- Ustensiles -- #}
+		<h2>Ustensiles</h2>
+		<table class="grid">
+			<tr>
 				{% for utensil in recipe.utensils %}
-					<div class="utensil-item">
+					<td>
 						{% if utensil.pictogramUrl %}
 							<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}">
 						{% else %}
-							<div style="width: 40px; height: 40px; margin: 0 auto 5px; background-color: #fef3c7; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20pt;">🔪</div>
+							<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
 						{% endif %}
-
-						<div class="utensil-name">{{ utensil.name }}</div>
-					</div>
+						<span>{{ utensil.name }}</span>
+					</td>
+					{% if loop.index is divisible by(6) %}
+					</tr>
+					<tr>
+					{% endif %}
 				{% endfor %}
-			</div>
-		{% else %}
-			<p style="color: #64748b; font-style: italic;">Aucun ustensile spécifié.</p>
-		{% endif %}
+			</tr>
+		</table>
 
-		{# Section Étapes de préparation #}
-		<h2>
-			<span class="icon">👨‍🍳</span>
-			Préparation</h2>
-
-		{% if recipe.steps is not empty %}
+		{# -- Préparation -- #}
+		<h2>Préparation</h2>
+		<table class="steps">
 			{% for step in recipe.steps %}
-				<div class="step-item">
-					<div class="step-picto">
+				<tr>
+					<td class="num">{{ loop.index }}</td>
+					<td class="step-images">
 						{% if step.pictogramUrls and step.pictogramUrls is not empty %}
-							{# Plusieurs pictogrammes, afficher en ligne #}
-							{% for pictoUrl in step.pictogramUrls %}
-								<img src="{{ pictoUrl }}" alt="Picto {{ loop.index }}" style="max-width: 50px; max-height: 50px; display: inline-block; margin: 2px;">
+							{% for url in step.pictogramUrls %}
+								<img src="{{ url }}" alt="picto">
 							{% endfor %}
 						{% elseif step.pictogramUrl %}
-							{# Un seul pictogramme (ancien format) #}
-							<img src="{{ step.pictogramUrl }}" alt="Étape {{ loop.index }}">
+							<img src="{{ step.pictogramUrl }}" alt="picto">
 						{% else %}
-							{# Pas de pictogramme #}
-							<div class="step-number">{{ loop.index }}</div>
+							<div style="width:50px;height:50px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
 						{% endif %}
-					</div>
-
-					<div class="step-content">
-						<div>
-							<span class="step-badge">Étape
-								{{ loop.index }}</span>
-							{% if step.durationMinutes %}
-								<span class="step-duration">⏱️
-									{{ step.durationMinutes }}
-									min</span>
-							{% endif %}
-						</div>
-						<div class="step-text">{{ step.content }}</div>
-					</div>
-				</div>
+					</td>
+					<td class="text">{{ step.content }}</td>
+				</tr>
 			{% endfor %}
-		{% else %}
-			<p style="color: #64748b; font-style: italic;">Aucune étape définie.</p>
-		{% endif %}
+		</table>
 
-		{# Boîte de succès #}
-		<div class="success-box">
-			<h3>🎉 Bonne dégustation !</h3>
-			<p>Votre recette illustrée PictoRecipe</p>
-		</div>
-
-		{# Footer #}
 		<div class="footer">
-			<p>Recette créée avec PictoRecipe •
+			<p>Bonne dégustation ! 🍰</p>
+			<p>Recette créée avec
+				<strong>PictoRecipe</strong>
+				•
 				{{ "now"|date("d/m/Y") }}</p>
 		</div>
 	</body>

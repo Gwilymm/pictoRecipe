@@ -140,39 +140,33 @@
 			{% for step in recipe.steps %}
 				<div class="card bg-base-100 shadow-md border-l-4 border-primary hover:shadow-lg transition-shadow">
 					<div class="card-body p-4">
-						<div
-							class="flex gap-4 items-start">
-							{# Pictogrammes de l'étape (peut en avoir plusieurs) #}
-							<div class="shrink-0">
-								{% if step.pictogramUrls and step.pictogramUrls is not empty %}
-									{# Plusieurs pictogrammes #}
-									<div class="flex flex-wrap gap-1">
-										{% for pictoUrl in step.pictogramUrls %}
-											<img src="{{ pictoUrl }}" alt="Picto" class="w-16 h-16 object-contain rounded-lg bg-base-200 p-1">
-										{% endfor %}
-									</div>
-								{% elseif step.pictogramUrl %}
-									{# Un seul pictogramme (ancien format) #}
-									<img src="{{ step.pictogramUrl }}" alt="Étape {{ loop.index }}" class="w-20 h-20 object-contain rounded-lg bg-base-200 p-2">
-								{% else %}
-									{# Pas de pictogramme, afficher le numéro #}
-									<div class="w-20 h-20 rounded-lg bg-base-200 flex items-center justify-center text-3xl">
-										{{ loop.index }}
-									</div>
-								{% endif %}
+						<div class="flex gap-4 items-start">
+							{# Colonne gauche : numéro d'étape + pictogrammes en dessous #}
+							<div class="flex flex-col items-center gap-3 shrink-0 w-28">
+								<span class="badge badge-primary badge-lg">Étape {{ loop.index }}</span>
+								<div class="mt-2">
+									{% if step.pictogramUrls and step.pictogramUrls is not empty %}
+										{# Affiche les pictogrammes en 2 colonnes #}
+										<div class="grid grid-cols-2 gap-2">
+											{% for pictoUrl in step.pictogramUrls %}
+												<img src="{{ pictoUrl }}" alt="Picto" class="w-16 h-16 object-contain rounded-lg bg-base-200 p-1 mx-auto">
+											{% endfor %}
+										</div>
+									{% elseif step.pictogramUrl %}
+										<img src="{{ step.pictogramUrl }}" alt="Étape {{ loop.index }}" class="w-20 h-20 object-contain rounded-lg bg-base-200 p-2 mx-auto">
+									{% else %}
+										<div class="w-20 h-20 rounded-lg bg-base-200 flex items-center justify-center text-3xl mx-auto">
+											{{ loop.index }}
+										</div>
+									{% endif %}
+								</div>
 							</div>
 
-							{# Contenu de l'étape #}
+							{# Colonne droite : durée + contenu texte #}
 							<div class="flex-1">
 								<div class="flex items-center gap-2 mb-2">
-									<span class="badge badge-primary badge-lg">Étape
-										{{ loop.index }}</span>
 									{% if step.durationMinutes %}
-										<span class="badge badge-ghost gap-1">
-											⏱️
-											{{ step.durationMinutes }}
-											min
-										</span>
+										<span class="badge badge-ghost gap-1">⏱️ {{ step.durationMinutes }} min</span>
 									{% endif %}
 								</div>
 								<p class="text-base leading-relaxed">{{ step.content }}</p>
