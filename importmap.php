@@ -19,17 +19,4 @@ return [
     '@hotwired/stimulus' => [
         'version' => '3.2.2',
     ],
-    '@symfony/stimulus-bundle' => [
-        'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
-    ],
-    '@hotwired/turbo' => [
-        'version' => '7.3.0',
-    ],
-    'daisyui' => [
-        'version' => '5.4.4',
-    ],
-    'daisyui/daisyui.min.css' => [
-        'version' => '5.4.4',
-        'type' => 'css',
-    ],
 ];

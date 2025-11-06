@@ -5,9 +5,8 @@ namespace App\Controller;
 use App\Entity\Recipe;
 use App\Form\RecipeType;
 use App\Repository\RecipeRepository;
+use App\Service\PdfGenerator;
 use Doctrine\ORM\EntityManagerInterface;
-use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
-use Knp\Snappy\Pdf;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -130,10 +129,20 @@ final class RecipeController extends AbstractController
      * Utilise knp_snappy pour convertir le HTML en PDF avec pictogrammes.
      */
     #[Route('/{id}/pdf', name: 'app_recipe_pdf', methods: ['GET'])]
-    public function pdf(Recipe $recipe, Pdf $pdf, Request $request, \Psr\Log\LoggerInterface $logger): Response
+    public function pdf(Recipe $recipe, PdfGenerator $pdfGenerator, Request $request, \Psr\Log\LoggerInterface $logger): Response
     {
         // Start timing
         $t0 = microtime(true);
+
+        // Bloquer le prefetch du navigateur (hover/anticipation)
+        $purpose = $request->headers->get('Purpose') ?: $request->headers->get('Sec-Purpose');
+        if ($purpose === 'prefetch' || stripos((string)$purpose, 'prefetch') !== false) {
+            $logger->info('PDF generation blocked (prefetch detected)', [
+                'recipe_id' => $recipe->getId(),
+                'purpose' => $purpose,
+            ]);
+            return new Response('', Response::HTTP_NO_CONTENT);
+        }
 
         // If not explicitly requested via ?download=1, do not generate the PDF (protect against prefetch/polls)
         if ($request->query->get('download') !== '1') {
@@ -179,28 +188,35 @@ final class RecipeController extends AbstractController
         $force = $request->query->get('force') === '1';
 
         // If cached and up-to-date, return it
-        $updatedAt = $recipe->getUpdatedAt();
         if (!$force && file_exists($cachePath) && is_readable($cachePath)) {
             $cacheMTime = filemtime($cachePath);
-            if ($cacheMTime !== false && $updatedAt instanceof \DateTimeInterface && $cacheMTime > $updatedAt->getTimestamp()) {
-                $logger->info('Returning cached PDF', ['recipe_id' => $recipe->getId(), 'cache_path' => $cachePath]);
+            $updatedAt = $recipe->getUpdatedAt();
+
+            // Use cache if: file exists AND (no updatedAt OR cache is newer)
+            $useCache = $cacheMTime !== false &&
+                (!$updatedAt instanceof \DateTimeInterface || $cacheMTime > $updatedAt->getTimestamp());
+
+            if ($useCache) {
+                $logger->info('Returning cached PDF', [
+                    'recipe_id' => $recipe->getId(),
+                    'cache_mtime' => date('Y-m-d H:i:s', $cacheMTime),
+                    'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : 'null'
+                ]);
                 $response = new BinaryFileResponse($cachePath);
                 $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
                 return $response;
+            } else {
+                $logger->info('Cache outdated, regenerating', [
+                    'recipe_id' => $recipe->getId(),
+                    'cache_mtime' => date('Y-m-d H:i:s', $cacheMTime),
+                    'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : 'null'
+                ]);
             }
         }
 
-        // Generate PDF via wkhtmltopdf
+        // Generate PDF via DOMPDF
         $tPdfStart = microtime(true);
-        $pdfOutput = $pdf->getOutputFromHtml($html, [
-            'encoding' => 'UTF-8',
-            'page-size' => 'A4',
-            'margin-top' => 10,
-            'margin-right' => 10,
-            'margin-bottom' => 10,
-            'margin-left' => 10,
-            'enable-local-file-access' => true,
-        ]);
+        $pdfOutput = $pdfGenerator->generateFromHtml($html);
         $tPdfEnd = microtime(true);
 
         $pdfBytes = strlen($pdfOutput);
