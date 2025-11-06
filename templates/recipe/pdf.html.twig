@@ -34,7 +34,7 @@
 
 			/* --- TABLEAU ÉTAPES --- */
 			.steps
-			{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed
+			{width:100%;border-collapse:collapse;margin-top:10px;table-layout:auto
 			}
 			/* keep borders on cells only to avoid double/dashed lines on page breaks */
 			.steps td
@@ -44,10 +44,10 @@
 			{width:48px;text-align:center;font-size:12pt;font-weight:bold;background:#dbeafe
 			}
 			.step-pictos
-			{width:180px;text-align:center;background:#f9fafb;border-right:2px solid #2563eb
+			{text-align:center;background:#f9fafb;border-right:2px solid #2563eb;padding:8px;width:300px;white-space:normal
 			}
 			.step-pictos img
-			{width:48px;height:48px;object-fit:contain;display:inline-block;margin:2px
+			{width:64px;height:64px;object-fit:contain;display:inline-block;margin:3px;vertical-align:middle
 			}
 			.step-text
 			{font-size:10pt;line-height:1.5;word-wrap:break-word;padding-left:15px
@@ -67,19 +67,14 @@
 			<tr>
 				{% for ingredient in recipe.ingredients %}
 					<td>
-						{# Prefer a linked Pictogram entity (local), otherwise fall back to pictogramUrl.
-																													   Local pictograms must be referenced with file://absolute_path so wkhtmltopdf can access them. #}
+						{# Browsershot needs HTTP URLs or data URIs #}
 						{% if ingredient.pictogram %}
-							{% set _key = (ingredient.pictogram.filePath|trim('/')) %}
-							<img src="file://{{ (project_public_dir ~ '/' ~ _key) }}" alt="{{ ingredient.name }}">
+							<img src="https://127.0.0.1:8000/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="60" height="60">
 						{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
-							{# If pictogramUrl is a remote URL (starts with http) keep it; if it's a local path or starts with '/', convert to file://
-																																			   Use a heuristic: if it starts with 'http' keep as-is, otherwise treat as local under public/ #}
 							{% if ingredient.pictogramUrl starts with('http') %}
-								<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}">
+								<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
 							{% else %}
-								{% set _key2 = (ingredient.pictogramUrl|trim('/')) %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ _key2) }}" alt="{{ ingredient.name }}">
+								<img src="https://127.0.0.1:8000/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
 							{% endif %}
 						{% else %}
 							<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
@@ -107,14 +102,12 @@
 				{% for utensil in recipe.utensils %}
 					<td>
 						{% if utensil.pictogram %}
-							{% set _u = (utensil.pictogram.filePath|trim('/')) %}
-							<img src="file://{{ (project_public_dir ~ '/' ~ _u) }}" alt="{{ utensil.name }}">
+							<img src="https://127.0.0.1:8000/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="50" height="50">
 						{% elseif utensil.pictogramUrl %}
 							{% if utensil.pictogramUrl starts with('http') %}
-								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}">
+								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
 							{% else %}
-								{% set _u2 = (utensil.pictogramUrl|trim('/')) %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ _u2) }}" alt="{{ utensil.name }}">
+								<img src="https://127.0.0.1:8000/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
 							{% endif %}
 						{% else %}
 							<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
@@ -139,23 +132,21 @@
 						{% if step.pictogramUrls and step.pictogramUrls is not empty %}
 							{% for url in step.pictogramUrls %}
 								{% if url starts with('http') %}
-									<img src="{{ url }}" alt="picto"/>
+									<img src="{{ url }}" alt="picto" width="64" height="64"/>
 								{% else %}
-									{% set _s = (url|trim('/')) %}
-									<img src="file://{{ (project_public_dir ~ '/' ~ _s) }}" alt="picto"/>
+									<img src="https://127.0.0.1:8000/{{ url }}" alt="picto" width="64" height="64"/>
 								{% endif %}
 							{% endfor %}
 						{% elseif step.pictogram %}
-							{% set _sf = (step.pictogram.filePath|trim('/')) %}
-							<img src="file://{{ (project_public_dir ~ '/' ~ _sf) }}" alt="picto"/>
+							<img src="https://127.0.0.1:8000/{{ step.pictogram.filePath }}" alt="picto" width="64" height="64"/>
 						{% elseif step.pictogramUrl %}
 							{% if step.pictogramUrl starts with('http') %}
-								<img src="{{ step.pictogramUrl }}" alt="picto"/>
+								<img src="{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
 							{% else %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ (step.pictogramUrl|trim('/'))) }}" alt="picto"/>
+								<img src="https://127.0.0.1:8000/{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
 							{% endif %}
 						{% else %}
-							<div style="width:48px;height:48px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
+							<div style="width:64px;height:64px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
 						{% endif %}
 					</td>
 					<td class="step-text">{{ step.content }}</td>
