@@ -8,6 +8,8 @@ use App\Repository\RecipeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Bundle\SnappyBundle\Snappy\Response\PdfResponse;
 use Knp\Snappy\Pdf;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -128,84 +130,92 @@ final class RecipeController extends AbstractController
      * Utilise knp_snappy pour convertir le HTML en PDF avec pictogrammes.
      */
     #[Route('/{id}/pdf', name: 'app_recipe_pdf', methods: ['GET'])]
-    public function pdf(Recipe $recipe, Pdf $pdf): Response
+    public function pdf(Recipe $recipe, Pdf $pdf, Request $request, \Psr\Log\LoggerInterface $logger): Response
     {
+        // Start timing
+        $t0 = microtime(true);
+
+        // If not explicitly requested via ?download=1, do not generate the PDF (protect against prefetch/polls)
+        if ($request->query->get('download') !== '1') {
+            $logger->info('PDF generation skipped (no download flag)', [
+                'recipe_id' => $recipe->getId(),
+                'referer' => $request->headers->get('referer'),
+                'user_agent' => $request->headers->get('user-agent'),
+                'ts' => date('c'),
+            ]);
+
+            // Return 204 No Content to indicate nothing to download (fast response)
+            return new Response('', Response::HTTP_NO_CONTENT);
+        }
+
+        // Log PDF requests to help diagnose unexpected automatic generation
+        $logger->info('PDF generation requested (start)', [
+            'recipe_id' => $recipe->getId(),
+            'referer' => $request->headers->get('referer'),
+            'user_agent' => $request->headers->get('user-agent'),
+            'ts' => date('c'),
+        ]);
         // Rendre le template HTML pour le PDF
         $projectPublic = rtrim($this->getParameter('kernel.project_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'public';
 
-        // Collect local image paths to inline as base64 (to avoid remote fetches and speed up rendering)
-        $localPaths = [];
-
-        foreach ($recipe->getIngredients() as $ingredient) {
-            if ($ingredient->getPictogram()) {
-                $localPaths[] = ltrim($ingredient->getPictogram()->getFilePath(), '/');
-            } elseif ($ingredient->getPictogramUrl() && !str_starts_with($ingredient->getPictogramUrl(), 'http')) {
-                $localPaths[] = ltrim(parse_url($ingredient->getPictogramUrl(), PHP_URL_PATH) ?: $ingredient->getPictogramUrl(), '/');
-            }
-        }
-
-        foreach ($recipe->getUtensils() as $utensil) {
-            if ($utensil->getPictogram()) {
-                $localPaths[] = ltrim($utensil->getPictogram()->getFilePath(), '/');
-            } elseif ($utensil->getPictogramUrl() && !str_starts_with($utensil->getPictogramUrl(), 'http')) {
-                $localPaths[] = ltrim(parse_url($utensil->getPictogramUrl(), PHP_URL_PATH) ?: $utensil->getPictogramUrl(), '/');
-            }
-        }
-
-        foreach ($recipe->getSteps() as $step) {
-            if ($step->getPictogram()) {
-                $localPaths[] = ltrim($step->getPictogram()->getFilePath(), '/');
-            }
-            if ($step->getPictogramUrl() && !str_starts_with($step->getPictogramUrl(), 'http')) {
-                $localPaths[] = ltrim(parse_url($step->getPictogramUrl(), PHP_URL_PATH) ?: $step->getPictogramUrl(), '/');
-            }
-            if ($step->getPictogramUrls()) {
-                foreach ($step->getPictogramUrls() as $u) {
-                    if ($u && !str_starts_with($u, 'http')) {
-                        $localPaths[] = ltrim(parse_url($u, PHP_URL_PATH) ?: $u, '/');
-                    }
-                }
-            }
-        }
-
-        // Unique and filter
-        $localPaths = array_values(array_unique(array_filter($localPaths)));
-
-        $inlineImages = $this->buildInlineImages($localPaths, $projectPublic);
-
+        // Simplified rendering: do not inline images (base64). Let wkhtmltopdf read local files via file://
+        $tRenderStart = microtime(true);
         $html = $this->renderView('recipe/pdf.html.twig', [
             'recipe' => $recipe,
-            // fournir le chemin absolu du dossier public pour permettre l'accès aux fichiers locaux via file:// si nécessaire
+            // provide absolute public dir for file:// references inside the template
             'project_public_dir' => $projectPublic,
-            // map of relative path => data:image... base64
-            'inline_images' => $inlineImages,
         ]);
+        $tRenderEnd = microtime(true);
 
-        // Générer le PDF avec le nom de la recette
-        $rawTitle = (string) $recipe->getTitle();
-        // Sanitize filename for filesystem / headers: keep letters, numbers, dash and underscore
-        $safe = preg_replace('/[^A-Za-z0-9_\-]/', '_', trim($rawTitle)) ?: 'recipe';
-        $filename = $safe . '.pdf';
+        $logger->info('Rendered HTML for PDF', ['recipe_id' => $recipe->getId(), 'dur_ms' => round(($tRenderEnd - $tRenderStart) * 1000, 1)]);
 
-        // Use filename* for UTF-8 compatibility while keeping a safe ASCII filename
-        $disposition = sprintf('attachment; filename="%s"; filename*=UTF-8\'\'%s', $filename, rawurlencode($rawTitle . '.pdf'));
+        // PDF caching: store under public/cache/pdf/{id}.pdf
+        $cacheDir = rtrim($this->getParameter('kernel.project_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'pdf';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0775, true);
+        }
 
-        return new Response(
-            $pdf->getOutputFromHtml($html, [
-                'encoding' => 'UTF-8',
-                'page-size' => 'A4',
-                'margin-top' => 10,
-                'margin-right' => 10,
-                'margin-bottom' => 10,
-                'margin-left' => 10,
-                'enable-local-file-access' => true,
-            ]),
-            200,
-            [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => $disposition,
-            ]
-        );
+        $cachePath = $cacheDir . DIRECTORY_SEPARATOR . $recipe->getId() . '.pdf';
+        $force = $request->query->get('force') === '1';
+
+        // If cached and up-to-date, return it
+        $updatedAt = $recipe->getUpdatedAt();
+        if (!$force && file_exists($cachePath) && is_readable($cachePath)) {
+            $cacheMTime = filemtime($cachePath);
+            if ($cacheMTime !== false && $updatedAt instanceof \DateTimeInterface && $cacheMTime > $updatedAt->getTimestamp()) {
+                $logger->info('Returning cached PDF', ['recipe_id' => $recipe->getId(), 'cache_path' => $cachePath]);
+                $response = new BinaryFileResponse($cachePath);
+                $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
+                return $response;
+            }
+        }
+
+        // Generate PDF via wkhtmltopdf
+        $tPdfStart = microtime(true);
+        $pdfOutput = $pdf->getOutputFromHtml($html, [
+            'encoding' => 'UTF-8',
+            'page-size' => 'A4',
+            'margin-top' => 10,
+            'margin-right' => 10,
+            'margin-bottom' => 10,
+            'margin-left' => 10,
+            'enable-local-file-access' => true,
+        ]);
+        $tPdfEnd = microtime(true);
+
+        $pdfBytes = strlen($pdfOutput);
+        $tEnd = microtime(true);
+        $logger->info('PDF generation complete', ['recipe_id' => $recipe->getId(), 'total_dur_ms' => round(($tEnd - $t0) * 1000, 1), 'pdf_bytes' => $pdfBytes]);
+
+        // Store in cache
+        if ($pdfOutput !== false) {
+            @file_put_contents($cachePath, $pdfOutput);
+        }
+
+        // Return cached file response (serves the freshly created file)
+        $response = new BinaryFileResponse($cachePath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
+        return $response;
     }
 
     #[Route('/{id}', name: 'app_recipe_show', methods: ['GET'])]
@@ -315,63 +325,7 @@ final class RecipeController extends AbstractController
         }
     }
 
-    /**
-     * Build a map of relative file path => data URI (base64) for small local images.
-     * This avoids multiple file:// reads and remote HTTP fetches when generating PDFs.
-     * We limit inlining to files under public and with a reasonable size to avoid blowing HTML memory.
-     *
-     * @param string[] $relativePaths
-     * @param string $projectPublicDir
-     * @return array<string,string>
-     */
-    private function buildInlineImages(array $relativePaths, string $projectPublicDir): array
-    {
-        $map = [];
-        $maxBytes = 200 * 1024; // 200 KB max per image to inline
-
-        foreach ($relativePaths as $rel) {
-            $clean = ltrim($rel, '/');
-            $abs = $projectPublicDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $clean);
-            if (!file_exists($abs) || !is_readable($abs)) {
-                continue;
-            }
-            $size = filesize($abs);
-            if ($size === false || $size > $maxBytes) {
-                // skip large files
-                continue;
-            }
-
-            // detect mime type
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = $finfo ? finfo_file($finfo, $abs) : mime_content_type($abs);
-            if ($finfo) {
-                finfo_close($finfo);
-            }
-
-            if (! $mime) {
-                // fallback by extension
-                $ext = strtolower(pathinfo($abs, PATHINFO_EXTENSION));
-                switch ($ext) {
-                    case 'svg': $mime = 'image/svg+xml'; break;
-                    case 'png': $mime = 'image/png'; break;
-                    case 'jpg': case 'jpeg': $mime = 'image/jpeg'; break;
-                    case 'webp': $mime = 'image/webp'; break;
-                    case 'gif': $mime = 'image/gif'; break;
-                    default: $mime = 'application/octet-stream';
-                }
-            }
-
-            $data = file_get_contents($abs);
-            if ($data === false) {
-                continue;
-            }
-
-            $base = base64_encode($data);
-            $map[$clean] = sprintf('data:%s;base64,%s', $mime, $base);
-        }
-
-        return $map;
-    }
+    // Inline image building removed: PDF generation now uses file:// references and a disk cache to speed up generation.
 
     #[Route('/{id}', name: 'app_recipe_delete', methods: ['POST'])]
     public function delete(Request $request, Recipe $recipe, EntityManagerInterface $entityManager): Response

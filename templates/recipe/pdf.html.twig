@@ -14,8 +14,6 @@
 			h1
 			{text-align:center;font-size:22pt;color:#222;margin-bottom:20px;text-transform:uppercase;border-bottom:3px solid #222;padding-bottom:6px
 			}
-
-			/* TITRES DE SECTION */
 			h2
 			{background:#f3f4f6;border-left:6px solid #2563eb;padding:6px 10px;font-size:13pt;margin:18px 0 8px
 			}
@@ -24,67 +22,39 @@
 			.grid
 			{width:100%;border-collapse:collapse;margin-bottom:15px
 			}
-
 			.grid td
-			{border:2px solid #ddd;text-align:center;padding:8px;width:14%;vertical-align:top
+			{border:1px solid #ddd;text-align:center;padding:8px;width:14%;vertical-align:top
 			}
-
 			.grid img
 			{width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 5px
 			}
-
-			<!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <title>{{recipe.title}}</title > <style > *
-			{box-sizing:border-box;margin:0;padding:0}
-			body
-			{font-family:'DejaVu Sans',Arial,sans-serif;font-size:10pt;line-height:1.4;color:#000;padding:20px}
-
-			h1
-			{text-align:center;font-size:22pt;color:#222;margin-bottom:20px;text-transform:uppercase;border-bottom:3px solid #222;padding-bottom:6px}
-
-			/* TITRES DE SECTION */
-			h2
-			{background:#f3f4f6;border-left:6px solid #2563eb;padding:6px 10px;font-size:13pt;margin:18px 0 8px}
-
-			/* --- GRILLES INGREDIENTS & USTENSILES --- */
-			.grid
-			{width:100%;border-collapse:collapse;margin-bottom:15px}
-
-			.grid td
-			{border:2px solid #ddd;text-align:center;padding:8px;width:14%;vertical-align:top}
-
-			.grid img
-			{width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 5px}
-
 			.grid span
-			{display:block;font-size:9pt;font-weight:bold;color:#333}
+			{display:block;font-size:9pt;font-weight:bold;color:#333
+			}
 
 			/* --- TABLEAU ÉTAPES --- */
 			.steps
-			{width:100%;border-collapse:collapse;margin-top:10px}
-
-			.steps tr
-			{border:2px solid #000;page-break-inside:avoid;/* avoid row split */
-				break-inside:avoid;-webkit-column-break-inside:avoid;-webkit-page-break-inside:avoid}
-
+			{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed
+			}
+			/* keep borders on cells only to avoid double/dashed lines on page breaks */
 			.steps td
-			{border:2px solid #000;vertical-align:top;padding:10px;page-break-inside:avoid;break-inside:avoid}
-
+			{border:1px solid #000;vertical-align:middle;padding:10px;page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;-webkit-page-break-inside:avoid
+			}
 			.num
-			{width:60px;text-align:center;font-size:12pt;font-weight:bold;background:#dbeafe}
-
-			.step-images
-			{text-align:center;width:180px}
-
-			.step-images img
-			{width:70px;/* larger */
-				height:70px;margin:4px;object-fit:contain;display:inline-block}
-
-			.text
-			{font-size:10pt;line-height:1.5}
-
-			/* FOOTER */
+			{width:48px;text-align:center;font-size:12pt;font-weight:bold;background:#dbeafe
+			}
+			.step-pictos
+			{width:180px;text-align:center;background:#f9fafb;border-right:2px solid #2563eb
+			}
+			.step-pictos img
+			{width:48px;height:48px;object-fit:contain;display:inline-block;margin:2px
+			}
+			.step-text
+			{font-size:10pt;line-height:1.5;word-wrap:break-word;padding-left:15px
+			} /* FOOTER */
 			.footer
-			{text-align:center;margin-top:20px;font-size:9pt;color:#555}
+			{text-align:center;margin-top:20px;font-size:9pt;color:#555
+			}
 		</style>
 	</head>
 	<body>
@@ -98,26 +68,18 @@
 				{% for ingredient in recipe.ingredients %}
 					<td>
 						{# Prefer a linked Pictogram entity (local), otherwise fall back to pictogramUrl.
-					   Local pictograms must be referenced with file://absolute_path so wkhtmltopdf can access them. #}
+																													   Local pictograms must be referenced with file://absolute_path so wkhtmltopdf can access them. #}
 						{% if ingredient.pictogram %}
 							{% set _key = (ingredient.pictogram.filePath|trim('/')) %}
-							{% if inline_images is defined and inline_images[_key] is defined %}
-								<img src="{{ inline_images[_key] }}" alt="{{ ingredient.name }}">
-							{% else %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ _key) }}" alt="{{ ingredient.name }}">
-							{% endif %}
+							<img src="file://{{ (project_public_dir ~ '/' ~ _key) }}" alt="{{ ingredient.name }}">
 						{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
 							{# If pictogramUrl is a remote URL (starts with http) keep it; if it's a local path or starts with '/', convert to file://
-							   Use a heuristic: if it starts with 'http' keep as-is, otherwise treat as local under public/ #}
+																																			   Use a heuristic: if it starts with 'http' keep as-is, otherwise treat as local under public/ #}
 							{% if ingredient.pictogramUrl starts with('http') %}
 								<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}">
 							{% else %}
 								{% set _key2 = (ingredient.pictogramUrl|trim('/')) %}
-								{% if inline_images is defined and inline_images[_key2] is defined %}
-									<img src="{{ inline_images[_key2] }}" alt="{{ ingredient.name }}">
-								{% else %}
-									<img src="file://{{ (project_public_dir ~ '/' ~ _key2) }}" alt="{{ ingredient.name }}">
-								{% endif %}
+								<img src="file://{{ (project_public_dir ~ '/' ~ _key2) }}" alt="{{ ingredient.name }}">
 							{% endif %}
 						{% else %}
 							<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
@@ -146,21 +108,13 @@
 					<td>
 						{% if utensil.pictogram %}
 							{% set _u = (utensil.pictogram.filePath|trim('/')) %}
-							{% if inline_images is defined and inline_images[_u] is defined %}
-								<img src="{{ inline_images[_u] }}" alt="{{ utensil.name }}">
-							{% else %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ _u) }}" alt="{{ utensil.name }}">
-							{% endif %}
+							<img src="file://{{ (project_public_dir ~ '/' ~ _u) }}" alt="{{ utensil.name }}">
 						{% elseif utensil.pictogramUrl %}
 							{% if utensil.pictogramUrl starts with('http') %}
 								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}">
 							{% else %}
 								{% set _u2 = (utensil.pictogramUrl|trim('/')) %}
-								{% if inline_images is defined and inline_images[_u2] is defined %}
-									<img src="{{ inline_images[_u2] }}" alt="{{ utensil.name }}">
-								{% else %}
-									<img src="file://{{ (project_public_dir ~ '/' ~ _u2) }}" alt="{{ utensil.name }}">
-								{% endif %}
+								<img src="file://{{ (project_public_dir ~ '/' ~ _u2) }}" alt="{{ utensil.name }}">
 							{% endif %}
 						{% else %}
 							<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
@@ -181,45 +135,33 @@
 			{% for step in recipe.steps %}
 				<tr>
 					<td class="num">{{ loop.index }}</td>
-					<td class="step-images">
+					<td class="step-pictos">
 						{% if step.pictogramUrls and step.pictogramUrls is not empty %}
-							{# Afficher les pictogrammes en 2 colonnes pour le PDF #}
-							<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;justify-items:center;align-items:center;">
-								{% for url in step.pictogramUrls %}
-									{% if url starts with('http') %}
-										<img src="{{ url }}" alt="picto" style="width:70px;height:70px;object-fit:contain;display:block;margin:0;" />
-									{% else %}
-										{% set _s = (url|trim('/')) %}
-										{% if inline_images is defined and inline_images[_s] is defined %}
-											<img src="{{ inline_images[_s] }}" alt="picto" style="width:70px;height:70px;object-fit:contain;display:block;margin:0;" />
-										{% else %}
-											<img src="file://{{ (project_public_dir ~ '/' ~ _s) }}" alt="picto" style="width:70px;height:70px;object-fit:contain;display:block;margin:0;" />
-										{% endif %}
-									{% endif %}
-								{% endfor %}
-							</div>
+							{% for url in step.pictogramUrls %}
+								{% if url starts with('http') %}
+									<img src="{{ url }}" alt="picto"/>
+								{% else %}
+									{% set _s = (url|trim('/')) %}
+									<img src="file://{{ (project_public_dir ~ '/' ~ _s) }}" alt="picto"/>
+								{% endif %}
+							{% endfor %}
 						{% elseif step.pictogram %}
 							{% set _sf = (step.pictogram.filePath|trim('/')) %}
-							{% if inline_images is defined and inline_images[_sf] is defined %}
-								<img src="{{ inline_images[_sf] }}" alt="picto">
-							{% else %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ _sf) }}" alt="picto">
-							{% endif %}
+							<img src="file://{{ (project_public_dir ~ '/' ~ _sf) }}" alt="picto"/>
 						{% elseif step.pictogramUrl %}
 							{% if step.pictogramUrl starts with('http') %}
-								<img src="{{ step.pictogramUrl }}" alt="picto">
+								<img src="{{ step.pictogramUrl }}" alt="picto"/>
 							{% else %}
-								<img src="file://{{ (project_public_dir ~ '/' ~ (step.pictogramUrl|trim('/'))) }}" alt="picto">
+								<img src="file://{{ (project_public_dir ~ '/' ~ (step.pictogramUrl|trim('/'))) }}" alt="picto"/>
 							{% endif %}
 						{% else %}
-							<div style="width:50px;height:50px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
+							<div style="width:48px;height:48px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
 						{% endif %}
 					</td>
-					<td class="text">{{ step.content }}</td>
+					<td class="step-text">{{ step.content }}</td>
 				</tr>
 			{% endfor %}
 		</table>
-
 		<div class="footer">
 			<p>Bonne dégustation ! 🍰</p>
 			<p>Recette créée avec

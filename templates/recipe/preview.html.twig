@@ -38,8 +38,11 @@
 					{% endif %}
 				</button>
 
-				<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-primary btn-sm gap-2">
+				<a href="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-sm gap-2" aria-label="Télécharger en PDF">
 					📄 Télécharger en PDF
+				</a>
+				<a href="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, force: 1}) }}" class="btn btn-outline" aria-label="Régénérer le PDF (forcer)">
+					🔁 Régénérer le PDF (forcer)
 				</a>
 			</div>
 		</div>
@@ -57,8 +60,11 @@
 				{% if recipe.id %}Mettre à jour{% else %}Enregistrer la recette
 				{% endif %}
 			</button>
-			<a href="{{ path('app_recipe_pdf', {id: recipe.id}) }}" class="btn btn-primary">
-				📄 Télécharger en PDF
+			<a href="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary">
+				📄 Télécharger le PDF
+			</a>
+			<a href="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, force: 1}) }}" class="btn btn-outline">
+				🔁 Régénérer le PDF (forcer)
 			</a>
 		</div>
 	</div>

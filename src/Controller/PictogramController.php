@@ -39,6 +39,7 @@ final class PictogramController extends AbstractController
 					$file->move($this->getParameter('pictogram_directory'), $newFilename);
 					$pictogram->setFilePath('uploads/pictograms/' . $newFilename);
 					$pictogram->setFormat('svg');
+					// SVG: no thumbnail generated (skipped)
 				} else {
 					// For raster images, convert to PNG
 					$newFilename = uniqid() . '.png';
@@ -48,12 +49,27 @@ final class PictogramController extends AbstractController
 					if ($this->convertToPng($source, $destination, $mime)) {
 						$pictogram->setFilePath('uploads/pictograms/' . $newFilename);
 						$pictogram->setFormat('png');
+						// create thumbnail for PDF/preview performance
+						$thumbDir = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . 'thumbs';
+						if (!is_dir($thumbDir)) {
+							@mkdir($thumbDir, 0755, true);
+						}
+						$thumbPath = $thumbDir . DIRECTORY_SEPARATOR . pathinfo($newFilename, PATHINFO_FILENAME) . '.png';
+						$this->createThumbnail($destination, $thumbPath, 70);
 					} else {
 						// Fallback: move original file (keep extension)
 						$origFilename = uniqid() . '.' . $file->guessExtension();
 						$file->move($this->getParameter('pictogram_directory'), $origFilename);
 						$pictogram->setFilePath('uploads/pictograms/' . $origFilename);
 						$pictogram->setFormat($file->guessExtension());
+						// try to create a thumbnail from the moved file if raster
+						$abs = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . $origFilename;
+						$thumbDir = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . 'thumbs';
+						if (!is_dir($thumbDir)) {
+							@mkdir($thumbDir, 0755, true);
+						}
+						$thumbPath = $thumbDir . DIRECTORY_SEPARATOR . pathinfo($origFilename, PATHINFO_FILENAME) . '.png';
+						$this->createThumbnail($abs, $thumbPath, 70);
 					}
 				}
 			}
@@ -187,5 +203,75 @@ final class PictogramController extends AbstractController
 		} catch (\Throwable $e) {
 			return false;
 		}
+	}
+
+	/**
+	 * Create a PNG thumbnail from a raster image using GD (preserves transparency when possible).
+	 * Returns true on success.
+	 */
+	private function createThumbnail(string $sourcePath, string $thumbnailPath, int $maxSide = 70): bool
+	{
+		if (!function_exists('imagecreatetruecolor')) {
+			return false;
+		}
+
+		if (!file_exists($sourcePath) || !is_readable($sourcePath)) {
+			return false;
+		}
+
+		$mime = mime_content_type($sourcePath) ?: '';
+		$img = null;
+		switch ($mime) {
+			case 'image/png':
+				if (function_exists('imagecreatefrompng')) $img = @imagecreatefrompng($sourcePath);
+				break;
+			case 'image/jpeg':
+			case 'image/jpg':
+				if (function_exists('imagecreatefromjpeg')) $img = @imagecreatefromjpeg($sourcePath);
+				break;
+			case 'image/gif':
+				if (function_exists('imagecreatefromgif')) $img = @imagecreatefromgif($sourcePath);
+				break;
+			case 'image/webp':
+				if (function_exists('imagecreatefromwebp')) $img = @imagecreatefromwebp($sourcePath);
+				break;
+			default:
+				// unsupported or SVG
+				return false;
+		}
+
+		if (! $img) {
+			return false;
+		}
+
+		$width = imagesx($img);
+		$height = imagesy($img);
+
+		// compute new size preserving ratio
+		$scale = min($maxSide / max($width, $height), 1);
+		$newW = (int) max(1, floor($width * $scale));
+		$newH = (int) max(1, floor($height * $scale));
+
+		$thumb = imagecreatetruecolor($newW, $newH);
+		// preserve transparency for PNG and GIF
+		imagealphablending($thumb, false);
+		imagesavealpha($thumb, true);
+		$transparent = imagecolorallocatealpha($thumb, 0, 0, 0, 127);
+		imagefilledrectangle($thumb, 0, 0, $newW, $newH, $transparent);
+
+		imagecopyresampled($thumb, $img, 0, 0, 0, 0, $newW, $newH, $width, $height);
+
+		// Ensure directory exists
+		$dir = dirname($thumbnailPath);
+		if (!is_dir($dir)) {
+			@mkdir($dir, 0755, true);
+		}
+
+		$ok = imagepng($thumb, $thumbnailPath);
+
+		imagedestroy($thumb);
+		imagedestroy($img);
+
+		return (bool) $ok;
 	}
 }
