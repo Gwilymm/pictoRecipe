@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\IngredientRepository;
+use App\Entity\Pictogram;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -32,6 +33,9 @@ class Ingredient
 
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $pictogramUrl = null;
+
+    #[ORM\ManyToOne(targetEntity: Pictogram::class)]
+    private ?Pictogram $pictogram = null;
 
     #[ORM\ManyToOne(inversedBy: 'ingredients')]
     private ?Recipe $recipe = null;
@@ -109,6 +113,18 @@ class Ingredient
     public function setPictogramUrl(?string $pictogramUrl): static
     {
         $this->pictogramUrl = $pictogramUrl;
+
+        return $this;
+    }
+
+    public function getPictogram(): ?Pictogram
+    {
+        return $this->pictogram;
+    }
+
+    public function setPictogram(?Pictogram $pictogram): static
+    {
+        $this->pictogram = $pictogram;
 
         return $this;
     }

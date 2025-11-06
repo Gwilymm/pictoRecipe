@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier pictogramme
+{% endblock %}
+
+{% block body %}
+	<h1 class="text-3xl font-bold mb-6">Modifier le pictogramme</h1>
+
+	<div class="mb-4">
+		{{ include('pictogram/_form.html.twig') }}
+	</div>
+
+	<a href="{{ path('app_pictogram_index') }}" class="btn btn-outline btn-sm">⬅ Retour</a>
+{% endblock %}

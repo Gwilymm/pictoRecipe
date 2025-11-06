@@ -1,0 +1,16 @@
+{{ form_start(form, {'attr': {'class': 'space-y-4'}}) }}
+<div class="form-control">
+	{{ form_widget(form) }}
+</div>
+
+{% if pictogram.filePath %}
+	<div class="mt-4">
+		<label class="label">
+			<span class="label-text">Prévisualisation actuelle :</span>
+		</label>
+		<img src="{{ asset(pictogram.filePath) }}" class="w-24 h-24 object-contain rounded-lg shadow mt-2" alt="Prévisualisation">
+	</div>
+{% endif %}
+
+<button class="btn btn-primary mt-4">💾 Enregistrer</button>
+{{ form_end(form) }}

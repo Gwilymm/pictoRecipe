@@ -3,7 +3,9 @@
 namespace App\Form;
 
 use App\Entity\Step;
+use App\Entity\Pictogram;
 use App\Form\DataTransformer\JsonToArrayTransformer;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -33,6 +35,13 @@ class StepType extends AbstractType
             ->add('pictogramUrls', HiddenType::class, [
                 'required' => false,
                 'attr' => ['data-pictograms' => 'multiple'],
+            ])
+            ->add('pictogram', EntityType::class, [
+                'class' => Pictogram::class,
+                'choice_label' => 'name',
+                'placeholder' => 'Choisir un pictogramme',
+                'required' => false,
+                'attr' => ['class' => 'select select-bordered w-full']
             ])
         ;
 

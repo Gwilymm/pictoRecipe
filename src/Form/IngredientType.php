@@ -3,6 +3,8 @@
 namespace App\Form;
 
 use App\Entity\Ingredient;
+use App\Entity\Pictogram;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -32,6 +34,13 @@ class IngredientType extends AbstractType
             ])
             ->add('pictogramUrl', HiddenType::class, [
                 'required' => false,
+            ])
+            ->add('pictogram', EntityType::class, [
+                'class' => Pictogram::class,
+                'choice_label' => 'name',
+                'placeholder' => 'Choisir un pictogramme',
+                'required' => false,
+                'attr' => ['class' => 'select select-bordered w-full']
             ])
         ;
     }

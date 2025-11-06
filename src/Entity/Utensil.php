@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UtensilRepository;
+use App\Entity\Pictogram;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -22,6 +23,9 @@ class Utensil
 
 	#[ORM\Column(length: 500, nullable: true)]
 	private ?string $pictogramUrl = null;
+
+	#[ORM\ManyToOne(targetEntity: Pictogram::class)]
+	private ?Pictogram $pictogram = null;
 
 	/**
 	 * @var Collection<int, Recipe>
@@ -58,6 +62,17 @@ class Utensil
 	public function setPictogramUrl(?string $pictogramUrl): self
 	{
 		$this->pictogramUrl = $pictogramUrl;
+		return $this;
+	}
+
+	public function getPictogram(): ?Pictogram
+	{
+		return $this->pictogram;
+	}
+
+	public function setPictogram(?Pictogram $pictogram): self
+	{
+		$this->pictogram = $pictogram;
 		return $this;
 	}
 

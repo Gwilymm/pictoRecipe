@@ -1,12 +1,44 @@
+version: "3.8"
+
 services:
-  ###> doctrine/doctrine-bundle ###
+  ###> Application Symfony sous FrankenPHP ###
+  pictorecette-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pictorecette-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80" # <─ Reverse-proxy YunoHost écoute ce port
+    depends_on:
+      - database
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - pictorecette-uploads:/app/public/uploads
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET:-ChangeMe}
+      # BDD PostgreSQL
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8"
+    networks:
+      - pictorecette-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+  ###< Application Symfony ###
+
+  ###> Base de données PostgreSQL ###
   database:
     container_name: pictoRecipeDatabase
     image: postgres:${POSTGRES_VERSION:-16}-alpine
-
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
       POSTGRES_USER: ${POSTGRES_USER:-app}
     healthcheck:
@@ -24,11 +56,16 @@ services:
       start_period: 60s
     volumes:
       - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+    networks:
+      - pictorecette-network
+  ###< Base de données PostgreSQL ###
 
 volumes:
-  ###> doctrine/doctrine-bundle ###
+  pictorecette-uploads:
+    driver: local
   database_data:
-###< doctrine/doctrine-bundle ###
+    driver: local
+
+networks:
+  pictorecette-network:
+    driver: bridge

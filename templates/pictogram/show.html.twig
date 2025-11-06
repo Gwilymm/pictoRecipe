@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ pictogram.name }}{% endblock %}
+
+{% block body %}
+    <h1 class="text-3xl font-bold mb-6">{{ pictogram.name }}</h1>
+
+    <div class="card w-full max-w-md bg-base-100 shadow">
+        <figure class="p-6">
+            <img src="{{ asset(pictogram.filePath) }}" alt="{{ pictogram.name }}" class="w-48 h-48 object-contain mx-auto">
+        </figure>
+        <div class="card-body">
+            <h2 class="card-title">{{ pictogram.name }}</h2>
+            <p class="text-sm text-gray-500">Format : {{ pictogram.format ? pictogram.format|upper : '—' }}</p>
+            <p class="text-xs text-base-content/60">Créé le : {{ pictogram.createdAt ? pictogram.createdAt|date('Y-m-d') : '—' }}</p>
+
+            <div class="card-actions mt-4">
+                <a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-warning btn-sm">Modifier</a>
+                <a href="{{ path('app_pictogram_index') }}" class="btn btn-outline btn-sm">⬅ Retour</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
