@@ -20,3 +20,8 @@ npm-debug.log
 yarn-error.log
 ###< symfony/webpack-encore-bundle ###
 .env
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
