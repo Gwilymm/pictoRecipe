@@ -16,7 +16,11 @@ return [
         'path' => './assets/app.js',
         'entrypoint' => true,
     ],
-    '@hotwired/stimulus' => [
-        'version' => '3.2.2',
+    'daisyui' => [
+        'version' => '5.4.7',
+    ],
+    'daisyui/daisyui.min.css' => [
+        'version' => '5.4.7',
+        'type' => 'css',
     ],
 ];
