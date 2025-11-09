@@ -17,11 +17,11 @@ RUN install-php-extensions pdo_pgsql pgsql intl zip xsl gmp
 # Copier les fichiers de dépendances
 COPY composer.json composer.lock symfony.lock ./
 
-# Installer dépendances PHP (sans dev)
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
 # Copier tout le reste du code
 COPY . .
+
+# Installer dépendances PHP (sans dev)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Installer dépendances front-end
 RUN npm ci
