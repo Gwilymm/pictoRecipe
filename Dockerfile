@@ -1,62 +1,50 @@
-# ---- Stage 1: Build (Composer + Node + Encore) ----
-FROM dunglas/frankenphp:1-php8.3-alpine AS composer-builder
+# ==========================================================
+#  DOCKERFILE - PictoRecette (basé sur modèle Doc2Sail)
+#  Symfony 7 + FrankenPHP + PostgreSQL + Tailwind + DaisyUI
+# ==========================================================
 
+# ---- Stage 1 : Builder (Composer + Node + Assets) ----
+FROM dunglas/frankenphp:1-php8.3-alpine AS builder
 WORKDIR /app
 
-# Installer Composer
+# Installer Composer et Node
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
+RUN apk add --no-cache nodejs npm
 
-# Installer outils de build
-RUN apk add --no-cache git bash nodejs npm
+# Installer extensions PHP nécessaires au build
+RUN install-php-extensions pdo_pgsql pgsql intl zip xsl gmp
 
-# Installer extensions PHP nécessaires
-RUN install-php-extensions \
-    pdo_pgsql \
-    pgsql \
-    pdo_sqlite \
-    intl \
-    zip \
-    xsl \
-    gmp
-
-# Copier uniquement les fichiers de dépendances
-COPY composer.json composer.lock symfony.lock package*.json ./
+# Copier les fichiers de dépendances
+COPY composer.json composer.lock symfony.lock ./
 
 # Installer dépendances PHP (sans dev)
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --prefer-dist \
-    --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Installer dépendances JS
-RUN npm install npm install daisyui@latest
-
-# Copier le reste de l’application
+# Copier tout le reste du code
 COPY . .
 
-# Compiler les assets Webpack Encore
+# Installer dépendances front-end
+RUN npm ci
+
+# Compiler Tailwind + DaisyUI + Stimulus avec Webpack Encore
 RUN npm run build
 
-# Optimiser autoload Symfony
+# Nettoyer le cache et générer l’autoload optimisé
 RUN composer dump-autoload --optimize --classmap-authoritative
 
 
-# ---- Stage 2: Runtime ----
+# ---- Stage 2 : Runtime (FrankenPHP final) ----
 FROM dunglas/frankenphp:1-php8.3-alpine
+WORKDIR /app
 
 ENV APP_ENV=prod \
     COMPOSER_ALLOW_SUPERUSER=1 \
     SERVER_NAME=:80
 
-WORKDIR /app
-
-# Installer extensions PHP nécessaires pour la prod
+# Extensions PHP nécessaires en runtime
 RUN install-php-extensions \
     pdo_pgsql \
     pgsql \
-    pdo_sqlite \
     opcache \
     intl \
     zip \
@@ -65,19 +53,22 @@ RUN install-php-extensions \
     gmp \
     apcu
 
-# Copier vendor + build depuis le builder
-COPY --from=composer-builder /app/vendor ./vendor
-COPY --from=composer-builder /app/public/build ./public/build
+# Copier depuis le builder
+COPY --from=builder /app/vendor ./vendor
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/config ./config
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/templates ./templates
+COPY --from=builder /app/bin ./bin
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/.env ./
 
-# Copier le reste du code applicatif
-COPY . .
-
-# Préparer les dossiers d’exécution
+# Préparer les dossiers et permissions
 RUN mkdir -p var/cache var/log var/tmp public/uploads && \
     chown -R www-data:www-data var public/uploads && \
     chmod -R 775 var public/uploads
 
-# Configuration OPcache optimisée
+# Activer et configurer OPcache
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
     echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini && \
     echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/opcache.ini && \
@@ -85,8 +76,7 @@ RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
     echo "upload_max_filesize=50M" > /usr/local/etc/php/conf.d/99-upload-size.ini && \
     echo "post_max_size=50M" >> /usr/local/etc/php/conf.d/99-upload-size.ini
 
-RUN php bin/console tailwind:build --env=prod || true
-# Warmup cache Symfony (prod)
+# Warmup du cache Symfony
 RUN php bin/console cache:clear --no-warmup --env=prod && \
     php bin/console cache:warmup --env=prod || true
 
