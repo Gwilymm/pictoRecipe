@@ -32,11 +32,6 @@
 				</div>
 				{{ form_end(form) }}
 
-				<button form="preview-save-form" class="btn btn-success btn-sm" title="Enregistrer la recette (reste sur la prévisualisation)">
-					💾
-					{% if recipe.id %}Mettre à jour{% else %}Enregistrer
-					{% endif %}
-				</button>
 
 				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
 					📄 Télécharger en PDF
@@ -55,11 +50,7 @@
 			<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">
 				← Retour à la liste
 			</a>
-			<button form="preview-save-form" class="btn btn-success">
-				💾
-				{% if recipe.id %}Mettre à jour{% else %}Enregistrer la recette
-				{% endif %}
-			</button>
+
 			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary pdf-download-btn">
 				📄 Télécharger le PDF
 			</a>
@@ -81,14 +72,26 @@
 		document.addEventListener( 'DOMContentLoaded', function ()
 {
 
+
+
+
+
 const pdfButtons = document.querySelectorAll( '.pdf-download-btn' );
 const loadingToast = document.getElementById( 'pdf-loading-toast' );
 
 pdfButtons.forEach( function ( btn )
 {
 
+
+
+
+
 btn.addEventListener( 'click', function ( e )
 {
+
+
+
+
 
 e.preventDefault();
 const url = this.getAttribute( 'data-pdf-url' );
@@ -101,7 +104,15 @@ loadingToast.style.display = 'block';
 pdfButtons.forEach( function ( b )
 {
 
+
+
+
+
 b.classList.add( 'btn-disabled', 'loading' );
+
+
+
+
 
 } );
 
@@ -112,21 +123,49 @@ window.location.href = url;
 setTimeout( function ()
 {
 
+
+
+
+
 loadingToast.style.display = 'none';
 pdfButtons.forEach( function ( b )
 {
 
+
+
+
+
 b.classList.remove( 'btn-disabled', 'loading' );
+
+
+
+
 
 } );
 
+
+
+
+
 }, 3000 );
+
+
+
+
 
 }
 
 } );
 
+
+
+
+
 } );
+
+
+
+
 
 } );
 	</script>
