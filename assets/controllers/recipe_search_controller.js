@@ -74,7 +74,7 @@ export default class extends Controller {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					q: searchQuery,
-					limit: 20,
+					limit: 40,
 					filters: {}
 				})
 			});

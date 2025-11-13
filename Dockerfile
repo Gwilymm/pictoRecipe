@@ -92,6 +92,8 @@ COPY . .
 # Les assets doivent être pré-compilés en local et copiés
 # Vérifier que public/build existe
 
+RUN  php bin/console tailwind:build --minify
+RUN php bin/console asset-map:compile 
 
 
 
