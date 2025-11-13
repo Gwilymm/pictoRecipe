@@ -47,6 +47,14 @@ export default class extends Controller {
 			this.targetValue = this.element.dataset.pictogramTargetValue;
 		}
 
+		console.log('Pictogram controller connecté', {
+			mode: this.modeValue,
+			targetValue: this.targetValue,
+			hasResultsTarget: this.hasResultsTarget,
+			hasResultsContainerTarget: this.hasResultsContainerTarget,
+			hasSearchTarget: this.hasSearchTarget
+		});
+
 		// Mode simple : afficher l'aperçu si déjà sélectionné
 		if (this.modeValue === 'single') {
 			this.selectedPictogramUrl = this.urlInputTarget?.value || null;
@@ -92,11 +100,16 @@ export default class extends Controller {
 
 		if (keyword.length < 2) {
 			this.clearResults();
+			this.hideResults();
 			return;
 		}
 
 		this.debounceTimer = setTimeout(() => {
-			this.search(keyword);
+			if (this.modeValue === 'multiple') {
+				this.performSearch(keyword);
+			} else {
+				this.search(keyword);
+			}
 		}, this.debounceDelayValue);
 	}
 
@@ -378,14 +391,21 @@ export default class extends Controller {
 	 * Charge les pictogrammes existants depuis le champ hidden JSON
 	 */
 	loadExistingPictograms() {
-		if (!this.targetValue) return;
+		if (!this.targetValue) {
+			console.log('Pas de targetValue, skip loadExistingPictograms');
+			return;
+		}
 
 		const hiddenField = document.getElementById(this.targetValue);
-		if (!hiddenField || !hiddenField.value) return;
+		if (!hiddenField || !hiddenField.value) {
+			console.log('Champ hidden non trouvé ou vide', { targetValue: this.targetValue });
+			return;
+		}
 
 		try {
 			const urls = JSON.parse(hiddenField.value);
-			if (Array.isArray(urls)) {
+			console.log('Pictogrammes existants chargés', { urls });
+			if (Array.isArray(urls) && urls.length > 0) {
 				urls.forEach(url => this.addSelectedPictogram(url));
 			}
 		} catch (e) {
@@ -457,6 +477,12 @@ export default class extends Controller {
 	 * Effectue la recherche (compatible mode simple et multiple)
 	 */
 	async performSearch(keyword) {
+		console.log('performSearch appelée', {
+			keyword,
+			mode: this.modeValue,
+			hasResultsTarget: this.hasResultsTarget
+		});
+
 		try {
 			const url = `${this.apiUrlValue}?q=${encodeURIComponent(keyword)}`;
 			const response = await fetch(url);
@@ -466,6 +492,11 @@ export default class extends Controller {
 			}
 
 			const data = await response.json();
+
+			console.log('Données reçues', {
+				success: data.success,
+				resultsCount: data.results?.length || 0
+			});
 
 			if (data.success && data.results.length > 0) {
 				this.displayResultsCompact(data.results);
@@ -485,7 +516,13 @@ export default class extends Controller {
 		const container = this.hasResultsTarget ? this.resultsTarget :
 			this.hasResultsContainerTarget ? this.resultsContainerTarget : null;
 
-		if (!container) return;
+		if (!container) {
+			console.warn('Pas de conteneur de résultats trouvé', {
+				hasResultsTarget: this.hasResultsTarget,
+				hasResultsContainerTarget: this.hasResultsContainerTarget
+			});
+			return;
+		}
 
 		// create a scrollable card to contain a compact grid
 		const wrapper = document.createElement('div');
@@ -499,7 +536,7 @@ export default class extends Controller {
 
 		results.forEach(pictogram => {
 			const card = document.createElement('div');
-			card.className = 'cursor-pointer transition p-1 flex items-center justify-center rounded';
+			card.className = 'cursor-pointer transition p-1 flex items-center justify-center rounded hover:bg-base-200 hover:scale-105';
 			card.innerHTML = `<img src="${pictogram.imageUrl}" alt="${pictogram.name}" class="w-12 h-12 object-contain" title="${pictogram.name}" />`;
 
 			card.addEventListener('click', () => {
@@ -516,12 +553,15 @@ export default class extends Controller {
 		body.appendChild(grid);
 		wrapper.appendChild(body);
 
+		// Vider et afficher
 		container.innerHTML = '';
 		container.appendChild(wrapper);
+		container.classList.remove('hidden');
 
-		if (this.hasResultsTarget) {
-			this.resultsTarget.classList.remove('hidden');
-		}
+		console.log('Résultats affichés dans le conteneur', {
+			resultsCount: results.length,
+			containerClass: container.className
+		});
 	}
 
 	/**

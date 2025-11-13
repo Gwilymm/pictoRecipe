@@ -275,7 +275,9 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 			</button>
 		</div>
 	</div>
-</section>{# Step 3: Steps #}<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
+</section>
+{# Step 3: Steps #}
+<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
 	<div class="card-body">
 		<h3 class="text-lg font-semibold">👨‍🍳 Étapes</h3>
 
@@ -298,11 +300,7 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 						{# Widget pour plusieurs pictogrammes #}
 						<div class="mt-3 pt-3 border-t border-base-300">
 							<div class="mb-2 font-semibold text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
-							{{ include('partials/_pictogram_multiple_widget.html.twig', {
-																													'form_field': step.content,
-																													'urls_field': step.pictogramUrls,
-																													'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'
-																												}) }}
+							{{ include('partials/_pictogram_multiple_widget.html.twig', {'urls_field': step.pictogramUrls,	'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'}) }}
 						</div>
 					</div>
 				{% else %}

@@ -14,7 +14,14 @@ class PdfGenerator
 			->margins(10, 10, 10, 10)
 			->showBackground()
 			->waitUntilNetworkIdle()
-			->setOption('args', ['--no-sandbox', '--disable-setuid-sandbox', '--ignore-certificate-errors'])
+			->setOption(
+				'args',
+				[
+					'--no-sandbox',
+					'--disable-setuid-sandbox',
+					'--ignore-certificate-errors'
+				]
+			)
 			->pdf();
 	}
 }
