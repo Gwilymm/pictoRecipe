@@ -182,6 +182,9 @@ export default class extends Controller {
 		container.innerHTML = `
 			<div class="space-y-6">
 				${this.sectionTitle(recipe)}
+				<div class="flex justify-end">
+					<button class="btn btn-success btn-sm" id="import-recipe-btn">📥 Importer cette recette</button>
+				</div>
 				${this.sectionPrimary(recipe)}
 				${this.sectionTimes(recipe.times)}
 				${this.sectionIngredients(recipe.ingredients)}
@@ -189,6 +192,12 @@ export default class extends Controller {
 				${this.sectionSteps(recipe.steps)}
 			</div>
 		`;
+
+		// Bind import button
+		const importBtn = document.getElementById("import-recipe-btn");
+		if (importBtn) {
+			importBtn.addEventListener("click", () => this.importRecipe(recipe));
+		}
 	}
 
 	/* ============================================================
@@ -395,5 +404,60 @@ export default class extends Controller {
 	hideMessages() {
 		this.infoMessageTarget.classList.add("hidden");
 		this.errorMessageTarget.classList.add("hidden");
+	}
+
+	/* ============================================================
+	   🟩 Import — POST /api/recipes/import
+	============================================================ */
+	async importRecipe(recipeJson) {
+		try {
+			// Prefer sending the full Marmiton structure
+			const body = { ok: true, recipe: recipeJson };
+			const response = await fetch("/api/recipes/import", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body)
+			});
+
+			const data = await response.json();
+
+			if (data.ok) {
+				// Close modal if open
+				const modal = document.getElementById("recipe-modal");
+				if (modal && typeof modal.close === 'function') {
+					modal.close();
+				}
+
+				this.showToast("Recette importée avec succès !", "success");
+				window.location.href = `/recipe/${data.id}`;
+			} else {
+				this.showToast(data.error || "Erreur lors de l'import.", "error");
+			}
+		} catch (e) {
+			this.showToast("Erreur import : " + (e?.message || e), "error");
+		}
+	}
+
+	showToast(message, type = "info") {
+		// DaisyUI toast container
+		let container = document.querySelector(".toast.toast-top.toast-end");
+		if (!container) {
+			container = document.createElement("div");
+			container.className = "toast toast-top toast-end z-50";
+			document.body.appendChild(container);
+		}
+
+		const alert = document.createElement("div");
+		alert.className = `alert ${type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : 'alert-info'}`;
+		alert.innerHTML = `<span>${message}</span>`;
+		container.appendChild(alert);
+
+		setTimeout(() => {
+			alert.remove();
+			// cleanup if empty
+			if (container.childElementCount === 0) {
+				container.remove();
+			}
+		}, 3500);
 	}
 }
