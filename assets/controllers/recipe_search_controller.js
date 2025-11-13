@@ -429,7 +429,7 @@ export default class extends Controller {
 				}
 
 				this.showToast("Recette importée avec succès !", "success");
-				window.location.href = `/recipe/${data.id}`;
+				window.location.href = `/recipe/${data.id}/show`;
 			} else {
 				this.showToast(data.error || "Erreur lors de l'import.", "error");
 			}
