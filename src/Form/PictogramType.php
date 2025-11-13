@@ -23,9 +23,9 @@ class PictogramType extends AbstractType
 				'mapped' => false,
 				'required' => $options['require_image'],
 				'constraints' => [
-					new File([
-						'maxSize' => '2M',
-						'mimeTypes' => [
+					new File(
+						maxSize: '2M',
+						mimeTypes: [
 							'image/png',
 							'image/svg+xml',
 							'image/jpeg',
@@ -33,8 +33,8 @@ class PictogramType extends AbstractType
 							'image/webp',
 							'image/gif',
 						],
-						'mimeTypesMessage' => 'Veuillez uploader une image (PNG, SVG, JPEG, WEBP, GIF). Les formats raster seront convertis en PNG si nécessaire.',
-					])
+						mimeTypesMessage: 'Veuillez uploader une image (PNG, SVG, JPEG, WEBP, GIF). Les formats raster seront convertis en PNG si nécessaire.'
+					)
 				],
 				'attr' => ['class' => 'file-input file-input-bordered w-full max-w-xs']
 			])

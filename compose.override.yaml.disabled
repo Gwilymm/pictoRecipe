@@ -4,6 +4,28 @@
 # ==========================================================
 
 services:
+  ###> Application en mode développement ###
+  pictorecette-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: composer-builder # Utilise le stage composer-builder en dev
+      args:
+        APP_ENV: dev # Installe les dépendances de dev
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: 1
+      SERVER_NAME: :80
+    volumes:
+      # Monter le code source pour le hot-reload
+      - ./:/app:cached
+      - /app/var
+      - /app/vendor
+      - /app/node_modules
+    # Logs lisibles
+    tty: true
+  ###< Application en mode développement ###
+
   ###> doctrine/doctrine-bundle ###
   database:
     ports:

@@ -1,7 +1,79 @@
+# ==========================================================
+#  .dockerignore - PictoRecipe
+#  Fichiers à exclure du contexte de build Docker
+# ==========================================================
+
+# Git
 .git
-node_modules
-vendor
-var
-.env.local
-.DS_Store
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+compose*.yaml
+.dockerignore
+
+# Documentation
+README*.md
+ROADMAP.md
+docs/
+*.md
+
+# Tests
+tests/
+phpunit*.xml
+.phpunit.cache
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+nuclei.json
+
+# IDE et éditeurs
 .idea
+.vscode
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environnement
+.env.local
+.env.*.local
+.env.test
+
+# Cache et logs
+var/cache/*
+var/log/*
+var/tmp/*
+!var/cache/.gitkeep
+!var/log/.gitkeep
+
+# Dépendances (seront réinstallées dans Docker)
+# On les exclut pour ne pas polluer le contexte de build
+# mais ils seront présents dans l'image finale
+vendor/
+node_modules/
+
+# Assets compilés (seront recompilés dans Docker)
+#public/build/
+#public/bundles/
+#public/assets/app-*.js
+#public/assets/bootstrap-*.js
+#public/assets/*.json
+
+# Uploads (seront montés en volume)
+public/uploads/*
+public/cache/pdf/*
+
+# Fichiers temporaires
+*.cache
+*.log
+*.pid
+.sass-cache/
+
+# Backups
+*.bak
+*.old
+Dockerfile.old

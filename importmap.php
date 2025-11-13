@@ -16,6 +16,12 @@ return [
         'path' => './assets/app.js',
         'entrypoint' => true,
     ],
+    '@hotwired/stimulus' => [
+        'version' => '3.2.2',
+    ],
+    '@hotwired/turbo' => [
+        'path' => './assets/vendor/@hotwired/turbo/turbo.index.js',
+    ],
     'daisyui' => [
         'version' => '5.4.7',
     ],

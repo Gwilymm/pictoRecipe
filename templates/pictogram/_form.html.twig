@@ -14,3 +14,68 @@
 
 <button class="btn btn-primary mt-4">💾 Enregistrer</button>
 {{ form_end(form) }}
+
+{# Small fallback script: if the form contains the placeholder token value, replace it
+   by the value from the csrf-token cookie so pages without the Stimulus controller still work. #}
+<script>
+	document.addEventListener( 'DOMContentLoaded', function ()
+{
+
+try
+{
+
+const tokenName = '{{ form.vars.full_name }}[_token]';
+const input = document.querySelector( 'input[name="' + tokenName + '"]' );
+if ( ! input )
+
+return;
+
+
+// First try: read cookie named csrf-token
+const cookieMatch = document.cookie.match( '(^|;)\\s*csrf-token\\s*=\\s*([^;]+)' );
+if ( cookieMatch && cookieMatch[ 2 ] && decodeURIComponent( cookieMatch[ 2 ] ) !== 'csrf-token' )
+{
+
+input.value = decodeURIComponent( cookieMatch[ 2 ] );
+return;
+
+}
+
+// Fallback: fetch token from server endpoint (works even if HTML is cached)
+const formName = '{{ form.vars.full_name }}';
+fetch( '/_csrf/' + encodeURIComponent( formName ),
+{ credentials: 'same-origin' } ).then( function ( r )
+{
+
+if ( ! r.ok )
+
+throw new Error( 'no-token' );
+
+return r.json();
+
+} ).then( function ( json )
+{
+
+if ( json && json.token )
+{
+
+input.value = json.token;
+
+}
+
+} ).catch( function ( e )
+{
+
+console && console.debug && console.debug( 'csrf token fetch error', e );
+
+} );
+
+} catch ( e )
+{
+
+console && console.debug && console.debug( 'csrf token fallback error', e );
+
+}
+
+} );
+</script>
