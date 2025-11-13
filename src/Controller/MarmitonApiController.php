@@ -19,33 +19,35 @@ class MarmitonApiController extends AbstractController
 	) {}
 
 	/**
-	 * Search for recipes on Marmiton
+	 * SEARCH — Recherche Marmiton
 	 */
 	#[Route('/search', name: 'search', methods: ['POST', 'GET'])]
 	public function search(Request $request): JsonResponse
 	{
 		try {
-			// Support both GET with query params and POST with JSON body
+			// --- Support GET et POST ----
 			if ($request->getMethod() === 'POST') {
-				$data = json_decode($request->getContent(), true);
-				$query = $data['q'] ?? $data['query'] ?? '';
-				$limit = $data['limit'] ?? 20;
-				$filters = $data['filters'] ?? [];
+				$body = json_decode($request->getContent(), true);
+				$query   = $body['q'] ?? $body['query'] ?? '';
+				$limit   = (int)($body['limit'] ?? 20);
+				$filters = $body['filters'] ?? [];
 			} else {
-				$query = $request->query->get('q') ?? $request->query->get('query') ?? '';
-				$limit = (int) ($request->query->get('limit') ?? 20);
+				$query = $request->query->get('q')
+					?? $request->query->get('query')
+					?? '';
+
+				$limit = (int)($request->query->get('limit') ?? 20);
 				$filters = [];
 
-				// Extract filters from query params
 				if ($request->query->get('withPhoto')) {
 					$filters['withPhoto'] = true;
 				}
 			}
 
-			if (empty($query)) {
+			if ($query === '') {
 				return new JsonResponse([
 					'success' => false,
-					'error' => 'Missing search term "q" or "query"',
+					'error' => 'Missing search term (q or query)',
 				], Response::HTTP_BAD_REQUEST);
 			}
 
@@ -55,14 +57,20 @@ class MarmitonApiController extends AbstractController
 				'filters' => $filters,
 			]);
 
-			$results = $this->scraperService->searchRecipes($query, $limit, $filters);
+			// --- APPEL EXACT À LA BONNE MÉTHODE ---
+			$results = $this->scraperService->searchRecipes(
+				$query,
+				$limit,
+				$filters
+			);
 
 			return new JsonResponse([
 				'success' => true,
 				'results' => $results,
 				'count' => count($results),
 			]);
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
+
 			$this->logger->error('Error in Marmiton search', [
 				'error' => $e->getMessage(),
 				'trace' => $e->getTraceAsString(),
@@ -70,13 +78,13 @@ class MarmitonApiController extends AbstractController
 
 			return new JsonResponse([
 				'success' => false,
-				'error' => 'Failed to fetch recipes: ' . $e->getMessage(),
+				'error' => 'Search failed: ' . $e->getMessage(),
 			], Response::HTTP_INTERNAL_SERVER_ERROR);
 		}
 	}
 
 	/**
-	 * Fetch a single recipe page
+	 * RECIPE — Récupérer une recette Marmiton complète
 	 */
 	#[Route('/recipe', name: 'recipe', methods: ['POST'])]
 	public function recipe(Request $request): JsonResponse
@@ -84,34 +92,34 @@ class MarmitonApiController extends AbstractController
 		try {
 			$data = json_decode($request->getContent(), true);
 			$link = $data['link'] ?? $data['url'] ?? null;
-			$id = $data['id'] ?? null;
 
-			if (!$link && !$id) {
+			if (!$link) {
 				return new JsonResponse([
 					'ok' => false,
-					'error' => 'Missing link or id parameter',
+					'error' => 'Missing "link" parameter',
 				], Response::HTTP_BAD_REQUEST);
 			}
 
-			// Prefer link over id
-			if (!$link && $id) {
-				return new JsonResponse([
-					'ok' => false,
-					'error' => 'Please provide "link" (full recipe URL). Cannot reliably construct URL from id alone.',
-				], Response::HTTP_BAD_REQUEST);
-			}
-
-			// Ensure absolute URL
+			// Normalize Marmiton URL
 			if (str_starts_with($link, '/')) {
 				$link = 'https://www.marmiton.org' . $link;
 			}
 
-			$this->logger->info('Fetching Marmiton recipe', ['url' => $link]);
+			$this->logger->info('Fetching Marmiton recipe', [
+				'url' => $link
+			]);
 
-			$recipeData = $this->scraperService->fetchRecipe($link);
+			// --- APPEL EXACT À LA BONNE MÉTHODE ---
+			$recipe = $this->scraperService->fetchRecipe($link);
 
-			return new JsonResponse($recipeData);
-		} catch (\Exception $e) {
+			// Toujours renvoyer un JSON propre unifié
+			return new JsonResponse([
+				'ok'     => true,
+				'recipe' => $recipe,
+				'source' => $link
+			]);
+		} catch (\Throwable $e) {
+
 			$this->logger->error('Error fetching Marmiton recipe', [
 				'error' => $e->getMessage(),
 				'trace' => $e->getTraceAsString(),
@@ -125,7 +133,7 @@ class MarmitonApiController extends AbstractController
 	}
 
 	/**
-	 * Health check endpoint
+	 * HEALTH CHECK
 	 */
 	#[Route('/health', name: 'health', methods: ['GET'])]
 	public function health(): JsonResponse

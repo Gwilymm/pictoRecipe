@@ -1,32 +1,42 @@
 import { Controller } from '@hotwired/stimulus';
 
-// Stimulus controller to manage DaisyUI theme swap (light/dark)
+// Manage DaisyUI custom theme swap: pictorecette-light / pictorecette-dark
 export default class extends Controller {
 	static targets = [ 'toggle' ];
 
 	connect() {
 		this.html = document.documentElement;
 
-		// Load saved theme or detect system preference
 		const stored = this._safeGet('theme');
-		const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-		const initial = stored || (prefersDark ? 'dark' : 'light');
+		const prefersDark =
+			window.matchMedia &&
+			window.matchMedia('(prefers-color-scheme: pictorecette-dark)').matches;
+
+		// Default theme logic
+		const initial =
+			stored ||
+			(prefersDark ? 'pictorecette-dark' : 'pictorecette-light');
 
 		this.applyTheme(initial);
 	}
 
-	// When the swap checkbox changes
+	// When toggle (checkbox) changes
 	toggle(event) {
 		const isDark = event.target.checked;
-		const theme = isDark ? 'dark' : 'light';
+
+		const theme = isDark
+			? 'pictorecette-dark'
+			: 'pictorecette-light';
+
 		this.applyTheme(theme);
 		this._safeSet('theme', theme);
 	}
 
 	applyTheme(theme) {
 		this.html.setAttribute('data-theme', theme);
+
 		if (this.hasToggleTarget) {
-			this.toggleTarget.checked = (theme === 'dark');
+			this.toggleTarget.checked = (theme === 'pictorecette-dark');
 		}
 	}
 

@@ -23,10 +23,10 @@ return [
         'path' => './assets/vendor/@hotwired/turbo/turbo.index.js',
     ],
     'daisyui' => [
-        'version' => '5.4.7',
+        'version' => '5.5.3',
     ],
     'daisyui/daisyui.min.css' => [
-        'version' => '5.4.7',
+        'version' => '5.5.3',
         'type' => 'css',
     ],
 ];
