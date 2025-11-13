@@ -7,7 +7,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"/>
 				</svg>
 			</button>
-			<ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[100] mt-3 w-56 p-2 shadow-lg">
+			<ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-100 mt-3 w-56 p-2 shadow-lg">
 				<li>
 					<a href="{{ path('app_home') }}" class="flex items-center gap-2">
 						<span class="material-icons">home</span>Accueil</a>
@@ -19,6 +19,9 @@
 						<ul class="p-2">
 							<li>
 								<a href="{{ path('app_recipe_index') }}">Liste</a>
+							</li>
+							<li>
+								<a href="{{ path('app_recipe_search') }}">🔍 Rechercher</a>
 							</li>
 							<li>
 								<a href="{{ path('app_recipe_new') }}">Créer</a>
@@ -59,6 +62,9 @@
 					<ul class="p-2">
 						<li>
 							<a href="{{ path('app_recipe_index') }}">Liste</a>
+						</li>
+						<li>
+							<a href="{{ path('app_recipe_search') }}">🔍 Rechercher</a>
 						</li>
 						<li>
 							<a href="{{ path('app_recipe_new') }}">Créer</a>

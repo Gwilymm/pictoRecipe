@@ -51,7 +51,23 @@ ENV APP_ENV=prod \
     COMPOSER_ALLOW_SUPERUSER=1 \
     SERVER_NAME=:80
 
+# ---- Browsershot / Puppeteer / Chromium ----
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    libstdc++ \
+    ttf-freefont \
+    nodejs \
+    npm
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 WORKDIR /app
+
+RUN npm install puppeteer
 
 # Installer uniquement les extensions PHP nécessaires (version Alpine = plus rapide)
 RUN install-php-extensions \
@@ -64,6 +80,8 @@ RUN install-php-extensions \
     xsl \
     gmp \
     apcu
+
+
 
 # Copier les dépendances Composer depuis le builder
 COPY --from=composer-builder /app/vendor ./vendor

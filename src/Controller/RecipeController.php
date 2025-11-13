@@ -6,9 +6,11 @@ use App\Entity\Recipe;
 use App\Form\RecipeType;
 use App\Repository\RecipeRepository;
 use App\Service\PdfGenerator;
+use App\Service\MarmitonApiService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,6 +25,12 @@ final class RecipeController extends AbstractController
         return $this->render('recipe/index.html.twig', [
             'recipes' => $recipeRepository->findAll(),
         ]);
+    }
+
+    #[Route('/search', name: 'app_recipe_search', methods: ['GET'])]
+    public function search(): Response
+    {
+        return $this->render('recipe/search.html.twig');
     }
 
     #[Route('/new', name: 'app_recipe_new', methods: ['GET', 'POST'])]
@@ -341,7 +349,7 @@ final class RecipeController extends AbstractController
         }
     }
 
-    // Inline image building removed: PDF generation now uses file:// references and a disk cache to speed up generation.
+
 
     #[Route('/{id}', name: 'app_recipe_delete', methods: ['POST'])]
     public function delete(Request $request, Recipe $recipe, EntityManagerInterface $entityManager): Response

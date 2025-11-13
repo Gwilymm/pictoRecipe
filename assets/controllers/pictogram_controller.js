@@ -449,26 +449,9 @@ export default class extends Controller {
 		hiddenField.dispatchEvent(new Event('change', { bubbles: true }));
 	}
 
-	/**
-	 * Recherche déclenchée par input (compatible mode simple et multiple)
-	 */
-	search(event) {
-		const keyword = this.hasSearchTarget ? this.searchTarget.value.trim() :
-			this.hasSearchInputTarget ? this.searchInputTarget.value.trim() : '';
-
-		if (keyword.length < 2) {
-			this.hideResults();
-			return;
-		}
-
-		if (this.debounceTimer) {
-			clearTimeout(this.debounceTimer);
-		}
-
-		this.debounceTimer = setTimeout(() => {
-			this.performSearch(keyword);
-		}, this.debounceDelayValue);
-	}
+	// Note: input handling is implemented in `onSearchInput` and `onSearchClick`.
+	// Older templates may reference `pictogram#search`; prefer using
+	// `pictogram#onSearchInput` (see templates/partials/_pictogram_multiple_widget.html.twig).
 
 	/**
 	 * Effectue la recherche (compatible mode simple et multiple)
