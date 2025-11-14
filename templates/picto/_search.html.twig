@@ -1,0 +1,15 @@
+{# Partial Twig for Picto search using OpenFoodFacts #}
+<div data-controller="picto-search" class="space-y-3">
+    <input data-picto-search-target="input" type="search" placeholder="Rechercher un produit (ex: tomate)" class="input input-bordered w-full" />
+    <div data-picto-search-target="results" class="w-full"></div>
+</div>
+
+{# Example of listening to selection in parent page:
+   <div id="picto-wrapper">{% include 'picto/_search.html.twig' %}</div>
+   <script>
+       document.getElementById('picto-wrapper').addEventListener('picto:selected', (e) => {
+           console.log('selected', e.detail);
+           // e.detail contains {id,name,image,brand,category}
+       });
+   </script>
+#}

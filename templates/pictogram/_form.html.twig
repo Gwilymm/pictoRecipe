@@ -1,81 +1,92 @@
-{{ form_start(form, {'attr': {'class': 'space-y-4'}}) }}
+{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+
 <div class="form-control">
-	{{ form_widget(form) }}
+	<label class="label">
+		<span class="label-text font-semibold">Nom du pictogramme</span>
+	</label>
+
+	<div data-controller="picto-search" class="space-y-3">
+		{{ form_widget(form.name, {
+            'attr': {
+                'data-picto-search-target': 'input',
+                'placeholder': 'Ex : farine, maïzena…',
+                'class':'input input-bordered w-full'
+            }
+        }) }}
+
+		<div data-picto-search-target="results" class="grid grid-cols-3 sm:grid-cols-4 gap-3"></div>
+	</div>
 </div>
 
-{% if pictogram.filePath %}
-	<div class="mt-4">
-		<label class="label">
-			<span class="label-text">Prévisualisation actuelle :</span>
-		</label>
-		<img src="{{ asset(pictogram.filePath) }}" class="w-24 h-24 object-contain rounded-lg shadow mt-2" alt="Prévisualisation">
-	</div>
-{% endif %}
+<div class="form-control">
+	<label class="label">
+		<span class="label-text font-semibold">Image (PNG ou SVG)</span>
+	</label>
 
-<button class="btn btn-primary mt-4">💾 Enregistrer</button>
+	{{ form_row(form.imageFile) }}
+</div>
+
+{# 🔥 LE SEUL CHAMP ACCEPTABLE #}
+<input type="hidden" id="externalImageTemp" name="externalImageTemp"/>
+
+<div id="picto-external-preview" class="mt-4"></div>
+
+<button class="btn btn-primary mt-6 w-full sm:w-auto">💾 Enregistrer</button>
+
 {{ form_end(form) }}
 
-{# Small fallback script: if the form contains the placeholder token value, replace it
-   by the value from the csrf-token cookie so pages without the Stimulus controller still work. #}
-<script>
-	document.addEventListener( 'DOMContentLoaded', function ()
+
+{# =============================================================== #}
+{# Script minimal : écoute la sélection picto:selected (via Stimulus) #}
+{# =============================================================== #}
+
+	<script>
+document.addEventListener( "picto:selected", ( e ) => {
+
+
+
+
+
+const item = e.detail;
+const hidden = document.getElementById( "{{ form.vars.full_name }}_externalImageUrl" );
+const preview = document.getElementById( "picto-external-preview" );
+
+if ( hidden )
 {
 
-try
-{
-
-const tokenName = '{{ form.vars.full_name }}[_token]';
-const input = document.querySelector( 'input[name="' + tokenName + '"]' );
-if ( ! input )
-
-return;
 
 
-// First try: read cookie named csrf-token
-const cookieMatch = document.cookie.match( '(^|;)\\s*csrf-token\\s*=\\s*([^;]+)' );
-if ( cookieMatch && cookieMatch[ 2 ] && decodeURIComponent( cookieMatch[ 2 ] ) !== 'csrf-token' )
-{
 
-input.value = decodeURIComponent( cookieMatch[ 2 ] );
-return;
+
+hidden.value = item.image;
+
+
+
+
 
 }
 
-// Fallback: fetch token from server endpoint (works even if HTML is cached)
-const formName = '{{ form.vars.full_name }}';
-fetch( '/_csrf/' + encodeURIComponent( formName ),
-{ credentials: 'same-origin' } ).then( function ( r )
+if ( preview )
 {
 
-if ( ! r.ok )
 
-throw new Error( 'no-token' );
 
-return r.json();
 
-} ).then( function ( json )
-{
 
-if ( json && json.token )
-{
+preview.innerHTML = `
+            <img src="${
+item.image
+}"
+                 class="w-24 h-24 object-contain rounded-lg shadow">
+            <div class="mt-1 text-sm opacity-75">${
+item.name || ''
+}</div>
+        `;
 
-input.value = json.token;
+
+
+
 
 }
 
-} ).catch( function ( e )
-{
-
-console && console.debug && console.debug( 'csrf token fetch error', e );
-
-} );
-
-} catch ( e )
-{
-
-console && console.debug && console.debug( 'csrf token fallback error', e );
-
-}
-
-} );
-</script>
+} );</script>

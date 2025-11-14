@@ -6,7 +6,8 @@
 {% block body %}
 	<h1 class="text-3xl font-bold mb-6">Ajouter un pictogramme personnalisé</h1>
 
-	<div class="mb-4">
+	<div class="mb-4" data-controller="picto-search">
+
 		{{ include('pictogram/_form.html.twig') }}
 	</div>
 

@@ -1,12 +1,11 @@
-# Dockerfile DEV - FrankenPHP + Symfony 7 + Tailwind + Puppeteer
-# Optimisé pour développement (pas pour Raspberry Pi)
+# Dockerfile DEV - FrankenPHP + Symfony 7 + Puppeteer + Chromium (ALPINE)
 
 FROM dunglas/frankenphp:1-php8.3-alpine
 
 WORKDIR /app
 
 # --------------------------------------------
-# Extensions PHP utiles en DEV
+# Install PHP extensions
 # --------------------------------------------
 RUN install-php-extensions \
     pdo_pgsql \
@@ -19,10 +18,11 @@ RUN install-php-extensions \
     apcu
 
 # --------------------------------------------
-# Install Node + Chromium + Puppeteer
+# Install Chromium + deps + NodeJS
 # --------------------------------------------
 RUN apk add --no-cache \
     chromium \
+    chromium-chromedriver \
     nss \
     freetype \
     harfbuzz \
@@ -30,30 +30,34 @@ RUN apk add --no-cache \
     ttf-freefont \
     nodejs \
     npm \
-    curl \
-    git
+    git \
+    curl
 
-ENV PUPPETEER_SKIP_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# Puppeteer env
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-RUN npm install -g pnpm
+# Install Puppeteer globally
+RUN npm install -g puppeteer@latest
+
+# Vérification
+RUN node -e "console.log('Node OK'), console.log(process.version)" && \
+    echo \"Chromium version:\" && chromium --version
 
 # --------------------------------------------
-# Copie du code + installation composer
+# Copy project and composer
 # --------------------------------------------
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 COPY . .
 
-# Install dépendances Composer (mode DEV)
+# Install Composer dependencies (dev)
 RUN composer install --no-interaction --prefer-dist
 
-# Install dépendances JS
-#RUN pnpm install || npm install
-
-# Pas de build ici → en dev le build est fait à chaud
+# Node deps (si tu utilises pnpm ou autre)
+RUN npm install -g pnpm
 
 # --------------------------------------------
-# ENV spécifiques DEV
+# ENV DEV
 # --------------------------------------------
 ENV APP_ENV=dev \
     APP_DEBUG=1 \
@@ -66,5 +70,3 @@ RUN mkdir -p var/cache var/log var/tmp && \
     chown -R www-data:www-data var
 
 EXPOSE 80
-
-

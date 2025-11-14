@@ -55,6 +55,9 @@ final class RecipeController extends AbstractController
             // Map submitted pictogramUrl fields to local Pictogram relations when applicable
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
 
+            // mark updatedAt so cache invalidation works correctly
+            $recipe->setUpdatedAt(new \DateTime());
+
             $entityManager->persist($recipe);
             $entityManager->flush();
 
@@ -116,6 +119,9 @@ final class RecipeController extends AbstractController
 
             // Map pictogramUrl -> Pictogram relation for local pictograms
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
+
+            // update timestamp to indicate recipe changed
+            $recipe->setUpdatedAt(new \DateTime());
 
             $entityManager->persist($recipe);
             $entityManager->flush();
@@ -270,6 +276,9 @@ final class RecipeController extends AbstractController
 
             // Map pictogramUrl -> Pictogram relation for local pictograms
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
+
+            // update timestamp to indicate recipe changed
+            $recipe->setUpdatedAt(new \DateTime());
 
             $entityManager->flush();
 

@@ -6,10 +6,11 @@ use App\Entity\Pictogram;
 use App\Form\PictogramType;
 use App\Repository\PictogramRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/pictogram')]
 final class PictogramController extends AbstractController
@@ -23,61 +24,80 @@ final class PictogramController extends AbstractController
 	}
 
 	#[Route('/new', name: 'app_pictogram_new', methods: ['GET', 'POST'])]
-	public function new(Request $request, EntityManagerInterface $entityManager): Response
-	{
+	public function new(
+		Request $request,
+		EntityManagerInterface $entityManager,
+		HttpClientInterface $http
+	): Response {
 		$pictogram = new Pictogram();
 		$form = $this->createForm(PictogramType::class, $pictogram);
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted() && $form->isValid()) {
-			$file = $form->get('imageFile')->getData();
-			if ($file) {
-				$mime = $file->getMimeType();
-				// If SVG, keep original
+
+			$uploadedFile = $form->get('imageFile')->getData();
+			$externalUrl  = $request->request->get('externalImageTemp');
+
+			/**
+			 * Si une IMAGE OFF est choisie → on LA TÉLÉCHARGE comme si c’était un file upload
+			 */
+			if (!$uploadedFile && $externalUrl) {
+				try {
+					$response = $http->request('GET', $externalUrl);
+					$bytes = $response->getContent();
+
+					// Temp file pour imiter un upload
+					$tempPath = tempnam(sys_get_temp_dir(), 'picto_');
+					file_put_contents($tempPath, $bytes);
+
+					// Symfony UploadedFile-like behaviour
+					$uploadedFile = new \Symfony\Component\HttpFoundation\File\File(
+						$tempPath
+					);
+				} catch (\Throwable $e) {
+					$this->addFlash('error', "Impossible de télécharger l'image externe.");
+					return $this->redirectToRoute('app_pictogram_new');
+				}
+			}
+
+			/**
+			 * Pipeline unique : que l’image vienne d’un upload ou d’OpenFoodFacts
+			 */
+			if ($uploadedFile) {
+				$mime = $uploadedFile->getMimeType();
+
+				// SVG → garder original
 				if ($mime === 'image/svg+xml') {
 					$newFilename = uniqid() . '.svg';
-					$file->move($this->getParameter('pictogram_directory'), $newFilename);
+					$uploadedFile->move($this->getParameter('pictogram_directory'), $newFilename);
+
 					$pictogram->setFilePath('uploads/pictograms/' . $newFilename);
 					$pictogram->setFormat('svg');
-					// SVG: no thumbnail generated (skipped)
 				} else {
-					// For raster images, convert to PNG
+					// Convertir RASTER → PNG (même comportement que ton code)
 					$newFilename = uniqid() . '.png';
-					$destination = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . $newFilename;
-					$source = $file->getPathname();
+					$destination = $this->getParameter('pictogram_directory') . '/' . $newFilename;
 
-					if ($this->convertToPng($source, $destination, $mime)) {
+					if ($this->convertToPng($uploadedFile->getPathname(), $destination, $mime)) {
 						$pictogram->setFilePath('uploads/pictograms/' . $newFilename);
 						$pictogram->setFormat('png');
-						// create thumbnail for PDF/preview performance
-						$thumbDir = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . 'thumbs';
-						if (!is_dir($thumbDir)) {
-							@mkdir($thumbDir, 0755, true);
-						}
-						$thumbPath = $thumbDir . DIRECTORY_SEPARATOR . pathinfo($newFilename, PATHINFO_FILENAME) . '.png';
-						$this->createThumbnail($destination, $thumbPath, 70);
-					} else {
-						// Fallback: move original file (keep extension)
-						$origFilename = uniqid() . '.' . $file->guessExtension();
-						$file->move($this->getParameter('pictogram_directory'), $origFilename);
-						$pictogram->setFilePath('uploads/pictograms/' . $origFilename);
-						$pictogram->setFormat($file->guessExtension());
-						// try to create a thumbnail from the moved file if raster
-						$abs = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . $origFilename;
-						$thumbDir = $this->getParameter('pictogram_directory') . DIRECTORY_SEPARATOR . 'thumbs';
-						if (!is_dir($thumbDir)) {
-							@mkdir($thumbDir, 0755, true);
-						}
-						$thumbPath = $thumbDir . DIRECTORY_SEPARATOR . pathinfo($origFilename, PATHINFO_FILENAME) . '.png';
-						$this->createThumbnail($abs, $thumbPath, 70);
+
+						// Thumbnail
+						$thumbDir = $this->getParameter('pictogram_directory') . '/thumbs';
+						if (!is_dir($thumbDir)) mkdir($thumbDir, 0755, true);
+
+						$this->createThumbnail($destination, $thumbDir . '/' . $newFilename, 70);
 					}
 				}
+			} else {
+				$this->addFlash('error', 'Veuillez uploader une image ou en sélectionner une.');
+				return $this->redirectToRoute('app_pictogram_new');
 			}
 
 			$entityManager->persist($pictogram);
 			$entityManager->flush();
 
-			return $this->redirectToRoute('app_pictogram_index', [], Response::HTTP_SEE_OTHER);
+			return $this->redirectToRoute('app_pictogram_index');
 		}
 
 		return $this->render('pictogram/new.html.twig', [
@@ -85,6 +105,7 @@ final class PictogramController extends AbstractController
 			'form' => $form,
 		]);
 	}
+
 
 	#[Route('/{id}', name: 'app_pictogram_show', methods: ['GET'])]
 	public function show(Pictogram $pictogram): Response

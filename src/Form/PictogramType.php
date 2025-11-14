@@ -21,7 +21,7 @@ class PictogramType extends AbstractType
 			->add('imageFile', FileType::class, [
 				'label' => 'Image (PNG ou SVG)',
 				'mapped' => false,
-				'required' => $options['require_image'],
+				'required' => false,
 				'constraints' => [
 					new File(
 						maxSize: '2M',
@@ -29,23 +29,20 @@ class PictogramType extends AbstractType
 							'image/png',
 							'image/svg+xml',
 							'image/jpeg',
-							'image/jpg',
 							'image/webp',
 							'image/gif',
 						],
-						mimeTypesMessage: 'Veuillez uploader une image (PNG, SVG, JPEG, WEBP, GIF). Les formats raster seront convertis en PNG si nécessaire.'
+						mimeTypesMessage: 'Image invalide.'
 					)
 				],
 				'attr' => ['class' => 'file-input file-input-bordered w-full max-w-xs']
-			])
-		;
+			]);
 	}
 
 	public function configureOptions(OptionsResolver $resolver): void
 	{
 		$resolver->setDefaults([
 			'data_class' => Pictogram::class,
-			'require_image' => true,
 		]);
 	}
 }

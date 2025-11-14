@@ -145,6 +145,20 @@ class Recipe
         return $this->updatedAt;
     }
 
+    public function setUpdatedAt(?\DateTimeInterface $updatedAt): static
+    {
+        if ($updatedAt instanceof \DateTimeImmutable) {
+            // convert to mutable DateTime for compatibility with the property type
+            $this->updatedAt = \DateTime::createFromInterface($updatedAt);
+        } elseif ($updatedAt instanceof \DateTime) {
+            $this->updatedAt = $updatedAt;
+        } else {
+            $this->updatedAt = null;
+        }
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, Ingredient>
      */

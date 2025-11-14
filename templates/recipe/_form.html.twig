@@ -335,27 +335,37 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 			</label>
 
 			{# Render expanded checkboxes as a grid of cards with pictograms (fallback emoji if missing) #}
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 				{% for child in form.utensils %}
-					{# pictogram URL is exposed as a data attribute on the input via choice_attr in the form type #}
 					{% set pictogram = child.vars.attr['data-pictogram']|default(null) %}
-					{# Render the checkbox input inside the label so clicking anywhere toggles it reliably #}
-					<label class="utensil-card relative flex items-center gap-3 p-2 pl-4 border rounded-lg cursor-pointer hover:shadow-sm bg-white transition-colors peer-checked:bg-primary/5 peer-checked:text-primary-600 peer-checked:border-primary">
-						{{ form_widget(child, {'attr': {'class': 'peer sr-only'}}) }}
-						{# Colored left indicator visible when selected #}
-						<span class="absolute left-0 top-0 bottom-0 w-1 rounded-r bg-primary/70 opacity-0 transition-opacity duration-150 peer-checked:opacity-100" aria-hidden="true"></span>
+
+					<label class="
+							            utensil-card relative flex items-center gap-3 p-3
+							            rounded-xl cursor-pointer border border-base-300
+							            bg-base-200
+							            transition-all duration-150
+							            hover:bg-base-300
+							
+							            peer-checked:bg-primary peer-checked:text-primary-content
+							            peer-checked:ring-2 peer-checked:ring-primary
+							        ">
+						{{ form_widget(child, {'attr': {'class': 'peer hidden'}}) }}
+
 						{% if pictogram %}
-							<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-10 h-10 object-contain rounded transition-all peer-checked:w-8 peer-checked:h-8"/>
+							<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-10 h-10 object-contain rounded"/>
 						{% else %}
-							<div class="w-10 h-10 rounded bg-base-200 flex items-center justify-center text-lg transition-all peer-checked:w-8 peer-checked:h-8">🔪</div>
+							<div class="w-10 h-10 rounded bg-base-100 flex items-center justify-center text-lg">🔪</div>
 						{% endif %}
 
-						<span class="ml-2">{{ child.vars.label }}</span>
+						<span class="ml-1 font-medium">{{ child.vars.label }}</span>
 					</label>
+
 				{% else %}
-					<p class="text-sm text-muted">Aucun ustensile — ajoutez-en un via la gestion d'ustensiles.</p>
+					<p class="text-sm opacity-70">Aucun ustensile — ajoutez-en un via la gestion d'ustensiles.</p>
 				{% endfor %}
 			</div>
+
+
 		</div>
 
 		{# Option 2: Lien pour ajouter un nouvel ustensile #}

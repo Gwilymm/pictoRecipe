@@ -36,9 +36,6 @@
 				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
 					📄 Télécharger en PDF
 				</a>
-				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, force: 1}) }}" class="btn btn-outline pdf-download-btn" aria-label="Régénérer le PDF (forcer)">
-					🔁 Régénérer le PDF (forcer)
-				</a>
 			</div>
 		</div>
 
@@ -53,9 +50,6 @@
 
 			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary pdf-download-btn">
 				📄 Télécharger le PDF
-			</a>
-			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, force: 1}) }}" class="btn btn-outline pdf-download-btn">
-				🔁 Régénérer le PDF (forcer)
 			</a>
 		</div>
 	</div>
