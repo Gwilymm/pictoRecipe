@@ -45,12 +45,12 @@ class ArasaacApiService
 
 			$statusCode = $response->getStatusCode();
 
-			// Si aucun résultat trouvé
-			if ($statusCode === 204) {
+			// Si aucun résultat trouvé (204 ou 404)
+			if ($statusCode === 204 || $statusCode === 404) {
 				return [];
 			}
 
-			// Si erreur HTTP
+			// Si erreur HTTP (sauf 404 qui signifie "pas de résultat")
 			if ($statusCode !== 200) {
 				$this->logger->error('Erreur API ARASAAC', [
 					'status_code' => $statusCode,
