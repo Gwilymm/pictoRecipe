@@ -1,0 +1,50 @@
+services:
+  pictorecette-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: pictorecette-dev
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: motdepassefort
+      POSTGRES_DB: picto
+      DATABASE_URL: "postgresql://app:motdepassefort@database:5432/picto?serverVersion=16&charset=utf8"
+    volumes:
+      - .:/app # 🔥 Code monté en live
+      - /app/vendor # Empêcher l’écrasement du vendor
+      - /app/node_modules
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - pictorecette-network
+    tty: true
+
+  database:
+    container_name: pictorecette-db-dev
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-picto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-motdepassefort}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "app", "-U", "app"]
+      timeout: 5s
+      retries: 5
+    volumes:
+      - database_data_dev:/var/lib/postgresql/data
+    networks:
+      - pictorecette-network
+
+volumes:
+  database_data_dev:
+
+networks:
+  pictorecette-network:
+    driver: bridge

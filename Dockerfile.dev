@@ -1,0 +1,70 @@
+# Dockerfile DEV - FrankenPHP + Symfony 7 + Tailwind + Puppeteer
+# Optimisé pour développement (pas pour Raspberry Pi)
+
+FROM dunglas/frankenphp:1-php8.3-alpine
+
+WORKDIR /app
+
+# --------------------------------------------
+# Extensions PHP utiles en DEV
+# --------------------------------------------
+RUN install-php-extensions \
+    pdo_pgsql \
+    pgsql \
+    intl \
+    zip \
+    gd \
+    xsl \
+    gmp \
+    apcu
+
+# --------------------------------------------
+# Install Node + Chromium + Puppeteer
+# --------------------------------------------
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    libstdc++ \
+    ttf-freefont \
+    nodejs \
+    npm \
+    curl \
+    git
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+RUN npm install -g pnpm
+
+# --------------------------------------------
+# Copie du code + installation composer
+# --------------------------------------------
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
+COPY . .
+
+# Install dépendances Composer (mode DEV)
+RUN composer install --no-interaction --prefer-dist
+
+# Install dépendances JS
+#RUN pnpm install || npm install
+
+# Pas de build ici → en dev le build est fait à chaud
+
+# --------------------------------------------
+# ENV spécifiques DEV
+# --------------------------------------------
+ENV APP_ENV=dev \
+    APP_DEBUG=1 \
+    SERVER_NAME=:80
+
+# --------------------------------------------
+# Permissions
+# --------------------------------------------
+RUN mkdir -p var/cache var/log var/tmp && \
+    chown -R www-data:www-data var
+
+EXPOSE 80
+
+

@@ -224,7 +224,7 @@ final class RecipeController extends AbstractController
 
         // Generate PDF via DOMPDF
         $tPdfStart = microtime(true);
-        $pdfOutput = $pdfGenerator->generateFromHtml($html);
+        $pdfOutput = $pdfGenerator->generateFromHtml($html, $projectPublic);
         $tPdfEnd = microtime(true);
 
         $pdfBytes = strlen($pdfOutput);

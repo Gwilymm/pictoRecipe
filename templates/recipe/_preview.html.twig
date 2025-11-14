@@ -67,7 +67,7 @@
 	{% if recipe.ingredients is not empty %}
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6" id="preview-ingredients-container">
 			{% for ingredient in recipe.ingredients %}
-				<div class="card bg-base-200 shadow hover:shadow-lg transition-shadow">
+				<div class="card bg-base-200 dark:bg-base-300 shadow hover:shadow-lg transition-shadow">
 					<div
 						class="card-body p-4 text-center">
 						{# Pictogramme de l'ingrédient #}
@@ -123,13 +123,13 @@
 							</div>
 						{% else %}
 							<div class="flex justify-center mb-1">
-								<div class="w-12 h-12 rounded-md bg-base-300 flex items-center justify-center text-2xl">
+								<div class="w-12 h-12 rounded-md bg-base-300 dark:bg-base-200 flex items-center justify-center text-2xl">
 									🔪
 								</div>
 							</div>
 						{% endif %}
 
-						<p class="text-xs font-medium">{{ utensil.name }}</p>
+						<p class="text-xs font-medium text-base-content">{{ utensil.name }}</p>
 					</div>
 				</div>
 			{% endfor %}
