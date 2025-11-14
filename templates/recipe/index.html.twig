@@ -4,51 +4,97 @@
 {% endblock %}
 
 {% block body %}
-	<h1 class="text-3xl font-bold mb-6">Recettes</h1>
+	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6">
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+			<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">Recettes</h1>
+			<a href="{{ path('app_recipe_new') }}" class="btn btn-success btn-sm md:btn-md w-full sm:w-auto">➕ Ajouter une recette</a>
+		</div>
 
-	<div class="overflow-x-auto">
-		<table class="table table-zebra w-full">
-			<thead>
-				<tr>
-					{# Id column removed for cleaner UI #}
-					<th>Titre</th>
-					<th>Description</th>
-					<th>Portions</th>
-					<th>Préparation</th>
-					<th>Cuisson</th>
-					<th>Créé le</th>
-					<th>MàJ</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
+		{% if recipes is empty %}
+			<div class="alert alert-info">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+				</svg>
+				<span>Aucune recette trouvée. Commencez par en créer une !</span>
+			</div>
+		{% else %}
+			{# Vue mobile : Cartes #}
+			<div class="grid grid-cols-1 md:hidden gap-3">
 				{% for recipe in recipes %}
-					<tr>
-						<td class="font-medium align-top">{{ recipe.title }}</td>
-						<td class="align-top">
-							<div class="max-w-[48ch] text-sm text-base-content/80 leading-6">{{ recipe.description }}</div>
-						</td>
-						<td>{{ recipe.servings }}</td>
-						<td>{{ recipe.prepTimeMinutes }}</td>
-						<td>{{ recipe.cookTimeMinutes }}</td>
-						<td>{{ recipe.createdAt ? recipe.createdAt|date('Y-m-d') : '' }}</td>
-						<td>{{ recipe.updatedAt ? recipe.updatedAt|date('Y-m-d') : '' }}</td>
-						<td class="align-top">
-							<div class="flex flex-col items-end gap-2">
-								<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-xs btn-info w-28 rounded-md shadow">👁️ Voir</a>
-								<a href="{{ path('app_recipe_preview', {'id': recipe.id}) }}" class="btn btn-xs btn-primary w-28 rounded-md shadow">🔍 Prévisualiser</a>
-								<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-xs btn-warning w-28 rounded-md shadow">✏️ Modifier</a>
-							</div>
-						</td>
-					</tr>
-				{% else %}
-					<tr>
-						<td colspan="8" class="text-center">Aucune recette trouvée</td>
-					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
+					<div class="card bg-base-100 shadow-md hover:shadow-lg transition-shadow">
+						<div class="card-body p-3">
+							<h2 class="card-title text-base mb-2">{{ recipe.title }}</h2>
+							{% if recipe.description %}
+								<p class="text-xs text-base-content/70 mb-2 line-clamp-2">{{ recipe.description }}</p>
+							{% endif %}
 
-	<a href="{{ path('app_recipe_new') }}" class="btn btn-success mt-6">Ajouter une recette</a>
+							<div class="flex flex-wrap gap-2 mb-2">
+								<div class="badge badge-outline badge-sm gap-1">
+									<span>👥</span>
+									{{ recipe.servings }}
+								</div>
+								<div class="badge badge-outline badge-sm gap-1">
+									<span>⏱️</span>
+									{{ recipe.prepTimeMinutes }}min
+								</div>
+								<div class="badge badge-outline badge-sm gap-1">
+									<span>🔥</span>
+									{{ recipe.cookTimeMinutes }}min
+								</div>
+							</div>
+
+							<div class="text-xs text-base-content/50 mb-3">
+								Créé le
+								{{ recipe.createdAt ? recipe.createdAt|date('d/m/Y') : '' }}
+							</div>
+
+							<div class="flex gap-2">
+								<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-info btn-xs flex-1">👁️ Voir</a>
+								<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-warning btn-xs flex-1">✏️ Modifier</a>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+
+			{# Vue desktop : Tableau #}
+			<div class="hidden md:block overflow-x-auto">
+				<table class="table table-zebra w-full">
+					<thead>
+						<tr>
+							<th>Titre</th>
+							<th>Description</th>
+							<th>Portions</th>
+							<th>Préparation</th>
+							<th>Cuisson</th>
+							<th>Créé le</th>
+							<th>MàJ</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for recipe in recipes %}
+							<tr>
+								<td class="font-medium align-top">{{ recipe.title }}</td>
+								<td class="align-top">
+									<div class="max-w-[48ch] text-sm text-base-content/80 leading-6">{{ recipe.description }}</div>
+								</td>
+								<td>{{ recipe.servings }}</td>
+								<td>{{ recipe.prepTimeMinutes }}</td>
+								<td>{{ recipe.cookTimeMinutes }}</td>
+								<td class="text-sm">{{ recipe.createdAt ? recipe.createdAt|date('d/m/Y') : '' }}</td>
+								<td class="text-sm">{{ recipe.updatedAt ? recipe.updatedAt|date('d/m/Y') : '' }}</td>
+								<td class="align-top">
+									<div class="flex flex-col items-end gap-2">
+										<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-xs btn-info w-28 rounded-md shadow">👁️ Voir</a>
+										<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-xs btn-warning w-28 rounded-md shadow">✏️ Modifier</a>
+									</div>
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% endif %}
+	</div>
 {% endblock %}

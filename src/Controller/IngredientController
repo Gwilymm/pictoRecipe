@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/ingredient')]
+
 final class IngredientController extends AbstractController
 {
     #[Route(name: 'app_ingredient_index', methods: ['GET'])]
@@ -71,7 +71,7 @@ final class IngredientController extends AbstractController
     #[Route('/{id}', name: 'app_ingredient_delete', methods: ['POST'])]
     public function delete(Request $request, Ingredient $ingredient, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$ingredient->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $ingredient->getId(), $request->getPayload()->getString('_token'))) {
             $entityManager->remove($ingredient);
             $entityManager->flush();
         }

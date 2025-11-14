@@ -160,7 +160,7 @@ export default class extends Controller {
 			ingredientsContainer.className = 'alert alert-info mb-6';
 			ingredientsContainer.innerHTML = '<span>Aucun ingrédient défini pour cette recette.</span>';
 		} else {
-			ingredientsContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6';
+			ingredientsContainer.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6';
 			ingredientsContainer.innerHTML = ingredients.map(ing => `
 				<div class="card bg-base-200/50 shadow-sm">
 					<div class="card-body p-3 flex flex-row gap-3 items-center">
@@ -214,23 +214,21 @@ export default class extends Controller {
 			stepsContainer.className = 'space-y-4 mb-6';
 			stepsContainer.innerHTML = steps.map(step => `
 				<div class="card bg-base-200/30 shadow-sm">
-					<div class="card-body p-4">
-						<div class="flex gap-4 items-start">
-							<div class="flex flex-col items-center gap-3 shrink-0 w-28">
-								<div class="badge badge-lg badge-primary font-bold">${step.position}</div>
-								<div class="mt-2">
-									${step.pictogramUrls.length > 0 ? `
-										<div class="flex flex-col items-center gap-2">
-											${step.pictogramUrls.map(url => `<img src="${url}" alt="Picto" class="w-16 h-16 object-contain rounded-lg bg-base-200 p-1">`).join('')}
-										</div>
-									` : (step.pictogramUrls.length === 0 && step.pictogramUrls !== undefined ? '' : '')}
-								</div>
+					<div class="card-body p-3 md:p-4">
+						<div class="flex flex-col sm:flex-row gap-3 md:gap-4 items-start">
+							<div class="flex flex-row sm:flex-col items-center gap-2 md:gap-3 shrink-0 sm:w-20 md:w-28">
+								<div class="badge badge-md md:badge-lg badge-primary font-bold">${step.position}</div>
+								${step.pictogramUrls.length > 0 ? `
+									<div class="grid grid-cols-2 gap-1 md:gap-2 mt-0 sm:mt-2">
+										${step.pictogramUrls.map(url => `<img src="${url}" alt="Picto" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">`).join('')}
+									</div>
+								` : ''}
 							</div>
 							<div class="flex-1">
 								<div class="flex items-center gap-2 mb-2">
-									${step.duration ? `<span class="badge badge-ghost gap-1">⏱️ ${step.duration} minutes</span>` : ''}
+									${step.duration ? `<span class="badge badge-ghost badge-sm md:badge-md gap-1">⏱️ ${step.duration} minutes</span>` : ''}
 								</div>
-								<p class="text-base leading-relaxed">${step.content}</p>
+								<p class="text-sm md:text-base leading-relaxed">${step.content}</p>
 							</div>
 						</div>
 					</div>

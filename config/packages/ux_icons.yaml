@@ -1,0 +1,4 @@
+ux_icons:
+    icon_dir: "%kernel.project_dir%/assets/icons"
+    default_icon_attributes:
+        fill: "currentColor"

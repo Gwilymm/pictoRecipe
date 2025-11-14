@@ -109,28 +109,26 @@ export default class extends Controller {
 
 	createRecipeCard(recipe) {
 		const card = document.createElement("div");
-		card.className = "card bg-base-100 shadow-md p-4 text-center";
+		card.className = "card bg-base-100 shadow-md p-3 md:p-4 text-center";
 
 		const img = document.createElement("img");
 		img.src = recipe.image;
-		img.className = "w-32 h-32 object-cover mx-auto rounded-lg mb-3";
+		img.className = "w-24 h-24 md:w-32 md:h-32 object-cover mx-auto rounded-lg mb-2 md:mb-3";
 
 		const title = document.createElement("h3");
-		title.className = "font-bold mb-2";
+		title.className = "font-bold text-sm md:text-base mb-2";
 		title.textContent = recipe.title;
 
+		const badge = document.createElement("div");
+		badge.className = "badge badge-sm badge-outline gap-1 mb-2";
+		badge.innerHTML = "🥘 Marmiton";
+
 		const btn = document.createElement("button");
-		btn.className = "btn btn-primary btn-sm mt-2";
+		btn.className = "btn btn-primary btn-xs md:btn-sm w-full mt-2";
 		btn.textContent = "Voir la recette";
 		btn.addEventListener("click", () => this.openRecipeModal(recipe.url));
 
-		const ext = document.createElement("a");
-		ext.href = recipe.url;
-		ext.target = "_blank";
-		ext.className = "btn btn-outline btn-sm mt-2";
-		ext.textContent = "Marmiton";
-
-		card.append(img, title, btn, ext);
+		card.append(img, title, badge, btn);
 		return card;
 	}
 
@@ -144,11 +142,11 @@ export default class extends Controller {
 			modal.id = "recipe-modal";
 			modal.className = "modal";
 			modal.innerHTML = `
-				<div class="modal-box w-11/12 max-w-5xl">
+				<div class="modal-box w-11/12 max-w-5xl max-h-[90vh] overflow-y-auto">
 					<form method="dialog">
-						<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+						<button class="btn btn-xs md:btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 					</form>
-					<div id="recipe-modal-content" class="py-4"></div>
+					<div id="recipe-modal-content" class="py-2 md:py-4"></div>
 				</div>
 				<form method="dialog" class="modal-backdrop"><button>close</button></form>`;
 			document.body.appendChild(modal);
@@ -180,10 +178,10 @@ export default class extends Controller {
 	============================================================ */
 	displayRecipeJson(recipe, container) {
 		container.innerHTML = `
-			<div class="space-y-6">
+			<div class="space-y-3 md:space-y-6">
 				${this.sectionTitle(recipe)}
 				<div class="flex justify-end">
-					<button class="btn btn-success btn-sm" id="import-recipe-btn">📥 Importer cette recette</button>
+					<button class="btn btn-success btn-xs md:btn-sm" id="import-recipe-btn">📥 Importer cette recette</button>
 				</div>
 				${this.sectionPrimary(recipe)}
 				${this.sectionTimes(recipe.times)}
@@ -206,16 +204,16 @@ export default class extends Controller {
 	sectionTitle(r) {
 		if (!r.title) return "";
 		return `
-			<div class="bg-primary text-primary-content p-6 rounded-xl shadow-xl">
-				<h2 class="text-3xl font-bold text-center">${r.title}</h2>
+			<div class="bg-primary text-primary-content p-3 md:p-6 rounded-xl shadow-xl">
+				<h2 class="text-xl md:text-2xl lg:text-3xl font-bold text-center">${r.title}</h2>
 			</div>`;
 	}
 
 	sectionPrimary(r) {
 		if (!r.primary?.length) return "";
 		return `
-			<div class="flex flex-wrap justify-center gap-2">
-				${r.primary.map(i => `<div class="badge badge-lg badge-outline">${i}</div>`).join("")}
+			<div class="flex flex-wrap justify-center gap-1 md:gap-2">
+				${r.primary.map(i => `<div class="badge badge-sm md:badge-lg badge-outline">${i}</div>`).join("")}
 			</div>`;
 	}
 
@@ -224,22 +222,22 @@ export default class extends Controller {
 
 		return `
     <div class="card bg-base-200 shadow-xl">
-        <div class="card-body">
-            <h3 class="card-title text-2xl mb-4">⏱️ Temps</h3>
+        <div class="card-body p-3 md:p-6">
+            <h3 class="card-title text-lg md:text-2xl mb-2 md:mb-4">⏱️ Temps</h3>
 
             <!-- Temps total -->
-            <div class="stat place-items-center bg-primary text-primary-content rounded-2xl shadow mb-6">
-                <div class="stat-title text-primary-content/80">Temps total</div>
-                <div class="stat-value text-4xl">${times.total}</div>
+            <div class="stat place-items-center bg-primary text-primary-content rounded-2xl shadow mb-3 md:mb-6 p-3">
+                <div class="stat-title text-xs md:text-sm text-primary-content/80">Temps total</div>
+                <div class="stat-value text-xl md:text-3xl">${times.total}</div>
             </div>
 
             <!-- Stats détaillées -->
-            <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
+            <div class="stats stats-vertical shadow w-full">
                 ${times.details.map(d => `
-                    <div class="stat">
-                        <div class="stat-figure text-secondary text-3xl">🕒</div>
-                        <div class="stat-title">${d.label}</div>
-                        <div class="stat-value text-xl">${d.value}</div>
+                    <div class="stat p-3">
+                        <div class="stat-figure text-secondary text-lg md:text-2xl">🕒</div>
+                        <div class="stat-title text-xs md:text-sm">${d.label}</div>
+                        <div class="stat-value text-sm md:text-lg">${d.value}</div>
                     </div>
                 `).join("")}
             </div>
@@ -265,17 +263,17 @@ export default class extends Controller {
 
 		let html = `
         <div class="card bg-base-200 shadow-xl">
-            <div class="card-body">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="text-3xl">🍪</div>
-                    <h3 class="card-title text-3xl font-bold">Ingrédients</h3>
+            <div class="card-body p-3 md:p-6">
+                <div class="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+                    <div class="text-2xl md:text-3xl">🍪</div>
+                    <h3 class="card-title text-lg md:text-2xl lg:text-3xl font-bold">Ingrédients</h3>
                 </div>
     `;
 
 		Object.entries(groups).forEach(([ groupName, items ]) => {
 			html += `
-            <h4 class="text-xl font-bold mt-6 mb-2 text-primary">${groupName}</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <h4 class="text-base md:text-xl font-bold mt-3 md:mt-6 mb-2 text-primary">${groupName}</h4>
+            <div class="grid grid-cols-2 gap-2 md:gap-3">
         `;
 
 			items.forEach(i => {
@@ -287,9 +285,9 @@ export default class extends Controller {
 				].join(" ").replace(/\s+/g, " ").trim();
 
 				html += `
-                <div class="p-4 rounded-xl bg-base-100 shadow flex items-center gap-3 border border-base-300 hover:shadow-lg transition">
-                    <span class="text-xl">✓</span>
-                    <span>${text}</span>
+                <div class="p-2 md:p-4 rounded-xl bg-base-100 shadow flex items-center gap-2 md:gap-3 border border-base-300 hover:shadow-lg transition">
+                    <span class="text-base md:text-xl">✓</span>
+                    <span class="text-xs md:text-sm">${text}</span>
                 </div>
             `;
 			});
@@ -327,16 +325,16 @@ export default class extends Controller {
 
 		let html = `
         <div class="card bg-base-200 shadow-xl">
-            <div class="card-body">
-                <h3 class="card-title text-2xl">🔧 Ustensiles</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+            <div class="card-body p-3 md:p-6">
+                <h3 class="card-title text-lg md:text-2xl">🔧 Ustensiles</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mt-2 md:mt-4">
     `;
 
 		unique.forEach(u => {
 			const text = `${u.quantity || ""} `.trim();
 
 			html += `
-            <div class="p-3 rounded-xl bg-base-100 shadow border border-base-300 flex items-center justify-center text-center hover:shadow-lg transition">
+            <div class="p-2 md:p-3 rounded-xl bg-base-100 shadow border border-base-300 flex items-center justify-center text-center hover:shadow-lg transition text-xs md:text-sm">
                 ${text}
             </div>
         `;
@@ -359,17 +357,17 @@ export default class extends Controller {
 		if (!steps?.length) return "";
 		return `
 			<div class="card bg-base-200 shadow-xl">
-				<div class="card-body">
-					<h3 class="card-title text-2xl">👨‍🍳 Préparation</h3>
+				<div class="card-body p-3 md:p-6">
+					<h3 class="card-title text-lg md:text-2xl">👨‍🍳 Préparation</h3>
 
-					<div class="mt-4 space-y-4">
+					<div class="mt-2 md:mt-4 space-y-2 md:space-y-4">
 						${steps.map((s, i) => `
-							<div class="card bg-base-100 p-4 shadow">
-								<h4 class="font-bold mb-2">
-									<span class="badge badge-primary">${i + 1}</span>
+							<div class="card bg-base-100 p-2 md:p-4 shadow">
+								<h4 class="font-bold mb-1 md:mb-2 text-sm md:text-base">
+									<span class="badge badge-sm md:badge-md badge-primary">${i + 1}</span>
 									${s.number || ""}
 								</h4>
-								<p>${s.text}</p>
+								<p class="text-xs md:text-sm">${s.text}</p>
 							</div>`).join("")}
 					</div>
 				</div>

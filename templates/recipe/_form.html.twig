@@ -7,32 +7,32 @@
 {# Determine submit label: prefer explicit `button_label`, otherwise infer from bound entity (has id => update) #}
 {% set submit_label = (button_label is defined) ? button_label : ((form.vars.data is defined and form.vars.data.id) ? 'Mettre à jour' : 'Enregistrer la recette') %}
 {% if form.ingredients is defined and form.ingredients.vars.prototype is defined %}
-	{% set ingredient_prototype %}{{ form_widget(form.ingredients.vars.prototype.position) }}<div class="flex items-start gap-3">
-		<div class="flex-1 grid grid-cols-3 gap-2">
-			<div class="col-span-2">{{ form_widget(form.ingredients.vars.prototype.name) }}</div>
-			<div class="col-span-1">{{ form_widget(form.ingredients.vars.prototype.amount) }}</div>
-			<div class="col-span-1">{{ form_widget(form.ingredients.vars.prototype.unit) }}</div>
+	{% set ingredient_prototype %}{{ form_widget(form.ingredients.vars.prototype.position) }}<div class="flex flex-col sm:flex-row items-start gap-2 md:gap-3">
+		<div class="flex-1 grid grid-cols-3 gap-2 w-full">
+			<div class="col-span-3 sm:col-span-2">{{ form_widget(form.ingredients.vars.prototype.name) }}</div>
+			<div class="col-span-2 sm:col-span-1">{{ form_widget(form.ingredients.vars.prototype.amount) }}</div>
+			<div class="col-span-1 sm:col-span-1">{{ form_widget(form.ingredients.vars.prototype.unit) }}</div>
 		</div>
-		<div class="flex items-start">
-			<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+		<div class="flex items-start w-full sm:w-auto">
+			<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
 		</div>
 	</div>
-	<div class="mt-3 pt-3 border-t border-base-300">{{ include('partials/_pictogram_widget.html.twig', {'form_field': form.ingredients.vars.prototype.name, 'url_field': form.ingredients.vars.prototype.pictogramUrl, 'placeholder': 'Rechercher un pictogramme pour cet ingrédient...', 'prefill': false}) }}</div>
+	<div class="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-base-300">{{ include('partials/_pictogram_widget.html.twig', {'form_field': form.ingredients.vars.prototype.name, 'url_field': form.ingredients.vars.prototype.pictogramUrl, 'placeholder': 'Rechercher un pictogramme pour cet ingrédient...', 'prefill': false}) }}</div>
 	{% endset %}
 {% else %}
 	{% set ingredient_prototype = '' %}
 {% endif %}
 
 {% if form.steps is defined and form.steps.vars.prototype is defined %}
-	{% set step_prototype %}{{ form_widget(form.steps.vars.prototype.position) }}<div class="flex gap-3 items-start">
-		<div class="flex-1">{{ form_widget(form.steps.vars.prototype.content) }}</div>
-		<div class="w-28">{{ form_widget(form.steps.vars.prototype.durationMinutes) }}</div>
-		<div class="flex items-start">
-			<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+	{% set step_prototype %}{{ form_widget(form.steps.vars.prototype.position) }}<div class="flex flex-col sm:flex-row gap-2 md:gap-3 items-start">
+		<div class="flex-1 w-full">{{ form_widget(form.steps.vars.prototype.content) }}</div>
+		<div class="w-full sm:w-28">{{ form_widget(form.steps.vars.prototype.durationMinutes) }}</div>
+		<div class="flex items-start w-full sm:w-auto">
+			<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
 		</div>
 	</div>
-	<div class="mt-3 pt-3 border-t border-base-300">
-		<div class="mb-2 font-semibold text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
+	<div class="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-base-300">
+		<div class="mb-2 font-semibold text-xs md:text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
 		{{ include('partials/_pictogram_multiple_widget.html.twig', {'form_field': form.steps.vars.prototype.content, 'urls_field': form.steps.vars.prototype.pictogramUrls, 'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'}) }}</div>
 	{% endset %}
 {% else %}
@@ -40,8 +40,8 @@
 {% endif %}
 
 {# Stepper header #}
-<div class="mb-6">
-	<ul class="steps steps-horizontal w-full" data-stepper-target="header">
+<div class="mb-4 md:mb-6">
+	<ul class="steps steps-horizontal w-full text-xs md:text-sm" data-stepper-target="header">
 		<li class="step step-primary" data-stepper-target="stepItem" data-step-name="Informations">
 			<span class="hidden sm:inline">Informations</span>
 		</li>
@@ -60,22 +60,22 @@
 	</ul>
 
 	{# Nom de l'étape active sur mobile #}
-	<div class="text-center mt-3 sm:hidden">
-		<span class="badge badge-lg badge-primary" data-stepper-target="currentStepName">Informations</span>
+	<div class="text-center mt-2 md:mt-3 sm:hidden">
+		<span class="badge badge-md md:badge-lg badge-primary" data-stepper-target="currentStepName">Informations</span>
 	</div>
 </div>
 
 {# Step 1: Informations générales #}
-<section class="card bg-base-100 shadow p-4" data-stepper-target="step">
-	<div class="card-body">
-		<h2 class="card-title">Informations générales</h2>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<section class="card bg-base-100 shadow p-3 md:p-4" data-stepper-target="step">
+	<div class="card-body p-3 md:p-6">
+		<h2 class="card-title text-lg md:text-xl">Informations générales</h2>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
 			<div>
 				{{ form_row(form.title) }}
 			</div>
 			<div>
 				{{ form_row(form.servings) }}
-				<div class="flex gap-2 mt-2">
+				<div class="flex flex-col sm:flex-row gap-2 mt-2">
 					{{ form_row(form.prepTimeMinutes) }}
 					{{ form_row(form.cookTimeMinutes) }}
 				</div>
@@ -212,37 +212,37 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 
 } );
 		</script>
-		<div class="mt-4">
+		<div class="mt-3 md:mt-4">
 			{{ form_row(form.description) }}
 		</div>
 
 		{# Boutons de navigation #}
-		<div class="flex justify-end gap-2 mt-6 pt-4 border-t">
-			<button type="button" class="btn btn-primary" data-action="stepper#next">
-				Suivant : Ingrédients ▶
+		<div class="flex justify-end gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
+			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
+				Suivant ▶
 			</button>
 		</div>
 	</div>
-</section>{# Step 2: Ingredients #}<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
-	<div class="card-body">
-		<h3 class="text-lg font-semibold">🧂 Ingrédients</h3>
+</section>{# Step 2: Ingredients #}<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
+	<div class="card-body p-3 md:p-6">
+		<h3 class="text-base md:text-lg font-semibold">🧂 Ingrédients</h3>
 
-		<div data-controller="form-collection" data-prototype="{{ ingredient_prototype|e('html_attr') }}" class="mt-3 space-y-2">
+		<div data-controller="form-collection" data-prototype="{{ ingredient_prototype|e('html_attr') }}" class="mt-2 md:mt-3 space-y-2">
 			<div data-form-collection-target="list" class="space-y-2">
 				{% for ingredient in form.ingredients %}
 					<div
-						class="collection-item card bg-base-200 p-3">
+						class="collection-item card bg-base-200 p-2 md:p-3">
 						{# Champ position caché #}
 						{{ form_widget(ingredient.position) }}
 
-						<div class="flex items-start gap-3">
-							<div class="flex-1 grid grid-cols-3 gap-2">
-								<div class="col-span-2">{{ form_widget(ingredient.name) }}</div>
-								<div class="col-span-1">{{ form_widget(ingredient.amount) }}</div>
-								<div class="col-span-1">{{ form_widget(ingredient.unit) }}</div>
+						<div class="flex flex-col sm:flex-row items-start gap-2 md:gap-3">
+							<div class="flex-1 grid grid-cols-3 gap-2 w-full">
+								<div class="col-span-3 sm:col-span-2">{{ form_widget(ingredient.name) }}</div>
+								<div class="col-span-2 sm:col-span-1">{{ form_widget(ingredient.amount) }}</div>
+								<div class="col-span-1 sm:col-span-1">{{ form_widget(ingredient.unit) }}</div>
 							</div>
-							<div class="flex items-start">
-								<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+							<div class="flex items-start w-full sm:w-auto">
+								<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
 							</div>
 						</div>
 
@@ -256,160 +256,149 @@ input.addEventListener( 'change', () => setSelected( input.checked ) );
 						</div>
 					</div>
 				{% else %}
-					<p class="text-sm text-muted">Aucun ingrédient — ajoutez le premier.</p>
+					<p class="text-xs md:text-sm text-muted">Aucun ingrédient — ajoutez le premier.</p>
 				{% endfor %}
 			</div>
 
-			<div class="mt-3">
-				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-primary">Ajouter un ingrédient</button>
+			<div class="mt-2 md:mt-3">
+				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-primary btn-sm md:btn-md w-full sm:w-auto">Ajouter un ingrédient</button>
 			</div>
 		</div>
 
 		{# Boutons de navigation #}
-		<div class="flex justify-between gap-2 mt-6 pt-4 border-t">
-			<button type="button" class="btn btn-outline" data-action="stepper#prev">
+		<div class="flex justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
+			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
 				◀ Précédent
 			</button>
-			<button type="button" class="btn btn-primary" data-action="stepper#next">
-				Suivant : Étapes ▶
+			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
+				Suivant ▶
 			</button>
 		</div>
 	</div>
 </section>
 {# Step 3: Steps #}
-<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
-	<div class="card-body">
-		<h3 class="text-lg font-semibold">👨‍🍳 Étapes</h3>
+<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
+	<div class="card-body p-3 md:p-6">
+		<h3 class="text-base md:text-lg font-semibold">👨‍🍳 Étapes</h3>
 
-		<div data-controller="form-collection" data-prototype="{{ step_prototype|e('html_attr') }}" class="mt-3 space-y-2">
+		<div data-controller="form-collection" data-prototype="{{ step_prototype|e('html_attr') }}" class="mt-2 md:mt-3 space-y-2">
 			<div data-form-collection-target="list" class="space-y-2">
 				{% for step in form.steps %}
 					<div
-						class="collection-item card bg-base-200 p-3">
+						class="collection-item card bg-base-200 p-2 md:p-3">
 						{# Champ position caché #}
 						{{ form_widget(step.position) }}
 
-						<div class="flex gap-3 items-start">
-							<div class="flex-1">{{ form_widget(step.content) }}</div>
-							<div class="w-28">{{ form_widget(step.durationMinutes) }}</div>
-							<div class="flex items-start">
-								<button type="button" class="btn btn-sm btn-ghost btn-error js-remove">🗑</button>
+						<div class="flex flex-col sm:flex-row gap-2 md:gap-3 items-start">
+							<div class="flex-1 w-full">{{ form_widget(step.content) }}</div>
+							<div class="w-full sm:w-28">{{ form_widget(step.durationMinutes) }}</div>
+							<div class="flex items-start w-full sm:w-auto">
+								<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
 							</div>
 						</div>
 
 						{# Widget pour plusieurs pictogrammes #}
-						<div class="mt-3 pt-3 border-t border-base-300">
-							<div class="mb-2 font-semibold text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
+						<div class="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-base-300">
+							<div class="mb-2 font-semibold text-xs md:text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
 							{{ include('partials/_pictogram_multiple_widget.html.twig', {'urls_field': step.pictogramUrls,	'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'}) }}
 						</div>
 					</div>
 				{% else %}
-					<p class="text-sm text-muted">Aucune étape — ajoutez la première.</p>
+					<p class="text-xs md:text-sm text-muted">Aucune étape — ajoutez la première.</p>
 				{% endfor %}
 			</div>
 
-			<div class="mt-3">
-				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-secondary">Ajouter une étape</button>
+			<div class="mt-2 md:mt-3">
+				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-secondary btn-sm md:btn-md w-full sm:w-auto">Ajouter une étape</button>
 			</div>
 		</div>
 
 		{# Boutons de navigation #}
-		<div class="flex justify-between gap-2 mt-6 pt-4 border-t">
-			<button type="button" class="btn btn-outline" data-action="stepper#prev">
+		<div class="flex justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
+			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
 				◀ Précédent
 			</button>
-			<button type="button" class="btn btn-primary" data-action="stepper#next">
-				Suivant : Ustensiles ▶
+			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
+				Suivant ▶
 			</button>
 		</div>
 	</div>
-</section>{# Step 4: Utensils #}<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
-	<div class="card-body">
-		<h3 class="text-lg font-semibold">🍴 Ustensiles</h3>
-		<p class="text-sm text-base-content/70 mb-4">Sélectionnez les ustensiles utilisés dans cette recette.</p>
+</section>{# Step 4: Utensils #}<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
+	<div class="card-body p-3 md:p-6">
+		<h3 class="text-base md:text-lg font-semibold">🍴 Ustensiles</h3>
+		<p class="text-xs md:text-sm text-base-content/70 mb-3 md:mb-4">Sélectionnez les ustensiles utilisés dans cette recette.</p>
 
 		{# Option 1: Sélection multiple depuis la liste existante #}
-		<div class="mb-4">
+		<div class="mb-3 md:mb-4">
 			<label class="label">
-				<span class="label-text font-semibold">Ustensiles disponibles</span>
+				<span class="label-text font-semibold text-xs md:text-sm">Ustensiles disponibles</span>
 			</label>
 
 			{# Render expanded checkboxes as a grid of cards with pictograms (fallback emoji if missing) #}
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
 				{% for child in form.utensils %}
 					{% set pictogram = child.vars.attr['data-pictogram']|default(null) %}
 
-					<label class="
-							            utensil-card relative flex items-center gap-3 p-3
-							            rounded-xl cursor-pointer border border-base-300
-							            bg-base-200
-							            transition-all duration-150
-							            hover:bg-base-300
-							
-							            peer-checked:bg-primary peer-checked:text-primary-content
-							            peer-checked:ring-2 peer-checked:ring-primary
-							        ">
-						{{ form_widget(child, {'attr': {'class': 'peer hidden'}}) }}
+					<label class="flex flex-col items-center gap-1 p-2 md:p-3 rounded-xl cursor-pointer border border-base-300 bg-base-200 transition-all duration-150 hover:bg-base-300 has-checked:bg-primary has-checked:text-primary-content has-checked:ring-2 has-checked:ring-primary">
+						{{ form_widget(child, {'attr': {'class': 'hidden'}}) }}
 
 						{% if pictogram %}
-							<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-10 h-10 object-contain rounded"/>
+							<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-8 h-8 md:w-10 md:h-10 object-contain rounded"/>
 						{% else %}
-							<div class="w-10 h-10 rounded bg-base-100 flex items-center justify-center text-lg">🔪</div>
+							<div class="w-8 h-8 md:w-10 md:h-10 rounded bg-base-100 flex items-center justify-center text-base md:text-lg">🔪</div>
 						{% endif %}
 
-						<span class="ml-1 font-medium">{{ child.vars.label }}</span>
+						<span class="ml-2 font-medium text-xs md:text-sm text-center">{{ child.vars.label }}</span>
 					</label>
 
 				{% else %}
-					<p class="text-sm opacity-70">Aucun ustensile — ajoutez-en un via la gestion d'ustensiles.</p>
+					<p class="text-xs md:text-sm opacity-70">Aucun ustensile — ajoutez-en un via la gestion d'ustensiles.</p>
 				{% endfor %}
 			</div>
-
-
 		</div>
 
 		{# Option 2: Lien pour ajouter un nouvel ustensile #}
-		<div class="alert alert-info">
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+		<div class="alert alert-info text-xs md:text-sm">
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5 md:w-6 md:h-6">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 			</svg>
 			<div>
-				<div class="text-sm">
+				<div class="text-xs md:text-sm">
 					<strong>Ustensile manquant ?</strong><br/>
 					Vous pouvez créer un nouvel ustensile avec son pictogramme.
 				</div>
 			</div>
-			<a href="{{ path('app_utensil_new') }}" target="_blank" class="btn btn-sm btn-primary">
+			<a href="{{ path('app_utensil_new') }}" target="_blank" class="btn btn-xs md:btn-sm btn-primary">
 				➕ Créer un ustensile
 			</a>
 		</div>
 
 		{# Boutons de navigation #}
-		<div class="flex justify-between gap-2 mt-6 pt-4 border-t">
-			<button type="button" class="btn btn-outline" data-action="stepper#prev">
+		<div class="flex justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
+			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
 				◀ Précédent
 			</button>
-			<button type="button" class="btn btn-primary" data-action="stepper#next">
-				Suivant : Aperçu ▶
+			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
+				Suivant ▶
 			</button>
 		</div>
 	</div>
 </section>
-<section class="card bg-base-100 shadow p-4 hidden" data-stepper-target="step">
-	<div class="card-body">
-		<h3 class="text-lg font-semibold">Aperçu</h3>
-		<p class="text-sm text-base-content/70 mb-4">Aperçu de la fiche avant enregistrement (basé sur les valeurs du formulaire).</p>
+<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
+	<div class="card-body p-3 md:p-6">
+		<h3 class="text-base md:text-lg font-semibold">Aperçu</h3>
+		<p class="text-xs md:text-sm text-base-content/70 mb-3 md:mb-4">Aperçu de la fiche avant enregistrement (basé sur les valeurs du formulaire).</p>
 		<div class="recipe-preview max-w-4xl mx-auto">
 			{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
 		</div>
 		{# Boutons de navigation et enregistrement #}
-		<div class="flex justify-between gap-2 mt-6 pt-4 border-t">
-			<button type="button" class="btn btn-outline" data-action="stepper#prev">
+		<div class="flex flex-col sm:flex-row justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
+			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
 				◀ Précédent
 			</button>
-			<div class="flex gap-2">
-				<a href="{{ path('app_recipe_index') }}" class="btn btn-ghost">Annuler</a>
-				<button type="submit" class="btn btn-success gap-2">
+			<div class="flex flex-col sm:flex-row gap-2">
+				<a href="{{ path('app_recipe_index') }}" class="btn btn-ghost btn-sm md:btn-md">Annuler</a>
+				<button type="submit" class="btn btn-success btn-sm md:btn-md gap-2">
 					💾
 					{{ submit_label }}
 				</button>

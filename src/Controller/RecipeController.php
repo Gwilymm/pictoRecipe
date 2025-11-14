@@ -251,9 +251,7 @@ final class RecipeController extends AbstractController
     #[Route('/{id<\d+>}/show', name: 'app_recipe_show', methods: ['GET'])]
     public function show(Recipe $recipe): Response
     {
-        return $this->render('recipe/show.html.twig', [
-            'recipe' => $recipe,
-        ]);
+        return $this->redirectToRoute('app_recipe_preview', ['id' => $recipe->getId()]);
     }
 
     #[Route('/{id}/edit', name: 'app_recipe_edit', methods: ['GET', 'POST'])]

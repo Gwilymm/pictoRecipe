@@ -4,42 +4,107 @@
 {% endblock %}
 
 {% block body %}
-	<h1 class="text-3xl font-bold mb-6">Galerie des pictogrammes</h1>
+	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6" data-controller="pictogram-filter">
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
+			<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">
+				<svg class="inline-block w-6 h-6 md:w-8 md:h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
+				</svg>
+				Galerie des Pictogrammes
+			</h1>
+			<a href="{{ path('app_pictogram_new') }}" class="btn btn-primary btn-sm md:btn-md w-full sm:w-auto">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 md:w-5 md:h-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+				</svg>
+				Ajouter un pictogramme
+			</a>
+		</div>
 
-	<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-		{% for pictogram in pictograms %}
-			<div class="card bg-base-100 shadow-md w-full">
-				<figure><img src="{{ asset(pictogram.filePath) }}" alt="{{ pictogram.name }}" class="w-24 h-24 object-contain mx-auto"></figure>
-				<div class="card-body p-2 text-center">
-					<h3 class="text-sm font-semibold">{{ pictogram.name }}</h3>
-					<p class="text-xs text-gray-500">{{ pictogram.format|upper }}</p>
-					<div class="card-actions justify-center mt-2">
-						<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-xs btn-warning">Modifier</a>
-						<button onclick="document.getElementById('delete-modal-{{ pictogram.id }}').showModal()" class="btn btn-xs btn-error">Supprimer</button>
-					</div>
-				</div>
+		{% if pictograms is empty %}
+			<div class="alert alert-info text-sm md:text-base">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5 md:w-6 md:h-6">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+				</svg>
+				<span>Aucun pictogramme trouvé. Commencez par en ajouter un !</span>
 			</div>
-
-			<!-- Delete Modal -->
-			<dialog id="delete-modal-{{ pictogram.id }}" class="modal">
-				<div class="modal-box">
-					<h3 class="font-bold text-lg">Confirmer la suppression</h3>
-					<p class="py-4">Êtes-vous sûr de vouloir supprimer le pictogramme "{{ pictogram.name }}" ?</p>
-					<div class="modal-action">
-						<form method="post" action="{{ path('app_pictogram_delete', {'id': pictogram.id}) }}" style="display: inline;">
-							<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ pictogram.id) }}">
-							<button type="submit" class="btn btn-error">Supprimer</button>
-						</form>
-						<button onclick="document.getElementById('delete-modal-{{ pictogram.id }}').close()" class="btn">Annuler</button>
-					</div>
-				</div>
-			</dialog>
 		{% else %}
-			<div class="col-span-full text-center py-8">
-				<p class="text-gray-500">Aucun pictogramme trouvé</p>
+			{# Barre de recherche #}
+			<div class="mb-4 md:mb-6">
+				<div class="form-control">
+					<div class="join w-full">
+						<input type="text" placeholder="Rechercher un pictogramme..." class="input input-bordered input-sm md:input-md join-item flex-1" data-pictogram-filter-target="searchInput" data-action="input->pictogram-filter#filter">
+						<button class="btn btn-square btn-sm md:btn-md join-item" data-action="click->pictogram-filter#clear">
+							{{ ux_icon('heroicons:x-mark', {class: 'h-4 w-4 md:h-5 md:w-5'}) }}
+						</button>
+					</div>
+				</div>
+				<div class="text-xs md:text-sm text-base-content/70 mt-2" data-pictogram-filter-target="counter">
+					<span data-pictogram-filter-target="visibleCount">{{ pictograms|length }}</span>
+					/
+					{{ pictograms|length }}
+					pictogrammes
+				</div>
 			</div>
-		{% endfor %}
-	</div>
 
-	<a href="{{ path('app_pictogram_new') }}" class="btn btn-primary">Ajouter un pictogramme</a>
+			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4" data-pictogram-filter-target="grid">
+				{% for pictogram in pictograms %}
+					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow pictogram-card" data-pictogram-filter-target="card" data-name="{{ pictogram.name|lower }}" data-format="{{ pictogram.format|lower }}">
+						<figure class="pt-2 md:pt-4">
+							<img src="{{ asset(pictogram.filePath) }}" alt="{{ pictogram.name }}" class="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 object-contain">
+						</figure>
+						<div class="card-body p-2 md:p-3 flex flex-col items-center text-center gap-1 md:gap-2">
+							<h3 class="font-semibold text-xs md:text-sm line-clamp-2">{{ pictogram.name }}</h3>
+							<span class="badge badge-xs">{{ pictogram.format|upper }}</span>
+
+							<div class="card-actions w-full flex gap-1">
+								<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-xs md:btn-sm btn-warning flex-1">
+									{{ ux_icon('heroicons:pencil-square', {class: 'w-3 h-3 md:w-4 md:h-4'}) }}
+									Modifier
+								</a>
+								<button onclick="document.getElementById('delete-modal-{{ pictogram.id }}').showModal()" class="btn btn-xs md:btn-sm btn-error flex-1">
+									{{ ux_icon('heroicons:trash', {class: 'w-3 h-3 md:w-4 md:h-4'}) }}
+									Supprimer
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Delete Modal -->
+					<dialog id="delete-modal-{{ pictogram.id }}" class="modal">
+						<div class="modal-box">
+							<h3 class="font-bold text-base md:text-lg">Confirmer la suppression</h3>
+							<p class="py-3 md:py-4 text-sm md:text-base">Êtes-vous sûr de vouloir supprimer le pictogramme "{{ pictogram.name }}" ?</p>
+							<div class="modal-action">
+								<form method="post" action="{{ path('app_pictogram_delete', {'id': pictogram.id}) }}" style="display: inline;">
+									<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ pictogram.id) }}">
+									<button type="submit" class="btn btn-sm md:btn-md btn-error">Supprimer</button>
+								</form>
+								<button onclick="document.getElementById('delete-modal-{{ pictogram.id }}').close()" class="btn btn-sm md:btn-md">Annuler</button>
+							</div>
+						</div>
+					</dialog>
+				{% endfor %}
+			</div>
+
+			{# Message quand aucun résultat #}
+			<div class="alert alert-warning mt-4 hidden" data-pictogram-filter-target="noResults">
+				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewbox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+				</svg>
+				<span>Aucun pictogramme ne correspond à votre recherche.</span>
+			</div>
+
+			{# Pagination #}
+			<div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 md:mt-6" data-pictogram-filter-target="pagination">
+				<div
+					class="text-xs md:text-sm text-base-content/70" data-pictogram-filter-target="pageInfo"><!-- Dynamically updated -->
+				</div>
+				<div class="join">
+					<button class="join-item btn btn-xs md:btn-sm" data-action="click->pictogram-filter#prevPage">«</button>
+					<!-- Page numbers will be inserted here dynamically -->
+					<button class="join-item btn btn-xs md:btn-sm" data-action="click->pictogram-filter#nextPage">»</button>
+				</div>
+			</div>
+		{% endif %}
+	</div>
 {% endblock %}

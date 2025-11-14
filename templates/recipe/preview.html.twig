@@ -7,34 +7,23 @@
 
 {% block body %}
 	<div
-		class="container mx-auto px-4 py-6">
+		class="container mx-auto px-4 py-4 md:py-6">
 		{# Barre d'actions en haut: ajout d'un bouton Enregistrer et réorganisation #}
-		<div class="flex flex-wrap gap-3 mb-6 items-center justify-between">
-			<div class="flex items-center gap-3">
-				<a href="{{ path('app_recipe_index') }}" class="btn btn-outline btn-sm">
-					← Retour à la liste
+		<div class="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3 mb-4 md:mb-6 items-stretch sm:items-center justify-between">
+			<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
+				<a href="{{ path('app_recipe_index') }}" class="btn btn-outline btn-xs md:btn-sm">
+					<span class="hidden sm:inline">← Retour à la liste</span>
+					<span class="sm:hidden">← Liste</span>
 				</a>
-				<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-outline btn-primary btn-sm">
-					✏️ Modifier
+				<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-outline btn-primary btn-xs md:btn-sm">
+					<span class="hidden sm:inline">✏️ Modifier</span>
+					<span class="sm:hidden">✏️ Éditer</span>
 				</a>
 			</div>
-			<div
-				class="flex items-center gap-3">
-				{# Hidden save form: renders all fields inside a hidden container so the visible save buttons can submit it via form attribute #}
-				{{ form_start(form, {'action': path('app_recipe_preview_save'), 'attr': {'id': 'preview-save-form'}}) }}
-				<div
-					style="display:none;">
-					{# ensure the id is sent when editing existing recipes #}
-					{% if recipe.id is defined and recipe.id %}
-						<input type="hidden" name="recipe[id]" value="{{ recipe.id }}"/>
-					{% endif %}
-					{{ form_widget(form) }}
-				</div>
-				{{ form_end(form) }}
-
-
-				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
-					📄 Télécharger en PDF
+			<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
+				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-xs md:btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
+					<span class="hidden sm:inline">📄 Télécharger en PDF</span>
+					<span class="sm:hidden">📄 PDF</span>
 				</a>
 			</div>
 		</div>
@@ -43,13 +32,15 @@
 		{{ include('recipe/_preview.html.twig', { recipe: recipe }) }}
 
 		{# Actions en bas: Enregistrer en évidence #}
-		<div class="flex flex-wrap gap-3 mt-6 justify-center">
-			<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">
-				← Retour à la liste
+		<div class="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3 mt-4 md:mt-6 justify-center">
+			<a href="{{ path('app_recipe_index') }}" class="btn btn-outline btn-sm md:btn-md">
+				<span class="hidden sm:inline">← Retour à la liste</span>
+				<span class="sm:hidden">← Liste</span>
 			</a>
 
-			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary pdf-download-btn">
-				📄 Télécharger le PDF
+			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-sm md:btn-md pdf-download-btn">
+				<span class="hidden sm:inline">📄 Télécharger le PDF</span>
+				<span class="sm:hidden">📄 PDF</span>
 			</a>
 		</div>
 	</div>
