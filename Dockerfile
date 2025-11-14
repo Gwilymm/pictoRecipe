@@ -78,6 +78,7 @@ RUN install-php-extensions \
     zip \
     gd \
     xsl \
+    gd \
     gmp \
     apcu
 
