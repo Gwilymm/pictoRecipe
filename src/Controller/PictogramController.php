@@ -118,7 +118,7 @@ final class PictogramController extends AbstractController
 	#[Route('/{id}/edit', name: 'app_pictogram_edit', methods: ['GET', 'POST'])]
 	public function edit(Request $request, Pictogram $pictogram, EntityManagerInterface $entityManager): Response
 	{
-		$form = $this->createForm(PictogramType::class, $pictogram, ['require_image' => false]);
+		$form = $this->createForm(PictogramType::class, $pictogram);
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted() && $form->isValid()) {
