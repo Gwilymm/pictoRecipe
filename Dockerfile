@@ -18,6 +18,7 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 RUN install-php-extensions \
     pdo_pgsql \
     pgsql \
+    gd \
     intl \
     zip \
     xsl \
@@ -78,7 +79,6 @@ RUN install-php-extensions \
     zip \
     gd \
     xsl \
-    gd \
     gmp \
     apcu
 
