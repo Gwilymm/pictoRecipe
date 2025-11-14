@@ -6,11 +6,11 @@ use App\Entity\Pictogram;
 use App\Form\PictogramType;
 use App\Repository\PictogramRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/pictogram')]
 final class PictogramController extends AbstractController
@@ -175,124 +175,108 @@ final class PictogramController extends AbstractController
 	 */
 	private function convertToPng(string $sourcePath, string $destinationPath, ?string $mime): bool
 	{
-		if (!function_exists('imagepng')) {
-			return false;
-		}
-
 		try {
-			$img = null;
+			// Charger l'image source
 			switch ($mime) {
 				case 'image/jpeg':
 				case 'image/jpg':
-					if (function_exists('imagecreatefromjpeg')) {
-						$img = @imagecreatefromjpeg($sourcePath);
-					}
+					$src = @imagecreatefromjpeg($sourcePath);
 					break;
 				case 'image/png':
-					if (function_exists('imagecreatefrompng')) {
-						$img = @imagecreatefrompng($sourcePath);
-					}
+					$src = @imagecreatefrompng($sourcePath);
 					break;
 				case 'image/gif':
-					if (function_exists('imagecreatefromgif')) {
-						$img = @imagecreatefromgif($sourcePath);
-					}
+					$src = @imagecreatefromgif($sourcePath);
 					break;
 				case 'image/webp':
-					if (function_exists('imagecreatefromwebp')) {
-						$img = @imagecreatefromwebp($sourcePath);
-					}
+					$src = @imagecreatefromwebp($sourcePath);
 					break;
 				default:
-					// unsupported mime
 					return false;
 			}
 
-			if (!$img) {
-				return false;
-			}
+			if (!$src) return false;
 
-			// Preserve alpha for PNG
-			imagesavealpha($img, true);
-			imagealphablending($img, false);
+			$srcW = imagesx($src);
+			$srcH = imagesy($src);
 
-			// Write PNG
-			$ok = imagepng($img, $destinationPath);
-			imagedestroy($img);
+			// === FORMAT FINAL 256x256 ===
+			$finalSize = 256;
 
-			return (bool) $ok;
+			// Créer canvas final carré avec fond blanc
+			$canvas = imagecreatetruecolor($finalSize, $finalSize);
+			$white = imagecolorallocate($canvas, 255, 255, 255);
+			imagefilledrectangle($canvas, 0, 0, $finalSize, $finalSize, $white);
+
+			// Calcul du ratio
+			$ratio = min($finalSize / $srcW, $finalSize / $srcH);
+			$newW = (int)($srcW * $ratio);
+			$newH = (int)($srcH * $ratio);
+
+			// Positionnement centré
+			$dstX = (int)(($finalSize - $newW) / 2);
+			$dstY = (int)(($finalSize - $newH) / 2);
+
+			// Redimensionnement dans le carré
+			imagecopyresampled(
+				$canvas,
+				$src,
+				$dstX,
+				$dstY,
+				0,
+				0,
+				$newW,
+				$newH,
+				$srcW,
+				$srcH
+			);
+
+			// Enregistrer PNG final
+			$ok = imagepng($canvas, $destinationPath, 9);
+
+			imagedestroy($src);
+			imagedestroy($canvas);
+
+			return $ok;
 		} catch (\Throwable $e) {
 			return false;
 		}
 	}
 
+
 	/**
 	 * Create a PNG thumbnail from a raster image using GD (preserves transparency when possible).
 	 * Returns true on success.
 	 */
-	private function createThumbnail(string $sourcePath, string $thumbnailPath, int $maxSide = 70): bool
+	private function createThumbnail(string $sourcePath, string $thumbnailPath, int $size = 70): bool
 	{
-		if (!function_exists('imagecreatetruecolor')) {
-			return false;
-		}
+		if (!file_exists($sourcePath)) return false;
 
-		if (!file_exists($sourcePath) || !is_readable($sourcePath)) {
-			return false;
-		}
+		$src = @imagecreatefrompng($sourcePath);
+		if (!$src) return false;
 
-		$mime = mime_content_type($sourcePath) ?: '';
-		$img = null;
-		switch ($mime) {
-			case 'image/png':
-				if (function_exists('imagecreatefrompng')) $img = @imagecreatefrompng($sourcePath);
-				break;
-			case 'image/jpeg':
-			case 'image/jpg':
-				if (function_exists('imagecreatefromjpeg')) $img = @imagecreatefromjpeg($sourcePath);
-				break;
-			case 'image/gif':
-				if (function_exists('imagecreatefromgif')) $img = @imagecreatefromgif($sourcePath);
-				break;
-			case 'image/webp':
-				if (function_exists('imagecreatefromwebp')) $img = @imagecreatefromwebp($sourcePath);
-				break;
-			default:
-				// unsupported or SVG
-				return false;
-		}
+		// Canvas carré blanc
+		$canvas = imagecreatetruecolor($size, $size);
+		$white = imagecolorallocate($canvas, 255, 255, 255);
+		imagefilledrectangle($canvas, 0, 0, $size, $size, $white);
 
-		if (! $img) {
-			return false;
-		}
+		$srcW = imagesx($src);
+		$srcH = imagesy($src);
 
-		$width = imagesx($img);
-		$height = imagesy($img);
+		$ratio = min($size / $srcW, $size / $srcH);
+		$newW = (int)($srcW * $ratio);
+		$newH = (int)($srcH * $ratio);
 
-		// compute new size preserving ratio
-		$scale = min($maxSide / max($width, $height), 1);
-		$newW = (int) max(1, floor($width * $scale));
-		$newH = (int) max(1, floor($height * $scale));
+		$dstX = (int)(($size - $newW) / 2);
+		$dstY = (int)(($size - $newH) / 2);
 
-		$thumb = imagecreatetruecolor($newW, $newH);
-		// preserve transparency for PNG and GIF
-		imagealphablending($thumb, false);
-		imagesavealpha($thumb, true);
-		$transparent = imagecolorallocatealpha($thumb, 0, 0, 0, 127);
-		imagefilledrectangle($thumb, 0, 0, $newW, $newH, $transparent);
+		imagecopyresampled($canvas, $src, $dstX, $dstY, 0, 0, $newW, $newH, $srcW, $srcH);
 
-		imagecopyresampled($thumb, $img, 0, 0, 0, 0, $newW, $newH, $width, $height);
+		$ok = imagepng($canvas, $thumbnailPath, 9);
 
-		// Ensure directory exists
-		$dir = dirname($thumbnailPath);
-		if (!is_dir($dir)) {
-			@mkdir($dir, 0755, true);
-		}
+		imagedestroy($src);
+		imagedestroy($canvas);
 
-		$ok = imagepng($thumb, $thumbnailPath);
-
-		imagedestroy($thumb);
-		imagedestroy($img);
-
-		return (bool) $ok;
+		return $ok;
 	}
 }

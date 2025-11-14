@@ -20,3 +20,4 @@
 /assets/vendor/
 ###< symfony/asset-mapper ###
 .pnpm-store/
+public/uploads/

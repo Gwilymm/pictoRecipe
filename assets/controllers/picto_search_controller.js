@@ -45,7 +45,7 @@ export default class extends Controller {
 			img.src = item.image;
 			img.alt = item.name || "";
 			img.className =
-				"w-full h-32 object-contain bg-base-200 p-1 rounded-lg border cursor-pointer transition hover:shadow-lg";
+				"w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition hover:shadow-lg";
 
 			img.addEventListener("click", () => this.select(item, img));
 
