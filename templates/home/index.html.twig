@@ -1,201 +1,535 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Recherche de Pictogrammes ARASAAC
+{% block title %}PictoRecipe - Créez des recettes accessibles avec des pictogrammes
 {% endblock %}
 
 {% block body %}
 	<div
 		class="min-h-screen bg-linear-to-br from-base-200 via-base-100 to-base-200">
-		{# Contenu principal #}
-		<div
-			class="container mx-auto px-4 py-8 max-w-7xl">
-			{# Hero section avec recherche intégrée #}
-			<div class="hero bg-linear-to-br from-primary/10 to-secondary/10 rounded-3xl shadow-2xl mb-8 border border-base-300">
-				<div class="hero-content w-full flex-col py-12">
-					<div class="text-center mb-6 space-y-4">
-						<div class="flex justify-center gap-2 text-4xl mb-4">
-							<span class="animate-bounce">🎨</span>
-							<span class="animate-bounce" style="animation-delay: 0.1s">📚</span>
-							<span class="animate-bounce" style="animation-delay: 0.2s">🌈</span>
-						</div>
-						<h1 class="text-5xl font-black bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
-							Recherche de Pictogrammes
-						</h1>
-						<p class="text-lg text-base-content/80 max-w-2xl">
-							Explorez des milliers de pictogrammes gratuits depuis la base de données
-							<span class="font-bold text-primary">ARASAAC</span>
-						</p>
+
+		{# Hero principal - Landing #}
+		<section class="hero min-h-[600px] bg-linear-to-br from-primary/10 via-secondary/5 to-accent/10">
+			<div class="hero-content text-center max-w-5xl px-4">
+				<div>
+					<div class="flex justify-center gap-3 text-6xl mb-6">
+						<span class="animate-bounce">🌟</span>
+						<span class="animate-bounce" style="animation-delay: 0.1s">🖼️</span>
+						<span class="animate-bounce" style="animation-delay: 0.2s">🧑‍🍳</span>
 					</div>
-
-					{# Formulaire de recherche moderne #}
-					<form method="get" action="{{ path('app_home') }}" class="w-full max-w-3xl">
-						<div class="join w-full shadow-xl">
-							<div class="relative flex-1">
-								<input type="text" name="q" value="{{ keyword }}" placeholder="🔍 Entrez un mot-clé : chat, manger, jouer..." class="input input-bordered input-lg w-full join-item focus:outline-offset-2 focus:outline-primary pr-12" required autofocus/>
-								{% if keyword %}
-									<a href="{{ path('app_home') }}" class="btn btn-ghost btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2">
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-										</svg>
-									</a>
-								{% endif %}
-							</div>
-							<button type="submit" class="btn btn-primary btn-lg join-item px-8 gap-2 hover:scale-105 transition-transform">
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-								</svg>
-								<span class="hidden sm:inline">Rechercher</span>
-							</button>
-						</div>
-					</form>
-
-					{# Stats rapides #}
-					{% if pictograms is not empty %}
-						<div class="stats stats-vertical sm:stats-horizontal shadow-lg mt-6 bg-base-100">
-							<div class="stat">
-								<div class="stat-figure text-primary">
-									<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-									</svg>
-								</div>
-								<div class="stat-title">Résultats trouvés</div>
-								<div class="stat-value text-primary">{{ pictograms|length }}</div>
-								<div class="stat-desc">pour "{{ keyword }}"</div>
-							</div>
-						</div>
-					{% endif %}
-				</div>
-			</div>
-
-			{# Affichage des erreurs avec style moderne #}
-			{% if error %}
-				<div class="alert alert-error shadow-2xl mb-8 animate-pulse">
-					<div class="flex items-center gap-4">
-						<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-8 w-8" fill="none" viewbox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-						</svg>
-						<div>
-							<h3 class="font-bold text-lg">⚠️ Erreur de connexion</h3>
-							<div class="text-sm mt-1">{{ error }}</div>
-						</div>
-					</div>
-				</div>
-			{% endif %}
-
-			{# Résultats de la recherche #}
-			{% if searched %}
-				{% if pictograms is empty and not error %}
-					{# Aucun résultat trouvé avec design sympathique #}
-					<div class="hero bg-base-100 rounded-3xl shadow-xl min-h-[400px]">
-						<div class="hero-content text-center">
-							<div class="max-w-md">
-								<div class="text-8xl mb-6">🔍</div>
-								<h3 class="text-3xl font-bold mb-4">Aucun résultat trouvé</h3>
-								<p class="text-lg mb-6">
-									Nous n'avons pas trouvé de pictogrammes pour
-									<span class="badge badge-primary badge-lg">"{{ keyword }}"</span>
-								</p>
-								<div class="alert alert-info">
-									<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-									</svg>
-									<div class="text-left">
-										<p class="font-semibold">💡 Astuce :</p>
-										<p>Essayez avec un mot français simple (ex: chat, maison, manger)</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				{% elseif pictograms is not empty %}
-					{# Grille de pictogrammes avec design premium #}
-					<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-						{% for pictogram in pictograms %}
-							<div class="card bg-base-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-base-300 group">
-								<figure class="px-4 pt-4 bg-linear-to-br from-base-200 to-base-100">
-									<div class="avatar">
-										<div class="w-full rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2 group-hover:ring-secondary transition-colors">
-											<img src="{{ pictogram.imageUrl }}" alt="{{ pictogram.name }}" class="w-full h-32 object-contain p-2" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-32 text-4xl\'>❌</div>'"/>
-										</div>
-									</div>
-								</figure>
-								<div class="card-body p-4 text-center">
-									<div class="badge badge-outline badge-sm mx-auto mb-2">ID:
-										{{ pictogram.id }}</div>
-									<h3 class="font-bold text-sm line-clamp-2 min-h-10 flex items-center justify-center">
-										{{ pictogram.name }}
-									</h3>
-									<div class="card-actions justify-center mt-2">
-										<a href="{{ pictogram.detailUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary gap-2 hover:scale-110 transition-transform">
-											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-											</svg>
-											Détails
-										</a>
-									</div>
-								</div>
-							</div>
-						{% endfor %}
-					</div>
-
-					{# Bouton retour en haut #}
-					<div class="flex justify-center mt-12">
-						<a href="#" class="btn btn-circle btn-lg btn-primary shadow-xl hover:scale-110 transition-transform">
+					<h1 class="text-6xl font-black mb-6 bg-linear-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+						PictoRecipe
+					</h1>
+					<p class="text-3xl font-bold mb-4">Créez des recettes accessibles avec des pictogrammes</p>
+					<p class="text-xl text-base-content/80 max-w-3xl mx-auto mb-8">
+						Transformez la création de recettes en une expérience simple, visuelle et inclusive. 
+												Générez des recettes illustrées pour faciliter la compréhension, l'apprentissage et l'autonomie.
+					</p>
+					<div class="flex flex-wrap gap-4 justify-center">
+						<a href="#features" class="btn btn-primary btn-lg gap-2">
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
 							</svg>
+							Découvrir les fonctionnalités
+						</a>
+						<a href="#search-picto" class="btn btn-outline btn-lg gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+							</svg>
+							Rechercher des pictogrammes
 						</a>
 					</div>
-				{% endif %}
-			{% else %}
-				{# Page d'accueil élégante #}
-				<div class="grid md:grid-cols-3 gap-6 mb-8">
-					<div class="card bg-linear-to-br from-primary/20 to-primary/5 shadow-xl border border-primary/20">
+				</div>
+			</div>
+		</section>
+
+		{# Section : Pour qui ? #}
+		<section class="py-16 bg-base-100">
+			<div class="container mx-auto px-4 max-w-7xl">
+				<div class="text-center mb-12">
+					<h2 class="text-4xl font-bold mb-4">Parfait pour</h2>
+					<p class="text-lg text-base-content/70">Des professionnels de l'éducation aux familles</p>
+				</div>
+				<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+					<div class="card bg-base-200 shadow-xl">
 						<div class="card-body items-center text-center">
-							<div class="text-5xl mb-4">🎨</div>
-							<h3 class="card-title text-primary">Gratuit</h3>
-							<p class="text-sm">Accès illimité à des milliers de pictogrammes libres de droits</p>
+							<div class="text-5xl mb-3">🏫</div>
+							<h3 class="card-title text-lg">IME & ULIS</h3>
+							<p class="text-sm text-base-content/70">Supports pédagogiques adaptés</p>
+						</div>
+					</div>
+					<div class="card bg-base-200 shadow-xl">
+						<div class="card-body items-center text-center">
+							<div class="text-5xl mb-3">💬</div>
+							<h3 class="card-title text-lg">Orthophonistes</h3>
+							<p class="text-sm text-base-content/70">Outils de communication alternative</p>
+						</div>
+					</div>
+					<div class="card bg-base-200 shadow-xl">
+						<div class="card-body items-center text-center">
+							<div class="text-5xl mb-3">👨‍👩‍👧</div>
+							<h3 class="card-title text-lg">Familles</h3>
+							<p class="text-sm text-base-content/70">Autonomie au quotidien</p>
+						</div>
+					</div>
+					<div class="card bg-base-200 shadow-xl">
+						<div class="card-body items-center text-center">
+							<div class="text-5xl mb-3">🎓</div>
+							<h3 class="card-title text-lg">Éducateurs</h3>
+							<p class="text-sm text-base-content/70">Ateliers cuisine inclusifs</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Fonctionnalités principales #}
+		<section id="features" class="py-16 bg-base-200">
+			<div class="container mx-auto px-4 max-w-7xl">
+				<div class="text-center mb-12">
+					<h2 class="text-4xl font-bold mb-4">🖼️ Créer des pictogrammes n'a jamais été aussi simple</h2>
+					<p class="text-lg text-base-content/70">Un studio complet de création et gestion de pictogrammes</p>
+				</div>
+
+				<div
+					class="grid lg:grid-cols-3 gap-8">
+					{# Feature 1: ARASAAC #}
+					<div class="card bg-base-100 shadow-2xl border-2 border-primary/20 hover:border-primary transition-all">
+						<div class="card-body">
+							<div class="text-5xl mb-4">🔍</div>
+							<h3 class="card-title text-2xl mb-3">Recherche ARASAAC</h3>
+							<ul class="space-y-2 text-sm">
+								<li class="flex gap-2">
+									<span class="text-primary">✓</span>
+									Accès à des milliers de pictos gratuits</li>
+								<li class="flex gap-2">
+									<span class="text-primary">✓</span>
+									Recherche en français ultra rapide</li>
+								<li class="flex gap-2">
+									<span class="text-primary">✓</span>
+									Images haute définition</li>
+								<li class="flex gap-2">
+									<span class="text-primary">✓</span>
+									Fallback intelligent</li>
+							</ul>
+						</div>
+					</div>
+
+					{# Feature 2: OpenFoodFacts #}
+					<div class="card bg-base-100 shadow-2xl border-2 border-secondary/20 hover:border-secondary transition-all">
+						<div class="card-body">
+							<div class="text-5xl mb-4">🛒</div>
+							<h3 class="card-title text-2xl mb-3">OpenFoodFacts</h3>
+							<ul class="space-y-2 text-sm">
+								<li class="flex gap-2">
+									<span class="text-secondary">✓</span>
+									Recherche d'ingrédients alimentaires</li>
+								<li class="flex gap-2">
+									<span class="text-secondary">✓</span>
+									Produits avec images réelles</li>
+								<li class="flex gap-2">
+									<span class="text-secondary">✓</span>
+									Sélection en un clic</li>
+								<li class="flex gap-2">
+									<span class="text-secondary">✓</span>
+									Téléchargement automatique</li>
+							</ul>
+						</div>
+					</div>
+
+					{# Feature 3: Pictos personnalisés #}
+					<div class="card bg-base-100 shadow-2xl border-2 border-accent/20 hover:border-accent transition-all">
+						<div class="card-body">
+							<div class="text-5xl mb-4">🖌️</div>
+							<h3 class="card-title text-2xl mb-3">Pictos personnalisés</h3>
+							<ul class="space-y-2 text-sm">
+								<li class="flex gap-2">
+									<span class="text-accent">✓</span>
+									Import PNG/JPG/GIF/WebP/SVG</li>
+								<li class="flex gap-2">
+									<span class="text-accent">✓</span>
+									Conversion automatique</li>
+								<li class="flex gap-2">
+									<span class="text-accent">✓</span>
+									Uniformisation visuelle</li>
+								<li class="flex gap-2">
+									<span class="text-accent">✓</span>
+									Bibliothèque personnelle</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Harmonisation automatique #}
+		<section class="py-16 bg-base-100">
+			<div class="container mx-auto px-4 max-w-6xl">
+				<div class="hero bg-linear-to-br from-primary/10 to-secondary/10 rounded-3xl shadow-2xl">
+					<div class="hero-content flex-col lg:flex-row gap-8 py-12">
+						<div class="lg:w-1/3 text-center">
+							<div class="mockup-code bg-base-300">
+								<pre data-prefix=">" class="text-primary"><code>256×256 px</code></pre>
+								<pre data-prefix=">" class="text-secondary"><code>Fond blanc</code></pre>
+								<pre data-prefix=">" class="text-accent"><code>Centrage parfait</code></pre>
+							</div>
+						</div>
+						<div class="lg:w-2/3">
+							<h2 class="text-3xl font-bold mb-4">🟦 Pictogrammes harmonisés automatiquement</h2>
+							<p class="mb-4">Chaque image — upload, ARASAAC ou OpenFoodFacts — est automatiquement :</p>
+							<div class="grid grid-cols-2 gap-3">
+								<div class="flex items-center gap-2">
+									<span class="text-primary text-xl">✔</span>
+									Téléchargée</div>
+								<div class="flex items-center gap-2">
+									<span class="text-primary text-xl">✔</span>
+									Nettoyée</div>
+								<div class="flex items-center gap-2">
+									<span class="text-primary text-xl">✔</span>
+									Convertie en PNG HD</div>
+								<div class="flex items-center gap-2">
+									<span class="text-primary text-xl">✔</span>
+									Redimensionnée 256×256</div>
+								<div class="flex items-center gap-2">
+									<span class="text-primary text-xl">✔</span>
+									Fond blanc uniforme</div>
+								<div class="flex items-center gap-2">
+									<span class="text-primary text-xl">✔</span>
+									Miniature 70×70</div>
+							</div>
+							<div class="alert alert-success mt-4">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+								</svg>
+								<span>Résultat : bibliothèque propre, cohérente et professionnelle</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Construction de recettes #}
+		<section class="py-16 bg-base-200">
+			<div class="container mx-auto px-4 max-w-7xl">
+				<div class="text-center mb-12">
+					<h2 class="text-4xl font-bold mb-4">🧩 Construisez vos recettes en pictogrammes</h2>
+					<p class="text-lg text-base-content/70">Interface claire et intuitive</p>
+				</div>
+
+				<div class="grid md:grid-cols-2 gap-8">
+					<div class="card bg-base-100 shadow-xl">
+						<div class="card-body">
+							<h3 class="card-title text-xl">📝 Création simple</h3>
+							<ul class="space-y-2">
+								<li>→ Sélectionnez vos ingrédients en pictos</li>
+								<li>→ Ajoutez les étapes (texte + pictos)</li>
+								<li>→ Organisez les ustensiles</li>
+								<li>→ Générez une fiche lisible</li>
+							</ul>
+						</div>
+					</div>
+					<div class="card bg-base-100 shadow-xl">
+						<div class="card-body">
+							<h3 class="card-title text-xl">👥 Pour tous</h3>
+							<ul class="space-y-2">
+								<li>✓ Compatible enfants</li>
+								<li>✓ Personnes non lectrices</li>
+								<li>✓ Apprentissage TSA</li>
+								<li>✓ Apprentissage visuel</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Export PDF #}
+		<section class="py-16 bg-base-100">
+			<div class="container mx-auto px-4 max-w-5xl">
+				<div class="card bg-linear-to-br from-accent/10 to-primary/10 shadow-2xl">
+					<div class="card-body items-center text-center p-12">
+						<div class="text-6xl mb-6">📄</div>
+						<h2 class="text-4xl font-bold mb-4">Génération PDF ultra propre</h2>
+						<p class="text-lg mb-6 max-w-2xl">
+							Grâce à l'intégration de
+							<span class="font-bold">Browsershot + Puppeteer</span>
+							dans Docker
+						</p>
+						<div class="stats stats-vertical lg:stats-horizontal shadow">
+							<div class="stat">
+								<div class="stat-title">Qualité</div>
+								<div class="stat-value text-primary">HD</div>
+								<div class="stat-desc">Export haute qualité</div>
+							</div>
+							<div class="stat">
+								<div class="stat-title">Mise en page</div>
+								<div class="stat-value text-secondary">Stable</div>
+								<div class="stat-desc">Rendu parfait</div>
+							</div>
+							<div class="stat">
+								<div class="stat-title">Usage</div>
+								<div class="stat-value text-accent">Print</div>
+								<div class="stat-desc">Prêt impression</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Stack technique #}
+		<section class="py-16 bg-base-200">
+			<div class="container mx-auto px-4 max-w-7xl">
+				<div class="text-center mb-12">
+					<h2 class="text-4xl font-bold mb-4">🛠️ Architecture moderne et robuste</h2>
+				</div>
+				<div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+					<div class="badge badge-lg badge-primary p-4">Symfony 7</div>
+					<div class="badge badge-lg badge-secondary p-4">FrankenPHP</div>
+					<div class="badge badge-lg badge-accent p-4">Docker ARM64</div>
+					<div class="badge badge-lg badge-info p-4">Puppeteer</div>
+					<div class="badge badge-lg badge-success p-4">Stimulus</div>
+					<div class="badge badge-lg badge-warning p-4">TailwindCSS</div>
+					<div class="badge badge-lg badge-error p-4">DaisyUI</div>
+					<div class="badge badge-lg badge-primary p-4">API ARASAAC</div>
+					<div class="badge badge-lg badge-secondary p-4">OpenFoodFacts</div>
+					<div class="badge badge-lg badge-accent p-4">AssetMapper</div>
+					<div class="badge badge-lg badge-info p-4">Raspberry Pi 5</div>
+					<div class="badge badge-lg badge-success p-4">Dark/Light mode</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Avantages #}
+		<section class="py-16 bg-base-100">
+			<div class="container mx-auto px-4 max-w-7xl">
+				<div class="text-center mb-12">
+					<h2 class="text-4xl font-bold mb-4">⏱️ Rapide, intuitif, accessible</h2>
+				</div>
+				<div class="grid md:grid-cols-3 gap-6">
+					<div class="card bg-linear-to-br from-primary/20 to-primary/5 shadow-xl border border-primary/20">
+						<div class="card-body">
+							<h3 class="card-title text-primary">🚀 Performance</h3>
+							<ul class="space-y-1 text-sm">
+								<li>• Temps réel</li>
+								<li>• Recherche prédictive</li>
+								<li>• Navigation fluide</li>
+								<li>• Optimisé tablettes</li>
+							</ul>
 						</div>
 					</div>
 					<div class="card bg-linear-to-br from-secondary/20 to-secondary/5 shadow-xl border border-secondary/20">
-						<div class="card-body items-center text-center">
-							<div class="text-5xl mb-4">⚡</div>
-							<h3 class="card-title text-secondary">Rapide</h3>
-							<p class="text-sm">Recherche instantanée dans la base ARASAAC</p>
+						<div class="card-body">
+							<h3 class="card-title text-secondary">🎯 Fiabilité</h3>
+							<ul class="space-y-1 text-sm">
+								<li>• Aucun 404</li>
+								<li>• Fallback intelligent</li>
+								<li>• Services testables</li>
+								<li>• Architecture découplée</li>
+							</ul>
 						</div>
 					</div>
 					<div class="card bg-linear-to-br from-accent/20 to-accent/5 shadow-xl border border-accent/20">
-						<div class="card-body items-center text-center">
-							<div class="text-5xl mb-4">🌍</div>
-							<h3 class="card-title text-accent">Universel</h3>
-							<p class="text-sm">Pictogrammes pour la communication alternative</p>
+						<div class="card-body">
+							<h3 class="card-title text-accent">🌐 Accessibilité</h3>
+							<ul class="space-y-1 text-sm">
+								<li>• Mode sombre/clair</li>
+								<li>• Adaptable</li>
+								<li>• Utilisable en local</li>
+								<li>• Raspberry Pi ready</li>
+							</ul>
 						</div>
 					</div>
+				</div>
+			</div>
+		</section>
+
+		{# Section : Impact #}
+		<section class="py-16 bg-base-200">
+			<div class="container mx-auto px-4 max-w-5xl">
+				<div class="hero bg-linear-to-br from-success/20 to-info/20 rounded-3xl shadow-2xl">
+					<div class="hero-content text-center py-16">
+						<div>
+							<div class="text-6xl mb-6">🚀</div>
+							<h2 class="text-4xl font-bold mb-6">PictoRecipe rend la cuisine accessible à tous</h2>
+							<p class="text-lg mb-8 max-w-3xl">
+								Créez des recettes visuelles, structurées et intuitives pour favoriser l'apprentissage, 
+																l'autonomie et l'inclusion.
+							</p>
+							<div class="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto text-left">
+								<div>✓ Apprendre à cuisiner</div>
+								<div>✓ Travailler l'autonomie</div>
+								<div>✓ Favoriser la compréhension</div>
+								<div>✓ Structurer le langage</div>
+								<div>✓ Aider les enfants</div>
+								<div>✓ Soutenir personnes TSA, T21</div>
+								<div>✓ Difficulté de lecture</div>
+								<div>✓ Simplifier le quotidien</div>
+							</div>
+							<div class="mt-8">
+								<p class="text-xl font-semibold italic">La cuisine expliquée avec des images</p>
+								<p class="text-base-content/70">Pensée pour l'inclusion, la pédagogie et l'autonomie</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# SECTION RECHERCHE DE PICTOGRAMMES - En bas de page #}
+		<section id="search-picto" class="py-16 bg-base-100 border-t-4 border-primary">
+			<div
+				class="container mx-auto px-4 max-w-7xl">
+
+				{# Titre de section #}
+				<div class="text-center mb-12">
+					<h2 class="text-4xl font-bold mb-4">🔍 Recherche de pictogrammes ARASAAC</h2>
+					<p class="text-lg text-base-content/70">Explorez des milliers de pictogrammes gratuits</p>
 				</div>
 
-				{# Suggestions de recherche #}
-				<div class="card bg-base-100 shadow-xl border border-base-300">
-					<div class="card-body">
-						<h3 class="card-title justify-center mb-4">
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-							</svg>
-							Essayez ces recherches populaires
-						</h3>
-						<div class="flex flex-wrap gap-2 justify-center">
-							{% for suggestion in ['chat', 'manger', 'jouer', 'maison', 'école', 'dormir', 'content', 'triste', 'famille', 'eau', 'livre', 'musique'] %}
-								<a href="{{ path('app_home', {q: suggestion}) }}" class="btn btn-outline btn-sm gap-2 hover:btn-primary">
-									{{ suggestion }}
-									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+				{# Formulaire de recherche moderne #}
+				<form method="get" action="{{ path('app_home') }}" class="w-full max-w-3xl mx-auto mb-8">
+					<div class="join w-full shadow-xl">
+						<div class="relative flex-1">
+							<input type="text" name="q" value="{{ keyword }}" placeholder="🔍 Entrez un mot-clé : chat, manger, jouer..." class="input input-bordered input-lg w-full join-item focus:outline-offset-2 focus:outline-primary pr-12" required autofocus/>
+							{% if keyword %}
+								<a href="{{ path('app_home') }}" class="btn btn-ghost btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
 									</svg>
 								</a>
-							{% endfor %}
+							{% endif %}
+						</div>
+						<button type="submit" class="btn btn-primary btn-lg join-item px-8 gap-2 hover:scale-105 transition-transform">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+							</svg>
+							<span class="hidden sm:inline">Rechercher</span>
+						</button>
+					</div>
+				</form>
+
+				{# Stats rapides #}
+				{% if pictograms is not empty %}
+					<div class="stats stats-vertical sm:stats-horizontal shadow-lg bg-base-100 mx-auto">
+						<div class="stat">
+							<div class="stat-figure text-primary">
+								<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+								</svg>
+							</div>
+							<div class="stat-title">Résultats trouvés</div>
+							<div class="stat-value text-primary">{{ pictograms|length }}</div>
+							<div class="stat-desc">pour "{{ keyword }}"</div>
 						</div>
 					</div>
-				</div>
-			{% endif %}
-		</div>
+				{% endif %}
+
+				{# Affichage des erreurs avec style moderne #}
+				{% if error %}
+					<div class="alert alert-error shadow-2xl mb-8 animate-pulse">
+						<div class="flex items-center gap-4">
+							<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-8 w-8" fill="none" viewbox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+							</svg>
+							<div>
+								<h3 class="font-bold text-lg">⚠️ Erreur de connexion</h3>
+								<div class="text-sm mt-1">{{ error }}</div>
+							</div>
+						</div>
+					</div>
+				{% endif %}
+
+				{# Résultats de la recherche #}
+				{% if searched %}
+					{% if pictograms is empty and not error %}
+						{# Aucun résultat trouvé avec design sympathique #}
+						<div class="hero bg-base-100 rounded-3xl shadow-xl min-h-[400px]">
+							<div class="hero-content text-center">
+								<div class="max-w-md">
+									<div class="text-8xl mb-6">🔍</div>
+									<h3 class="text-3xl font-bold mb-4">Aucun résultat trouvé</h3>
+									<p class="text-lg mb-6">
+										Nous n'avons pas trouvé de pictogrammes pour
+										<span class="badge badge-primary badge-lg">"{{ keyword }}"</span>
+									</p>
+									<div class="alert alert-info">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+										</svg>
+										<div class="text-left">
+											<p class="font-semibold">💡 Astuce :</p>
+											<p>Essayez avec un mot français simple (ex: chat, maison, manger)</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					{% elseif pictograms is not empty %}
+						{# Grille de pictogrammes avec design premium #}
+						<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+							{% for pictogram in pictograms %}
+								<div class="card bg-base-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 border border-base-300 group">
+									<figure class="px-4 pt-4 bg-linear-to-br from-base-200 to-base-100">
+										<div class="avatar">
+											<div class="w-full rounded-xl ring ring-primary ring-offset-base-100 ring-offset-2 group-hover:ring-secondary transition-colors">
+												<img src="{{ pictogram.imageUrl }}" alt="{{ pictogram.name }}" class="w-full h-32 object-contain p-2" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-32 text-4xl\'>❌</div>'"/>
+											</div>
+										</div>
+									</figure>
+									<div class="card-body p-4 text-center">
+										<div class="badge badge-outline badge-sm mx-auto mb-2">ID:
+											{{ pictogram.id }}</div>
+										<h3 class="font-bold text-sm line-clamp-2 min-h-10 flex items-center justify-center">
+											{{ pictogram.name }}
+										</h3>
+										<div class="card-actions justify-center mt-2">
+											<a href="{{ pictogram.detailUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary gap-2 hover:scale-110 transition-transform">
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+												</svg>
+												Détails
+											</a>
+										</div>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+
+						{# Bouton retour en haut #}
+						<div class="flex justify-center mt-12">
+							<a href="#" class="btn btn-circle btn-lg btn-primary shadow-xl hover:scale-110 transition-transform">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+								</svg>
+							</a>
+						</div>
+					{% endif %}
+				{% else %}
+					{# Suggestions de recherche si pas encore cherché #}
+					<div class="card bg-base-100 shadow-xl border border-base-300">
+						<div class="card-body">
+							<h3 class="card-title justify-center mb-4">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+								</svg>
+								Essayez ces recherches populaires
+							</h3>
+							<div class="flex flex-wrap gap-2 justify-center">
+								{% for suggestion in ['chat', 'manger', 'jouer', 'maison', 'école', 'dormir', 'content', 'triste', 'famille', 'eau', 'livre', 'musique'] %}
+									<a href="{{ path('app_home', {q: suggestion}) }}" class="btn btn-outline btn-sm gap-2 hover:btn-primary">
+										{{ suggestion }}
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+										</svg>
+									</a>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+		</section>
 
 		{# Footer moderne et élégant #}
 		<footer class="footer footer-center p-10 bg-linear-to-r from-base-300 to-base-200 text-base-content mt-16 border-t border-base-300">

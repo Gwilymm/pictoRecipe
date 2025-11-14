@@ -63,17 +63,20 @@ class ArasaacApiService
 
 			// Transformer les données pour simplifier l'utilisation dans le template
 			return array_map(function ($pictogram) {
+				$imageUrl = sprintf(
+					'%s/%s/%s_500.png',
+					self::PICTOGRAM_IMAGE_BASE_URL,
+					$pictogram['_id'],
+					$pictogram['_id']
+				);
+
 				return [
 					'id' => $pictogram['_id'] ?? null,
 					'keywords' => $pictogram['keywords'] ?? [],
 					'name' => $pictogram['keywords'][0]['keyword'] ?? 'Sans nom',
-					'imageUrl' => sprintf(
-						'%s/%s/%s_500.png',
-						self::PICTOGRAM_IMAGE_BASE_URL,
-						$pictogram['_id'],
-						$pictogram['_id']
-					),
-					'detailUrl' => sprintf('https://arasaac.org/pictograms/fr/%s', $pictogram['_id'] ?? '')
+					'imageUrl' => $this->imageExists($imageUrl) ? $imageUrl : null,
+					'detailUrl' => sprintf('https://arasaac.org/pictograms/fr/%s', $pictogram['_id'] ?? ''),
+					'notFound' => !$this->imageExists($imageUrl),
 				];
 			}, $data);
 		} catch (TransportExceptionInterface $e) {
@@ -88,6 +91,16 @@ class ArasaacApiService
 				'keyword' => $keyword
 			]);
 			throw $e;
+		}
+	}
+
+	private function imageExists(string $url): bool
+	{
+		try {
+			$res = $this->client->request('HEAD', $url, ['max_redirects' => 0]);
+			return $res->getStatusCode() === 200;
+		} catch (\Throwable $e) {
+			return false;
 		}
 	}
 }
