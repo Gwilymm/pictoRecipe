@@ -6,8 +6,13 @@ use App\Repository\PictogramRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: PictogramRepository::class)]
+#[UniqueEntity(
+	fields: ['name'],
+	message: 'Un pictogramme avec ce nom existe déjà.'
+)]
 class Pictogram
 {
 	#[ORM\Id]

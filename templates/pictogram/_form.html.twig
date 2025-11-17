@@ -1,29 +1,70 @@
 {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
 
+{# Champ nom du pictogramme - séparé de la recherche #}
 <div class="form-control">
 	<label class="label">
 		<span class="label-text font-semibold">Nom du pictogramme</span>
 	</label>
+	{{ form_widget(form.name, {
+		'attr': {
+			'placeholder': 'Ex : Farine, Maïzena, Beurre doux…',
+			'class':'input input-bordered w-full' ~ (form.name.vars.errors|length > 0 ? ' input-error' : '')
+		}
+	}) }}
 
-	<div data-controller="picto-search" class="space-y-3">
-		{{ form_widget(form.name, {
-            'attr': {
-                'data-picto-search-target': 'input',
-                'placeholder': 'Ex : farine, maïzena…',
-                'class':'input input-bordered w-full'
-            }
-        }) }}
+	{# Affichage des erreurs du champ name #}
+	{% if form.name.vars.errors|length > 0 %}
+		<div class="text-error text-sm mt-1 flex items-center gap-1">
+			<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+			</svg>
+			{% for error in form.name.vars.errors %}
+				<p>{{ error.message }}</p>
+			{% endfor %}
+		</div>
+	{% endif %}
+</div>
 
-		<div data-picto-search-target="results" class="grid grid-cols-3 sm:grid-cols-4 gap-3"></div>
+{# Section recherche d'image OpenFoodFacts - indépendante #}
+<div class="form-control" data-controller="picto-search">
+	<label class="label">
+		<span class="label-text font-semibold flex items-center gap-2">
+			<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+			</svg>
+			Rechercher une image (optionnel)
+		</span>
+	</label>
+
+	<div
+		class="space-y-3">
+		{# Champ de recherche d'ingrédient #}
+		<input
+		type="text" data-picto-search-target="input" placeholder="Rechercher un ingrédient : farine, beurre, œufs…" class="input input-bordered w-full"/>
+
+		{# Champ optionnel pour filtrer par marque #}
+		<div class="w-full">
+			<label class="label pt-0">
+				<span class="label-text text-sm flex items-center gap-1">
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+					</svg>
+					Filtrer par marque (optionnel)
+				</span>
+			</label>
+			<input type="text" data-picto-search-target="brandInput" placeholder="Ex : Carrefour, Tipiak, Barilla…" class="input input-bordered w-full"/>
+		</div>
+
+		<div data-picto-search-target="results" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-visible"></div>
+		<div data-picto-search-target="pagination"></div>
 	</div>
 </div>
 
 <div class="form-control">
-	<label class="label">
-		<span class="label-text font-semibold">Image (PNG ou SVG)</span>
-	</label>
-
-	{{ form_row(form.imageFile) }}
+	{{ form_row(form.imageFile, {
+		'label_attr': {'class': 'label'},
+		'row_attr': {'class': 'w-full'}
+	}) }}
 </div>
 
 {# 🔥 LE SEUL CHAMP ACCEPTABLE #}
@@ -31,7 +72,12 @@
 
 <div id="picto-external-preview" class="mt-4"></div>
 
-<button class="btn btn-primary mt-6 w-full sm:w-auto">💾 Enregistrer</button>
+<button class="btn btn-primary mt-6 w-full sm:w-auto">
+	<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+	</svg>
+	Enregistrer
+</button>
 
 {{ form_end(form) }}
 

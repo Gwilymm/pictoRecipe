@@ -5,7 +5,7 @@ export default class extends Controller {
 
 	connect() {
 		this.totalCount = this.cardTargets.length;
-		this.itemsPerPage = 6;
+		this.itemsPerPage = 24; // Plus d'éléments par page pour profiter de la grille responsive
 		this.currentPage = 1;
 		this.filteredCards = [ ...this.cardTargets ];
 		this.updateDisplay();

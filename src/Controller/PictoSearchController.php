@@ -15,6 +15,7 @@ class PictoSearchController extends AbstractController
 	{
 		$query = trim($request->query->get('q', ''));
 		$limit = (int) $request->query->get('limit', 12);
+		$brand = $request->query->get('brand', null);
 
 		if ($query === '') {
 			return $this->json([
@@ -23,7 +24,7 @@ class PictoSearchController extends AbstractController
 			]);
 		}
 
-		$results = $off->searchByName($query, $limit);
+		$results = $off->searchByName($query, $limit, $brand);
 
 		return $this->json([
 			'success' => true,

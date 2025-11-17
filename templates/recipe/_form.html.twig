@@ -1,8 +1,8 @@
 {# Recipe main form partial with embedded Ingredients and Steps collections
-	 Uses DaisyUI classes and a small Stimulus controller to add/remove collection items dynamically.
+	 Modern desktop-first UI with improved UX principles
 #}
 
-{{ form_start(form, {'attr': {'class': 'space-y-6', 'data-controller': 'stepper'}}) }}
+{{ form_start(form, {'attr': {'class': 'container mx-auto px-4 lg:px-8 py-8', 'data-controller': 'stepper'}}) }}
 
 {# Determine submit label: prefer explicit `button_label`, otherwise infer from bound entity (has id => update) #}
 {% set submit_label = (button_label is defined) ? button_label : ((form.vars.data is defined and form.vars.data.id) ? 'Mettre à jour' : 'Enregistrer la recette') %}
@@ -39,373 +39,566 @@
 	{% set step_prototype = '' %}
 {% endif %}
 
-{# Stepper header #}
-<div class="mb-4 md:mb-6">
-	<ul class="steps steps-horizontal w-full text-xs md:text-sm" data-stepper-target="header">
-		<li class="step step-primary" data-stepper-target="stepItem" data-step-name="Informations">
-			<span class="hidden sm:inline">Informations</span>
-		</li>
-		<li class="step" data-stepper-target="stepItem" data-step-name="Ingrédients">
-			<span class="hidden sm:inline">Ingrédients</span>
-		</li>
-		<li class="step" data-stepper-target="stepItem" data-step-name="Étapes">
-			<span class="hidden sm:inline">Étapes</span>
-		</li>
-		<li class="step" data-stepper-target="stepItem" data-step-name="Ustensiles">
-			<span class="hidden sm:inline">Ustensiles</span>
-		</li>
-		<li class="step" data-stepper-target="stepItem" data-step-name="Aperçu">
-			<span class="hidden sm:inline">Aperçu</span>
-		</li>
-	</ul>
+{# Stepper header - Modern desktop design #}
+<div class="mb-8">
+	<div class="max-w-5xl mx-auto">
+		<ul class="steps steps-horizontal w-full" data-stepper-target="header">
+			<li class="step step-primary" data-stepper-target="stepItem" data-step-name="Informations">
+				<div class="flex flex-col items-center gap-2">
+					<div class="bg-primary text-primary-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">1</div>
+					<span class="text-sm font-medium hidden lg:block">Informations</span>
+				</div>
+			</li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Ingrédients">
+				<div class="flex flex-col items-center gap-2">
+					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">2</div>
+					<span class="text-sm font-medium hidden lg:block">Ingrédients</span>
+				</div>
+			</li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Étapes">
+				<div class="flex flex-col items-center gap-2">
+					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">3</div>
+					<span class="text-sm font-medium hidden lg:block">Étapes</span>
+				</div>
+			</li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Ustensiles">
+				<div class="flex flex-col items-center gap-2">
+					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">4</div>
+					<span class="text-sm font-medium hidden lg:block">Ustensiles</span>
+				</div>
+			</li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Aperçu">
+				<div class="flex flex-col items-center gap-2">
+					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">5</div>
+					<span class="text-sm font-medium hidden lg:block">Aperçu</span>
+				</div>
+			</li>
+		</ul>
+	</div>
 
-	{# Nom de l'étape active sur mobile #}
-	<div class="text-center mt-2 md:mt-3 sm:hidden">
-		<span class="badge badge-md md:badge-lg badge-primary" data-stepper-target="currentStepName">Informations</span>
+	{# Current step indicator - visible on all screens #}
+	<div class="text-center mt-6">
+		<div class="inline-flex items-center gap-3 bg-base-200 px-6 py-3 rounded-full">
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+			</svg>
+			<span class="font-semibold text-base" data-stepper-target="currentStepName">Informations</span>
+		</div>
 	</div>
 </div>
 
-{# Step 1: Informations générales #}
-<section class="card bg-base-100 shadow p-3 md:p-4" data-stepper-target="step">
-	<div class="card-body p-3 md:p-6">
-		<h2 class="card-title text-lg md:text-xl">Informations générales</h2>
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-			<div>
-				{{ form_row(form.title) }}
-			</div>
-			<div>
-				{{ form_row(form.servings) }}
-				<div class="flex flex-col sm:flex-row gap-2 mt-2">
-					{{ form_row(form.prepTimeMinutes) }}
-					{{ form_row(form.cookTimeMinutes) }}
+{# Step 1: Informations générales - Modern desktop layout #}
+<section class="max-w-5xl mx-auto" data-stepper-target="step">
+	<div class="card bg-base-100 shadow-xl border border-base-300">
+		<div
+			class="card-body p-8">
+			{# Section header #}
+			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
+				<div class="bg-primary/10 text-primary rounded-xl p-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+				</div>
+				<div>
+					<h2 class="text-2xl font-bold text-base-content">Informations générales</h2>
+					<p class="text-sm text-base-content/70 mt-1">Commencez par les informations de base de votre recette</p>
 				</div>
 			</div>
+
+			{# Form fields with modern layout #}
+			<div
+				class="space-y-6">
+				{# Title - Full width #}
+				<div class="form-control">
+					{{ form_row(form.title, {
+						'label_attr': {'class': 'label'},
+						'attr': {'class': 'input input-bordered input-lg w-full focus:input-primary', 'placeholder': 'Ex: Gâteau au chocolat'}
+					}) }}
+				</div>
+
+				{# Grid layout for numeric fields #}
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+					<div class="form-control">
+						{{ form_row(form.servings, {
+							'label_attr': {'class': 'label'},
+							'attr': {'class': 'input input-bordered w-full focus:input-primary'}
+						}) }}
+					</div>
+					<div class="form-control">
+						{{ form_row(form.prepTimeMinutes, {
+							'label_attr': {'class': 'label'},
+							'attr': {'class': 'input input-bordered w-full focus:input-primary'}
+						}) }}
+					</div>
+					<div class="form-control">
+						{{ form_row(form.cookTimeMinutes, {
+							'label_attr': {'class': 'label'},
+							'attr': {'class': 'input input-bordered w-full focus:input-primary'}
+						}) }}
+					</div>
+				</div>
+
+				{# Description - Full width with larger textarea #}
+				<div class="form-control">
+					{{ form_row(form.description, {
+						'label_attr': {'class': 'label'},
+						'attr': {'class': 'textarea textarea-bordered h-32 w-full focus:textarea-primary', 'placeholder': 'Décrivez votre recette en quelques mots...'}
+					}) }}
+				</div>
+			</div>
+
+			{# Navigation buttons #}
+			<div class="flex justify-end gap-3 mt-8 pt-6 border-t border-base-300">
+				<button type="button" class="btn btn-primary btn-lg gap-2" data-action="stepper#next">
+					Suivant
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</button>
+			</div>
 		</div>
+	</div>
+</section>
+{# Step 2: Ingredients - Modern desktop layout #}
+<section class="max-w-5xl mx-auto hidden" data-stepper-target="step">
+	<div class="card bg-base-100 shadow-xl border border-base-300">
+		<div
+			class="card-body p-8">
+			{# Section header #}
+			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
+				<div class="bg-accent/10 text-accent rounded-xl p-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+					</svg>
+				</div>
+				<div>
+					<h2 class="text-2xl font-bold text-base-content">Ingrédients</h2>
+					<p class="text-sm text-base-content/70 mt-1">Ajoutez tous les ingrédients nécessaires avec leurs quantités</p>
+				</div>
+			</div>
 
-		{# Small JS enhancement: make utensil cards toggle the checkbox reliably and apply selected classes #}
-		<script>
-			document.addEventListener( 'DOMContentLoaded', () => {
+			{# Ingredients collection #}
+			<div data-controller="form-collection" data-prototype="{{ ingredient_prototype|e('html_attr') }}" class="space-y-4">
+				<div data-form-collection-target="list" class="space-y-4">
+					{% for ingredient in form.ingredients %}
+						<div
+							class="collection-item bg-base-200/50 rounded-xl p-6 border-2 border-base-300 hover:border-primary/30 transition-colors">
+							{# Position field #}
+							{{ form_widget(ingredient.position) }}
 
+							{# Ingredient fields in a clean grid #}
+							<div class="grid grid-cols-12 gap-4 items-start">
+								<div class="col-span-6">
+									<label class="label">
+										<span class="label-text font-medium">Nom de l'ingrédient</span>
+									</label>
+									{{ form_widget(ingredient.name, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Farine'}}) }}
+								</div>
+								<div class="col-span-3">
+									<label class="label">
+										<span class="label-text font-medium">Quantité</span>
+									</label>
+									{{ form_widget(ingredient.amount, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': '250'}}) }}
+								</div>
+								<div class="col-span-2">
+									<label class="label">
+										<span class="label-text font-medium">Unité</span>
+									</label>
+									{{ form_widget(ingredient.unit, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'g'}}) }}
+								</div>
+								<div class="col-span-1 flex items-end">
+									<button type="button" class="btn btn-error btn-outline btn-square js-remove" title="Supprimer cet ingrédient">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+										</svg>
+									</button>
+								</div>
+							</div>
 
+							{# Pictogram selector #}
+							<div class="mt-6 pt-6 border-t border-base-300">
+								<label class="label">
+									<span class="label-text font-medium flex items-center gap-2">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+										</svg>
+										Pictogramme associé
+									</span>
+								</label>
+								{{ include('partials/_pictogram_widget.html.twig', {
+									'form_field': ingredient.name,
+									'url_field': ingredient.pictogramUrl,
+									'placeholder': 'Rechercher un pictogramme pour cet ingrédient...',
+									'prefill': false
+								}) }}
+							</div>
+						</div>
+					{% else %}
+						<div class="text-center py-12 bg-base-200/30 rounded-xl border-2 border-dashed border-base-300">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+							</svg>
+							<p class="text-base-content/70 font-medium">Aucun ingrédient ajouté</p>
+							<p class="text-sm text-base-content/50 mt-1">Cliquez sur le bouton ci-dessous pour ajouter votre premier ingrédient</p>
+						</div>
+					{% endfor %}
+				</div>
 
+				{# Add ingredient button #}
+				<div class="pt-4">
+					<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-primary btn-lg gap-2 w-full lg:w-auto">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+						</svg>
+						Ajouter un ingrédient
+					</button>
+				</div>
+			</div>
 
+			{# Navigation buttons #}
+			<div class="flex justify-between items-center gap-3 mt-8 pt-6 border-t border-base-300">
+				<button type="button" class="btn btn-outline btn-lg gap-2" data-action="stepper#prev">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+					</svg>
+					Précédent
+				</button>
+				<button type="button" class="btn btn-primary btn-lg gap-2" data-action="stepper#next">
+					Suivant
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+</section>
+{# Step 3: Steps - Modern desktop layout #}
+<section class="max-w-5xl mx-auto hidden" data-stepper-target="step">
+	<div class="card bg-base-100 shadow-xl border border-base-300">
+		<div
+			class="card-body p-8">
+			{# Section header #}
+			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
+				<div class="bg-secondary/10 text-secondary rounded-xl p-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+					</svg>
+				</div>
+				<div>
+					<h2 class="text-2xl font-bold text-base-content">Étapes de préparation</h2>
+					<p class="text-sm text-base-content/70 mt-1">Détaillez les étapes de votre recette dans l'ordre</p>
+				</div>
+			</div>
+
+			{# Steps collection #}
+			<div data-controller="form-collection" data-prototype="{{ step_prototype|e('html_attr') }}" class="space-y-4">
+				<div data-form-collection-target="list" class="space-y-4">
+					{% for step in form.steps %}
+						<div
+							class="collection-item bg-base-200/50 rounded-xl p-6 border-2 border-base-300 hover:border-secondary/30 transition-colors">
+							{# Position field #}
+							{{ form_widget(step.position) }}
+
+							{# Step number badge #}
+							<div class="flex items-start gap-4 mb-4">
+								<div class="badge badge-secondary badge-lg font-bold">Étape
+									{{ loop.index }}</div>
+							</div>
+
+							{# Step content and duration #}
+							<div class="grid grid-cols-12 gap-4 items-start">
+								<div class="col-span-9">
+									<label class="label">
+										<span class="label-text font-medium">Description de l'étape</span>
+									</label>
+									{{ form_widget(step.content, {'attr': {'class': 'textarea textarea-bordered h-24 w-full focus:textarea-secondary', 'placeholder': 'Décrivez cette étape en détail...'}}) }}
+								</div>
+								<div class="col-span-2">
+									<label class="label">
+										<span class="label-text font-medium">Durée (min)</span>
+									</label>
+									{{ form_widget(step.durationMinutes, {'attr': {'class': 'input input-bordered w-full focus:input-secondary', 'placeholder': '15'}}) }}
+								</div>
+								<div class="col-span-1 flex items-end">
+									<button type="button" class="btn btn-error btn-outline btn-square js-remove" title="Supprimer cette étape">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+										</svg>
+									</button>
+								</div>
+							</div>
+
+							{# Multiple pictograms selector #}
+							<div class="mt-6 pt-6 border-t border-base-300">
+								<label class="label">
+									<span class="label-text font-medium flex items-center gap-2">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+										</svg>
+										Pictogrammes pour cette étape
+										<span class="badge badge-sm">Plusieurs possibles</span>
+									</span>
+								</label>
+								{{ include('partials/_pictogram_multiple_widget.html.twig', {
+									'urls_field': step.pictogramUrls,
+									'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'
+								}) }}
+							</div>
+						</div>
+					{% else %}
+						<div class="text-center py-12 bg-base-200/30 rounded-xl border-2 border-dashed border-base-300">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+							</svg>
+							<p class="text-base-content/70 font-medium">Aucune étape ajoutée</p>
+							<p class="text-sm text-base-content/50 mt-1">Cliquez sur le bouton ci-dessous pour ajouter votre première étape</p>
+						</div>
+					{% endfor %}
+				</div>
+
+				{# Add step button #}
+				<div class="pt-4">
+					<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-secondary btn-lg gap-2 w-full lg:w-auto">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+						</svg>
+						Ajouter une étape
+					</button>
+				</div>
+			</div>
+
+			{# Navigation buttons #}
+			<div class="flex justify-between items-center gap-3 mt-8 pt-6 border-t border-base-300">
+				<button type="button" class="btn btn-outline btn-lg gap-2" data-action="stepper#prev">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+					</svg>
+					Précédent
+				</button>
+				<button type="button" class="btn btn-primary btn-lg gap-2" data-action="stepper#next">
+					Suivant
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+</section>
+{# Step 4: Utensils - Modern desktop layout #}
+<section class="max-w-5xl mx-auto hidden" data-stepper-target="step">
+	<div class="card bg-base-100 shadow-xl border border-base-300">
+		<div
+			class="card-body p-8">
+			{# Section header #}
+			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
+				<div class="bg-info/10 text-info rounded-xl p-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+				</div>
+				<div>
+					<h2 class="text-2xl font-bold text-base-content">Ustensiles nécessaires</h2>
+					<p class="text-sm text-base-content/70 mt-1">Sélectionnez tous les ustensiles utilisés dans cette recette</p>
+				</div>
+			</div>
+
+			{# Utensils selection grid #}
+			<div class="mb-6">
+				{% if form.utensils|length > 0 %}
+					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+						{% for child in form.utensils %}
+							{% set pictogram = child.vars.attr['data-pictogram']|default(null) %}
+
+							<label class="utensil-card group cursor-pointer">
+								{{ form_widget(child, {'attr': {'class': 'peer hidden'}}) }}
+
+								<div
+									class="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-base-300 bg-base-100 transition-all duration-200 hover:shadow-lg hover:scale-105 peer-checked:border-info peer-checked:bg-info/5 peer-checked:shadow-xl">
+									{# Pictogram or fallback icon #}
+									<div class="w-16 h-16 flex items-center justify-center">
+										{% if pictogram %}
+											<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-full h-full object-contain transition-transform group-hover:scale-110"/>
+										{% else %}
+											<div class="w-full h-full rounded-xl bg-base-200 flex items-center justify-center text-3xl">
+												🔪
+											</div>
+										{% endif %}
+									</div>
+
+									{# Label #}
+									<span class="text-sm font-medium text-center leading-tight">{{ child.vars.label }}</span>
+
+									{# Check indicator #}
+									<div class="w-6 h-6 rounded-full border-2 border-base-300 bg-base-100 flex items-center justify-center peer-checked:border-info peer-checked:bg-info peer-checked:text-white transition-colors">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden peer-checked:block" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+										</svg>
+									</div>
+								</div>
+							</label>
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="text-center py-12 bg-base-200/30 rounded-xl border-2 border-dashed border-base-300">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+						</svg>
+						<p class="text-base-content/70 font-medium">Aucun ustensile disponible</p>
+						<p class="text-sm text-base-content/50 mt-1">Créez d'abord des ustensiles pour pouvoir les sélectionner</p>
+					</div>
+				{% endif %}
+			</div>
+
+			{# Helper card #}
+			<div class="alert border-info/20">
+				<div class="flex items-start gap-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-info shrink-0 mt-0.5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+					</svg>
+					<div class="flex-1">
+						<h4 class="font-semibold text-base mb-1">Ustensile manquant ?</h4>
+						<p class="text-sm text-base-content/70 mb-3">
+							Vous pouvez créer de nouveaux ustensiles avec leurs pictogrammes avant de compléter votre recette.
+						</p>
+						<a href="{{ path('app_utensil_new') }}" target="_blank" class="btn btn-sm btn-info gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+							</svg>
+							Créer un nouvel ustensile
+						</a>
+					</div>
+				</div>
+			</div>
+
+			{# Navigation buttons #}
+			<div class="flex justify-between items-center gap-3 mt-8 pt-6 border-t border-base-300">
+				<button type="button" class="btn btn-outline btn-lg gap-2" data-action="stepper#prev">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+					</svg>
+					Précédent
+				</button>
+				<button type="button" class="btn btn-primary btn-lg gap-2" data-action="stepper#next">
+					Suivant
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+</section>
+
+{# JavaScript for utensil card interactions #}
+<script>
+	document.addEventListener( 'DOMContentLoaded', () => {
 
 document.querySelectorAll( '.utensil-card' ).forEach( ( label ) => {
-
-
-
-
 
 const input = label.querySelector( 'input[type="checkbox"]' );
 if ( ! input )
 
-
-
 return;
 
 
+const updateState = ( checked ) => {
 
-const setSelected = ( checked ) => {
-
-
-
-
-
-const img = label.querySelector( 'img' );
+const card = label.querySelector( 'div' );
 if ( checked )
 {
 
-
-
-
-
-label.classList.add( 'bg-primary/5', 'text-primary-600', 'border-primary', 'shadow-md' );
-if ( img )
-{
-
-
-
-
-
-img.classList.remove( 'w-10', 'h-10' );
-img.classList.add( 'w-8', 'h-8' );
-
-
-
-
-
-}
+card.classList.add( 'ring-2', 'ring-info' );
 
 }
 else
 {
 
-
-
-
-
-label.classList.remove( 'bg-primary/5', 'text-primary-600', 'border-primary', 'shadow-md' );
-if ( img )
-{
-
-
-
-
-
-img.classList.remove( 'w-8', 'h-8' );
-img.classList.add( 'w-10', 'h-10' );
-
-
-
-
-
-}
+card.classList.remove( 'ring-2', 'ring-info' );
 
 }
 
 };
 
-// initialize visual state
-setSelected( input.checked );
+// Initialize state
+updateState( input.checked );
 
-// clicking the label toggles the input; wait a tick to read its state
-label.addEventListener( 'click', () => {
+// Update on change
+input.addEventListener( 'change', () => {
 
-
-
-
-
-setTimeout( () => {
-
-
-
-
-
-setSelected( input.checked );
-input.dispatchEvent( new Event( 'change',
-{ bubbles: true } ) );
-
-
-
-
-
-}, 0 );
-
-
-
-
+updateState( input.checked );
 
 } );
 
-// keep visuals in sync when input changes directly
-input.addEventListener( 'change', () => setSelected( input.checked ) );
-
-
-
-
-
 } );
 
-
-
-
-
 } );
-		</script>
-		<div class="mt-3 md:mt-4">
-			{{ form_row(form.description) }}
-		</div>
+</script>
 
-		{# Boutons de navigation #}
-		<div class="flex justify-end gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
-			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
-				Suivant ▶
-			</button>
-		</div>
-	</div>
-</section>{# Step 2: Ingredients #}<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
-	<div class="card-body p-3 md:p-6">
-		<h3 class="text-base md:text-lg font-semibold">🧂 Ingrédients</h3>
-
-		<div data-controller="form-collection" data-prototype="{{ ingredient_prototype|e('html_attr') }}" class="mt-2 md:mt-3 space-y-2">
-			<div data-form-collection-target="list" class="space-y-2">
-				{% for ingredient in form.ingredients %}
-					<div
-						class="collection-item card bg-base-200 p-2 md:p-3">
-						{# Champ position caché #}
-						{{ form_widget(ingredient.position) }}
-
-						<div class="flex flex-col sm:flex-row items-start gap-2 md:gap-3">
-							<div class="flex-1 grid grid-cols-3 gap-2 w-full">
-								<div class="col-span-3 sm:col-span-2">{{ form_widget(ingredient.name) }}</div>
-								<div class="col-span-2 sm:col-span-1">{{ form_widget(ingredient.amount) }}</div>
-								<div class="col-span-1 sm:col-span-1">{{ form_widget(ingredient.unit) }}</div>
-							</div>
-							<div class="flex items-start w-full sm:w-auto">
-								<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
-							</div>
-						</div>
-
-						<div class="mt-3 pt-3 border-t border-base-300">
-							{{ include('partials/_pictogram_widget.html.twig', {
-								'form_field': ingredient.name,
-								'url_field': ingredient.pictogramUrl,
-								'placeholder': 'Rechercher un pictogramme pour cet ingrédient...',
-								'prefill': false
-							}) }}
-						</div>
-					</div>
-				{% else %}
-					<p class="text-xs md:text-sm text-muted">Aucun ingrédient — ajoutez le premier.</p>
-				{% endfor %}
-			</div>
-
-			<div class="mt-2 md:mt-3">
-				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-primary btn-sm md:btn-md w-full sm:w-auto">Ajouter un ingrédient</button>
-			</div>
-		</div>
-
-		{# Boutons de navigation #}
-		<div class="flex justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
-			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
-				◀ Précédent
-			</button>
-			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
-				Suivant ▶
-			</button>
-		</div>
-	</div>
-</section>
-{# Step 3: Steps #}
-<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
-	<div class="card-body p-3 md:p-6">
-		<h3 class="text-base md:text-lg font-semibold">👨‍🍳 Étapes</h3>
-
-		<div data-controller="form-collection" data-prototype="{{ step_prototype|e('html_attr') }}" class="mt-2 md:mt-3 space-y-2">
-			<div data-form-collection-target="list" class="space-y-2">
-				{% for step in form.steps %}
-					<div
-						class="collection-item card bg-base-200 p-2 md:p-3">
-						{# Champ position caché #}
-						{{ form_widget(step.position) }}
-
-						<div class="flex flex-col sm:flex-row gap-2 md:gap-3 items-start">
-							<div class="flex-1 w-full">{{ form_widget(step.content) }}</div>
-							<div class="w-full sm:w-28">{{ form_widget(step.durationMinutes) }}</div>
-							<div class="flex items-start w-full sm:w-auto">
-								<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
-							</div>
-						</div>
-
-						{# Widget pour plusieurs pictogrammes #}
-						<div class="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-base-300">
-							<div class="mb-2 font-semibold text-xs md:text-sm">🎨 Pictogrammes pour cette étape (plusieurs possibles)</div>
-							{{ include('partials/_pictogram_multiple_widget.html.twig', {'urls_field': step.pictogramUrls,	'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'}) }}
-						</div>
-					</div>
-				{% else %}
-					<p class="text-xs md:text-sm text-muted">Aucune étape — ajoutez la première.</p>
-				{% endfor %}
-			</div>
-
-			<div class="mt-2 md:mt-3">
-				<button type="button" data-action="click->form-collection#add" class="btn btn-outline btn-secondary btn-sm md:btn-md w-full sm:w-auto">Ajouter une étape</button>
-			</div>
-		</div>
-
-		{# Boutons de navigation #}
-		<div class="flex justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
-			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
-				◀ Précédent
-			</button>
-			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
-				Suivant ▶
-			</button>
-		</div>
-	</div>
-</section>{# Step 4: Utensils #}<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
-	<div class="card-body p-3 md:p-6">
-		<h3 class="text-base md:text-lg font-semibold">🍴 Ustensiles</h3>
-		<p class="text-xs md:text-sm text-base-content/70 mb-3 md:mb-4">Sélectionnez les ustensiles utilisés dans cette recette.</p>
-
-		{# Option 1: Sélection multiple depuis la liste existante #}
-		<div class="mb-3 md:mb-4">
-			<label class="label">
-				<span class="label-text font-semibold text-xs md:text-sm">Ustensiles disponibles</span>
-			</label>
-
-			{# Render expanded checkboxes as a grid of cards with pictograms (fallback emoji if missing) #}
-			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
-				{% for child in form.utensils %}
-					{% set pictogram = child.vars.attr['data-pictogram']|default(null) %}
-
-					<label class="flex flex-col items-center gap-1 p-2 md:p-3 rounded-xl cursor-pointer border border-base-300 bg-base-200 transition-all duration-150 hover:bg-base-300 has-checked:bg-primary has-checked:text-primary-content has-checked:ring-2 has-checked:ring-primary">
-						{{ form_widget(child, {'attr': {'class': 'hidden'}}) }}
-
-						{% if pictogram %}
-							<img src="{{ pictogram }}" alt="{{ child.vars.label }}" class="w-8 h-8 md:w-10 md:h-10 object-contain rounded"/>
-						{% else %}
-							<div class="w-8 h-8 md:w-10 md:h-10 rounded bg-base-100 flex items-center justify-center text-base md:text-lg">🔪</div>
-						{% endif %}
-
-						<span class="ml-2 font-medium text-xs md:text-sm text-center">{{ child.vars.label }}</span>
-					</label>
-
-				{% else %}
-					<p class="text-xs md:text-sm opacity-70">Aucun ustensile — ajoutez-en un via la gestion d'ustensiles.</p>
-				{% endfor %}
-			</div>
-		</div>
-
-		{# Option 2: Lien pour ajouter un nouvel ustensile #}
-		<div class="alert alert-info text-xs md:text-sm">
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5 md:w-6 md:h-6">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-			</svg>
-			<div>
-				<div class="text-xs md:text-sm">
-					<strong>Ustensile manquant ?</strong><br/>
-					Vous pouvez créer un nouvel ustensile avec son pictogramme.
+{# Step 5: Preview - Modern desktop layout #}
+<section class="max-w-6xl mx-auto hidden" data-stepper-target="step">
+	<div class="card bg-base-100 shadow-xl border border-base-300">
+		<div
+			class="card-body p-8">
+			{# Section header #}
+			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
+				<div class="bg-success/10 text-success rounded-xl p-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+					</svg>
+				</div>
+				<div>
+					<h2 class="text-2xl font-bold text-base-content">Aperçu de votre recette</h2>
+					<p class="text-sm text-base-content/70 mt-1">Vérifiez toutes les informations avant de sauvegarder</p>
 				</div>
 			</div>
-			<a href="{{ path('app_utensil_new') }}" target="_blank" class="btn btn-xs md:btn-sm btn-primary">
-				➕ Créer un ustensile
-			</a>
-		</div>
 
-		{# Boutons de navigation #}
-		<div class="flex justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
-			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
-				◀ Précédent
-			</button>
-			<button type="button" class="btn btn-primary btn-sm md:btn-md" data-action="stepper#next">
-				Suivant ▶
-			</button>
-		</div>
-	</div>
-</section>
-<section class="card bg-base-100 shadow p-3 md:p-4 hidden" data-stepper-target="step">
-	<div class="card-body p-3 md:p-6">
-		<h3 class="text-base md:text-lg font-semibold">Aperçu</h3>
-		<p class="text-xs md:text-sm text-base-content/70 mb-3 md:mb-4">Aperçu de la fiche avant enregistrement (basé sur les valeurs du formulaire).</p>
-		<div class="recipe-preview max-w-4xl mx-auto">
-			{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
-		</div>
-		{# Boutons de navigation et enregistrement #}
-		<div class="flex flex-col sm:flex-row justify-between gap-2 mt-4 md:mt-6 pt-3 md:pt-4 border-t">
-			<button type="button" class="btn btn-outline btn-sm md:btn-md" data-action="stepper#prev">
-				◀ Précédent
-			</button>
-			<div class="flex flex-col sm:flex-row gap-2">
-				<a href="{{ path('app_recipe_index') }}" class="btn btn-ghost btn-sm md:btn-md">Annuler</a>
-				<button type="submit" class="btn btn-success btn-sm md:btn-md gap-2">
-					💾
-					{{ submit_label }}
+			{# Recipe preview #}
+			<div class="bg-base-200/30 rounded-2xl p-6 mb-6">
+				<div class="recipe-preview">
+					{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
+				</div>
+			</div>
+
+			{# Info badge #}
+			<div class="alert bg-success/5 border-success/20 mb-6">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-success shrink-0" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+				</svg>
+				<span class="text-sm">
+					Tout semble correct ? Cliquez sur
+					<strong>"{{ submit_label }}"</strong>
+					pour finaliser votre recette !
+				</span>
+			</div>
+
+			{# Navigation and submit buttons #}
+			<div class="flex flex-col lg:flex-row justify-between items-center gap-4 pt-6 border-t border-base-300">
+				<button type="button" class="btn btn-outline btn-lg gap-2 w-full lg:w-auto" data-action="stepper#prev">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+					</svg>
+					Précédent
 				</button>
+				<div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+					<a href="{{ path('app_recipe_index') }}" class="btn btn-ghost btn-lg w-full sm:w-auto">
+						Annuler
+					</a>
+					<button type="submit" class="btn btn-success btn-lg gap-3 w-full sm:w-auto shadow-lg">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+						</svg>
+						{{ submit_label }}
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
-</section>{# Fallback submit actions (if user skips to bottom) #}<div class="mt-4 hidden">
+</section>
+{# Fallback submit actions (if user skips to bottom) #}
+<div class="mt-4 hidden">
 	<button type="submit" class="btn btn-primary">{{ submit_label }}</button>
 	<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour à la liste</a>
 </div>

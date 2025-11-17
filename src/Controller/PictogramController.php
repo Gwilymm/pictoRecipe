@@ -97,6 +97,7 @@ final class PictogramController extends AbstractController
 			$entityManager->persist($pictogram);
 			$entityManager->flush();
 
+			$this->addFlash('success', '✅ Pictogramme "' . $pictogram->getName() . '" ajouté avec succès !');
 			return $this->redirectToRoute('app_pictogram_index');
 		}
 
@@ -149,6 +150,7 @@ final class PictogramController extends AbstractController
 
 			$entityManager->flush();
 
+			$this->addFlash('success', '✅ Pictogramme "' . $pictogram->getName() . '" modifié avec succès !');
 			return $this->redirectToRoute('app_pictogram_index', [], Response::HTTP_SEE_OTHER);
 		}
 
@@ -162,8 +164,10 @@ final class PictogramController extends AbstractController
 	public function delete(Request $request, Pictogram $pictogram, EntityManagerInterface $entityManager): Response
 	{
 		if ($this->isCsrfTokenValid('delete' . $pictogram->getId(), $request->getPayload()->getString('_token'))) {
+			$name = $pictogram->getName();
 			$entityManager->remove($pictogram);
 			$entityManager->flush();
+			$this->addFlash('success', '🗑️ Pictogramme "' . $name . '" supprimé avec succès !');
 		}
 
 		return $this->redirectToRoute('app_pictogram_index', [], Response::HTTP_SEE_OTHER);

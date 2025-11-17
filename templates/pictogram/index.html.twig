@@ -46,11 +46,11 @@
 				</div>
 			</div>
 
-			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4" data-pictogram-filter-target="grid">
+			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 md:gap-4 overflow-visible" data-pictogram-filter-target="grid">
 				{% for pictogram in pictograms %}
-					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow pictogram-card" data-pictogram-filter-target="card" data-name="{{ pictogram.name|lower }}" data-format="{{ pictogram.format|lower }}">
-						<figure class="pt-2 md:pt-4">
-							<img src="{{ asset(pictogram.filePath) }}" alt="{{ pictogram.name }}" class="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 object-contain">
+					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow pictogram-card group" data-pictogram-filter-target="card" data-name="{{ pictogram.name|lower }}" data-format="{{ pictogram.format|lower }}">
+						<figure class="pt-2 md:pt-4 relative overflow-visible">
+							<img src="{{ asset(pictogram.filePath) }}" alt="{{ pictogram.name }}" class="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 object-contain transition-all duration-300 group-hover:scale-150 group-hover:z-50 group-hover:relative">
 						</figure>
 						<div class="card-body p-2 md:p-3 flex flex-col items-center text-center gap-1 md:gap-2">
 							<h3 class="font-semibold text-xs md:text-sm line-clamp-2">{{ pictogram.name }}</h3>

@@ -22,7 +22,7 @@
 					<p class="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4">Créez des recettes accessibles avec des pictogrammes</p>
 					<p class="text-base md:text-lg lg:text-xl text-base-content/80 max-w-3xl mx-auto mb-6 md:mb-8">
 						Transformez la création de recettes en une expérience simple, visuelle et inclusive. 
-																								Générez des recettes illustrées pour faciliter la compréhension, l'apprentissage et l'autonomie.
+																														Générez des recettes illustrées pour faciliter la compréhension, l'apprentissage et l'autonomie.
 					</p>
 					<div class="flex flex-wrap gap-3 md:gap-4 justify-center">
 						<a href="#features" class="btn btn-primary btn-md md:btn-lg gap-2">
@@ -289,7 +289,7 @@
 							<h2 class="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6">PictoRecipe rend la cuisine accessible à tous</h2>
 							<p class="text-base md:text-lg mb-6 md:mb-8 max-w-3xl">
 								Créez des recettes visuelles, structurées et intuitives pour favoriser l'apprentissage, 
-																																l'autonomie et l'inclusion.
+																																								l'autonomie et l'inclusion.
 							</p>
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-w-2xl mx-auto text-left text-sm md:text-base">
 								<div>✓ Apprendre à cuisiner</div>
@@ -406,20 +406,6 @@
 					</div>
 				{% endif %}
 
-				{# Affichage des erreurs avec style moderne #}
-				{% if error %}
-					<div class="alert alert-error shadow-2xl mb-6 md:mb-8 animate-pulse">
-						<div class="flex items-center gap-3 md:gap-4">
-							<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6 md:h-8 md:w-8" fill="none" viewbox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-							</svg>
-							<div>
-								<h3 class="font-bold text-base md:text-lg">⚠️ Erreur de connexion</h3>
-								<div class="text-xs md:text-sm mt-1">{{ error }}</div>
-							</div>
-						</div>
-					</div>
-				{% endif %}
 
 				{# Résultats de la recherche #}
 				{% if searched %}

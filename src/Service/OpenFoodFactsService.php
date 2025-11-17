@@ -12,7 +12,8 @@ use OpenFoodFacts\Api as OpenFoodFactsApi;
  */
 final class OpenFoodFactsService
 {
-	private const BASE_URL = 'https://world.openfoodfacts.org/cgi/search.pl';
+	// URL pour la France
+	private const BASE_URL = 'https://fr.openfoodfacts.org/cgi/search.pl';
 
 	public function __construct(
 		private readonly HttpClientInterface $httpClient,
@@ -20,11 +21,15 @@ final class OpenFoodFactsService
 	) {}
 
 	/**
-	 * Recherche par nom. Retourne un tableau propre pour la couche front.
+	 * Recherche par nom (avec filtre optionnel par marque).
+	 * Retourne un tableau propre pour la couche front.
 	 *
+	 * @param string $query Terme de recherche (nom d'ingrédient)
+	 * @param int $limit Nombre maximum de résultats
+	 * @param string|null $brand Filtre optionnel par marque
 	 * @return array<int,array<string,mixed>>
 	 */
-	public function searchByName(string $query, int $limit = 10): array
+	public function searchByName(string $query, int $limit = 10, ?string $brand = null): array
 	{
 		$query = trim($query);
 		if ($query === '') {
@@ -79,12 +84,26 @@ final class OpenFoodFactsService
 
 		// --- 2) Fallback HTTP ---
 		$params = [
-			'search_terms'  => $query,
-			'search_simple' => '1',
 			'action'        => 'process',
 			'json'          => '1',
 			'page_size'     => $limit,
 		];
+
+		// Si une marque est spécifiée, utiliser la recherche avancée avec deux critères
+		if ($brand !== null && trim($brand) !== '') {
+			// Critère 1 : la marque
+			$params['tagtype_0'] = 'brands';
+			$params['tag_contains_0'] = 'contains';
+			$params['tag_0'] = trim($brand);
+
+			// Recherche simple pour le nom de produit (filtre les résultats de la marque)
+			$params['search_terms'] = $query;
+			$params['search_simple'] = '1';
+		} else {
+			// Recherche simple uniquement par nom
+			$params['search_terms'] = $query;
+			$params['search_simple'] = '1';
+		}
 
 		try {
 			$response = $this->httpClient->request('GET', self::BASE_URL, [
@@ -101,12 +120,51 @@ final class OpenFoodFactsService
 			$results = [];
 
 			foreach ($data['products'] as $p) {
+				$productName = $p['product_name'] ?? $p['generic_name'] ?? '';
+				$productBrand = $p['brands'] ?? '';
+				$categories = $p['categories'] ?? '';
+
+				// Filtrage intelligent : PRIORITÉ au nom du produit
+				$searchLower = mb_strtolower($query);
+				$nameLower = mb_strtolower($productName);
+				$categoriesLower = mb_strtolower($categories);
+
+				// Vérifier si le terme est dans le nom du produit
+				$isInName = strpos($nameLower, $searchLower) !== false;
+
+				// Pour les catégories, on est plus strict : on vérifie que c'est une catégorie principale
+				// en cherchant le terme suivi d'une virgule ou en fin de chaîne (évite les sous-catégories)
+				$isMainCategory = false;
+				if (!$isInName) {
+					// Chercher "beurre," ou "beurre" en fin de catégories, ou ",beurre," ou ",beurre"
+					$patterns = [
+						',' . $searchLower . ',',  // au milieu
+						',' . $searchLower,        // à la fin
+						$searchLower . ',',        // au début
+					];
+					foreach ($patterns as $pattern) {
+						if (strpos($categoriesLower, $pattern) !== false) {
+							$isMainCategory = true;
+							break;
+						}
+					}
+					// Si c'est le seul terme (catégorie unique)
+					if (!$isMainCategory && $categoriesLower === $searchLower) {
+						$isMainCategory = true;
+					}
+				}
+
+				// On accepte uniquement si le terme est dans le nom OU si c'est une catégorie principale
+				if (!$isInName && !$isMainCategory) {
+					continue;
+				}
+
 				$results[] = [
 					'id'       => $p['code'] ?? null,
-					'name'     => $p['product_name'] ?? $p['generic_name'] ?? null,
+					'name'     => $productName,
 					'image'    => $p['image_front_url'] ?? $p['image_url'] ?? null,
-					'brand'    => $p['brands'] ?? null,
-					'category' => $p['categories'] ?? null,
+					'brand'    => $productBrand,
+					'category' => $categories,
 				];
 			}
 

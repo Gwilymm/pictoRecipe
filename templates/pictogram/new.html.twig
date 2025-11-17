@@ -6,10 +6,72 @@
 {% block body %}
 	<h1 class="text-3xl font-bold mb-6">Ajouter un pictogramme personnalisé</h1>
 
+	{# Alerte d'erreur qui s'efface automatiquement #}
+	{% set hasErrors = form.vars.errors|length > 0 or form.name.vars.errors|length > 0 %}
+	{% if hasErrors %}
+		<div class="alert alert-error mb-6 animate-slide-in-right" id="error-alert">
+			<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewbox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+			</svg>
+			<div>
+				<h3 class="font-bold">Erreur de validation</h3>
+				{% for error in form.vars.errors %}
+					<p class="text-sm">{{ error.message }}</p>
+				{% endfor %}
+				{% for error in form.name.vars.errors %}
+					<p class="text-sm">{{ error.message }}</p>
+				{% endfor %}
+			</div>
+			<button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()">
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+		<script>
+			// Auto-fermeture après 8 secondes
+setTimeout( function ()
+{
+
+
+
+const alert = document.getElementById( 'error-alert' );
+if ( alert )
+{
+
+
+
+alert.style.transition = 'opacity 0.5s, transform 0.5s';
+alert.style.opacity = '0';
+alert.style.transform = 'translateX(100%)';
+setTimeout( function ()
+{
+
+
+
+alert.remove();
+
+
+
+}, 500 );
+
+
+
+}
+
+}, 8000 );
+		</script>
+	{% endif %}
+
 	<div class="mb-4" data-controller="picto-search">
 
 		{{ include('pictogram/_form.html.twig') }}
 	</div>
 
-	<a href="{{ path('app_pictogram_index') }}" class="btn btn-outline btn-sm">⬅ Retour</a>
+	<a href="{{ path('app_pictogram_index') }}" class="btn btn-outline btn-sm">
+		<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+		</svg>
+		Retour
+	</a>
 {% endblock %}
