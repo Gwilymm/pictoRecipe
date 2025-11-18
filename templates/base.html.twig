@@ -52,7 +52,7 @@
 			{% endfor %}
 		</div>
 
-		<main class="container mx-auto px-4 py-6"> {% block body %}{% endblock %}
+		<main class="container mx-auto px-2 sm:px-4 py-6"> {% block body %}{% endblock %}
 			</main>
 
 			{# Script pour auto-fermer les toasts après 5 secondes #}
@@ -60,12 +60,18 @@
 				document.addEventListener( 'DOMContentLoaded', function ()
 {
 
+
+
 const toasts = document.querySelectorAll( '.toast .alert' );
 toasts.forEach( function ( toast )
 {
 
+
+
 setTimeout( function ()
 {
+
+
 
 toast.style.transition = 'opacity 0.5s, transform 0.5s';
 toast.style.opacity = '0';
@@ -73,13 +79,23 @@ toast.style.transform = 'translateX(100%)';
 setTimeout( function ()
 {
 
+
+
 toast.remove();
+
+
 
 }, 500 );
 
+
+
 }, 5000 );
 
+
+
 } );
+
+
 
 } );
 			</script>

@@ -434,11 +434,14 @@ export default class extends Controller {
 		}
 
 		const badge = document.createElement('div');
-		badge.className = 'badge badge-lg badge-primary gap-2 p-3';
+		// Larger, non-badge card with white background for visibility
+		badge.className = 'selected-picto flex items-center gap-3 p-2 md:p-3 bg-white border border-base-300 rounded-xl shadow-sm';
 		badge.dataset.pictogramUrl = imageUrl;
 		badge.innerHTML = `
-			<img src="${imageUrl}" alt="${name}" class="w-8 h-8 object-contain" />
-			<span class="text-xs max-w-[100px] truncate">${name}</span>
+			<div class="w-16 h-16 flex items-center justify-center">
+				<img src="${imageUrl}" alt="${name}" class="max-w-16 max-h-16 object-contain" />
+			</div>
+			<span class="text-xs sm:text-sm max-w-[140px] truncate">${name}</span>
 			<button type="button" class="btn btn-ghost btn-xs btn-circle" data-url="${imageUrl}">✕</button>
 		`;
 

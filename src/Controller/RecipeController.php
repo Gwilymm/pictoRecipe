@@ -199,33 +199,45 @@ final class RecipeController extends AbstractController
         }
 
         $cachePath = $cacheDir . DIRECTORY_SEPARATOR . $recipe->getId() . '.pdf';
+        // Content hash of the rendered HTML to detect any change impacting the PDF
+        $htmlHash = sha1($html);
+        $hashPath = $cachePath . '.sha1';
         $force = $request->query->get('force') === '1';
 
-        // If cached and up-to-date, return it
+        // If cached, check both last update timestamp and HTML hash; return cache if fresh
         if (!$force && file_exists($cachePath) && is_readable($cachePath)) {
             $cacheMTime = filemtime($cachePath);
             $updatedAt = $recipe->getUpdatedAt();
+            $storedHash = is_readable($hashPath) ? @trim((string)file_get_contents($hashPath)) : null;
 
-            // Use cache if: file exists AND (no updatedAt OR cache is newer)
-            $useCache = $cacheMTime !== false &&
-                (!$updatedAt instanceof \DateTimeInterface || $cacheMTime > $updatedAt->getTimestamp());
+            $mtimeFresh = $cacheMTime !== false && (!$updatedAt instanceof \DateTimeInterface || $cacheMTime > $updatedAt->getTimestamp());
+            $hashFresh = $storedHash && hash_equals($storedHash, $htmlHash);
 
-            if ($useCache) {
+            if ($mtimeFresh && $hashFresh) {
                 $logger->info('Returning cached PDF', [
                     'recipe_id' => $recipe->getId(),
-                    'cache_mtime' => date('Y-m-d H:i:s', $cacheMTime),
-                    'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : 'null'
+                    'cache_mtime' => $cacheMTime ? date('Y-m-d H:i:s', $cacheMTime) : null,
+                    'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : 'null',
+                    'hash_match' => true,
                 ]);
                 $response = new BinaryFileResponse($cachePath);
                 $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
+                // Avoid browser-level caching of the download
+                $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+                $response->headers->set('Pragma', 'no-cache');
+                if ($cacheMTime) {
+                    $response->setLastModified(\DateTime::createFromFormat('U', (string)$cacheMTime) ?: new \DateTime());
+                }
+                $response->setEtag('W/"' . $htmlHash . '"');
                 return $response;
-            } else {
-                $logger->info('Cache outdated, regenerating', [
-                    'recipe_id' => $recipe->getId(),
-                    'cache_mtime' => date('Y-m-d H:i:s', $cacheMTime),
-                    'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : 'null'
-                ]);
             }
+
+            $logger->info('Cache outdated, regenerating', [
+                'recipe_id' => $recipe->getId(),
+                'cache_mtime' => $cacheMTime ? date('Y-m-d H:i:s', $cacheMTime) : null,
+                'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : 'null',
+                'hash_match' => $storedHash ? hash_equals($storedHash, $htmlHash) : null,
+            ]);
         }
 
         // Generate PDF via DOMPDF
@@ -240,11 +252,16 @@ final class RecipeController extends AbstractController
         // Store in cache
         if ($pdfOutput !== false) {
             @file_put_contents($cachePath, $pdfOutput);
+            @file_put_contents($hashPath, $htmlHash);
         }
 
         // Return cached file response (serves the freshly created file)
         $response = new BinaryFileResponse($cachePath);
         $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
+        // Avoid browser-level caching of the download
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->setEtag('W/"' . $htmlHash . '"');
         return $response;
     }
 

@@ -21,7 +21,7 @@
 				</a>
 			</div>
 			<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
-				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-xs md:btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
+				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, v: (recipe.updatedAt ?? recipe.createdAt)|date('U')}) }}" class="btn btn-primary btn-xs md:btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
 					<span class="hidden sm:inline">📄 Télécharger en PDF</span>
 					<span class="sm:hidden">📄 PDF</span>
 				</a>
@@ -38,7 +38,7 @@
 				<span class="sm:hidden">← Liste</span>
 			</a>
 
-			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1}) }}" class="btn btn-primary btn-sm md:btn-md pdf-download-btn">
+			<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, v: (recipe.updatedAt ?? recipe.createdAt)|date('U')}) }}" class="btn btn-primary btn-sm md:btn-md pdf-download-btn">
 				<span class="hidden sm:inline">📄 Télécharger le PDF</span>
 				<span class="sm:hidden">📄 PDF</span>
 			</a>

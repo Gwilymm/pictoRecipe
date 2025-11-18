@@ -2,22 +2,58 @@
 	 Modern desktop-first UI with improved UX principles
 #}
 
-{{ form_start(form, {'attr': {'class': 'container mx-auto px-4 lg:px-8 py-8', 'data-controller': 'stepper'}}) }}
+{{ form_start(form, {'attr': {'class': 'container mx-auto  sm:px-4 lg:px-8 py-6 md:py-8', 'data-controller': 'stepper'}}) }}
 
 {# Determine submit label: prefer explicit `button_label`, otherwise infer from bound entity (has id => update) #}
 {% set submit_label = (button_label is defined) ? button_label : ((form.vars.data is defined and form.vars.data.id) ? 'Mettre à jour' : 'Enregistrer la recette') %}
 {% if form.ingredients is defined and form.ingredients.vars.prototype is defined %}
-	{% set ingredient_prototype %}{{ form_widget(form.ingredients.vars.prototype.position) }}<div class="flex flex-col sm:flex-row items-start gap-2 md:gap-3">
-		<div class="flex-1 grid grid-cols-3 gap-2 w-full">
-			<div class="col-span-3 sm:col-span-2">{{ form_widget(form.ingredients.vars.prototype.name) }}</div>
-			<div class="col-span-2 sm:col-span-1">{{ form_widget(form.ingredients.vars.prototype.amount) }}</div>
-			<div class="col-span-1 sm:col-span-1">{{ form_widget(form.ingredients.vars.prototype.unit) }}</div>
+	{% set ingredient_prototype %}
+	{{ form_widget(form.ingredients.vars.prototype.position) }}
+	<div class="flex items-center justify-between mb-4">
+		<div class="badge badge-accent badge-lg font-bold">Ingrédient</div>
+		<button type="button" class="btn btn-ghost btn-error btn-sm md:btn-md js-remove" title="Supprimer cet ingrédient">
+			{{ ux_icon('heroicons:trash', { class: 'w-5 h-5' }) }}
+			<span class="sr-only">Supprimer cet ingrédient</span>
+		</button>
+	</div>
+
+	<div class="flex flex-col gap-4 md:grid md:grid-cols-12 md:gap-4 items-start">
+		<div class="md:col-span-6">
+			<label class="label">
+				<span class="label-text font-medium">Nom de l'ingrédient</span>
+			</label>
+			{{ form_widget(form.ingredients.vars.prototype.name, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Farine'}}) }}
 		</div>
-		<div class="flex items-start w-full sm:w-auto">
-			<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
+		<div class="md:col-span-3">
+			<label class="label">
+				<span class="label-text font-medium">Quantité</span>
+			</label>
+			{{ form_widget(form.ingredients.vars.prototype.amount, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': '250'}}) }}
+		</div>
+		<div class="md:col-span-2">
+			<label class="label">
+				<span class="label-text font-medium">Unité</span>
+			</label>
+			{{ form_widget(form.ingredients.vars.prototype.unit, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'g'}}) }}
 		</div>
 	</div>
-	<div class="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-base-300">{{ include('partials/_pictogram_widget.html.twig', {'form_field': form.ingredients.vars.prototype.name, 'url_field': form.ingredients.vars.prototype.pictogramUrl, 'placeholder': 'Rechercher un pictogramme pour cet ingrédient...', 'prefill': false}) }}</div>
+
+	<div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-base-300">
+		<label class="label">
+			<span class="label-text font-medium flex items-center gap-2">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+				</svg>
+				Pictogramme associé
+			</span>
+		</label>
+		{{ include('partials/_pictogram_widget.html.twig', {
+				'form_field': form.ingredients.vars.prototype.name,
+				'url_field': form.ingredients.vars.prototype.pictogramUrl,
+				'placeholder': 'Rechercher un pictogramme pour cet ingrédient...',
+				'prefill': false
+			}) }}
+	</div>
 	{% endset %}
 {% else %}
 	{% set ingredient_prototype = '' %}
@@ -43,42 +79,17 @@
 <div class="mb-8">
 	<div class="max-w-5xl mx-auto">
 		<ul class="steps steps-horizontal w-full" data-stepper-target="header">
-			<li class="step step-primary" data-stepper-target="stepItem" data-step-name="Informations">
-				<div class="flex flex-col items-center gap-2">
-					<div class="bg-primary text-primary-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">1</div>
-					<span class="text-sm font-medium hidden lg:block">Informations</span>
-				</div>
-			</li>
-			<li class="step" data-stepper-target="stepItem" data-step-name="Ingrédients">
-				<div class="flex flex-col items-center gap-2">
-					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">2</div>
-					<span class="text-sm font-medium hidden lg:block">Ingrédients</span>
-				</div>
-			</li>
-			<li class="step" data-stepper-target="stepItem" data-step-name="Étapes">
-				<div class="flex flex-col items-center gap-2">
-					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">3</div>
-					<span class="text-sm font-medium hidden lg:block">Étapes</span>
-				</div>
-			</li>
-			<li class="step" data-stepper-target="stepItem" data-step-name="Ustensiles">
-				<div class="flex flex-col items-center gap-2">
-					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">4</div>
-					<span class="text-sm font-medium hidden lg:block">Ustensiles</span>
-				</div>
-			</li>
-			<li class="step" data-stepper-target="stepItem" data-step-name="Aperçu">
-				<div class="flex flex-col items-center gap-2">
-					<div class="bg-base-300 text-base-content rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">5</div>
-					<span class="text-sm font-medium hidden lg:block">Aperçu</span>
-				</div>
-			</li>
+			<li class="step step-primary" data-stepper-target="stepItem" data-step-name="Informations"></li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Ingrédients"></li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Étapes"></li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Ustensiles"></li>
+			<li class="step" data-stepper-target="stepItem" data-step-name="Aperçu"></li>
 		</ul>
 	</div>
 
 	{# Current step indicator - visible on all screens #}
 	<div class="text-center mt-6">
-		<div class="inline-flex items-center gap-3 bg-base-200 px-6 py-3 rounded-full">
+		<div class="inline-flex items-center gap-2 md:gap-3 bg-base-200 px-3 py-2 md:px-6 md:py-3 rounded-full">
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewbox="0 0 24 24" stroke="currentColor">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
 			</svg>
@@ -88,10 +99,10 @@
 </div>
 
 {# Step 1: Informations générales - Modern desktop layout #}
-<section class="max-w-5xl mx-auto" data-stepper-target="step">
+<section class="max-w-5xl sm:w-full mx-auto" data-stepper-target="step">
 	<div class="card bg-base-100 shadow-xl border border-base-300">
 		<div
-			class="card-body p-8">
+			class="card-body p-4 md:p-8">
 			{# Section header #}
 			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
 				<div class="bg-primary/10 text-primary rounded-xl p-4">
@@ -163,7 +174,7 @@
 <section class="max-w-5xl mx-auto hidden" data-stepper-target="step">
 	<div class="card bg-base-100 shadow-xl border border-base-300">
 		<div
-			class="card-body p-8">
+			class="card-body p-4 md:p-8">
 			{# Section header #}
 			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
 				<div class="bg-accent/10 text-accent rounded-xl p-4">
@@ -186,37 +197,41 @@
 							{# Position field #}
 							{{ form_widget(ingredient.position) }}
 
+							{# Ingredient header with delete button on the right (better mobile placement) #}
+							<div class="flex items-center justify-between mb-4">
+								<div class="badge badge-accent badge-lg font-bold">Ingrédient
+									{{ loop.index }}</div>
+								<button type="button" class="btn btn-ghost btn-error btn-sm md:btn-md js-remove" title="Supprimer cet ingrédient">
+									{{ ux_icon('heroicons:trash', {class: 'w-5 h-5'}) }}
+									<span class="sr-only">Supprimer l'ingrédient
+										{{ loop.index }}</span>
+								</button>
+							</div>
+
 							{# Ingredient fields in a clean grid #}
-							<div class="grid grid-cols-12 gap-4 items-start">
-								<div class="col-span-6">
+							<div class="flex flex-col gap-4 md:grid md:grid-cols-12 md:gap-4 items-start">
+								<div class="md:col-span-6">
 									<label class="label">
 										<span class="label-text font-medium">Nom de l'ingrédient</span>
 									</label>
 									{{ form_widget(ingredient.name, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Farine'}}) }}
 								</div>
-								<div class="col-span-3">
+								<div class="md:col-span-3">
 									<label class="label">
 										<span class="label-text font-medium">Quantité</span>
 									</label>
 									{{ form_widget(ingredient.amount, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': '250'}}) }}
 								</div>
-								<div class="col-span-2">
+								<div class="md:col-span-2">
 									<label class="label">
 										<span class="label-text font-medium">Unité</span>
 									</label>
 									{{ form_widget(ingredient.unit, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'g'}}) }}
 								</div>
-								<div class="col-span-1 flex items-end">
-									<button type="button" class="btn btn-error btn-outline btn-square js-remove" title="Supprimer cet ingrédient">
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-										</svg>
-									</button>
-								</div>
 							</div>
 
 							{# Pictogram selector #}
-							<div class="mt-6 pt-6 border-t border-base-300">
+							<div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-base-300">
 								<label class="label">
 									<span class="label-text font-medium flex items-center gap-2">
 										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
@@ -277,7 +292,7 @@
 <section class="max-w-5xl mx-auto hidden" data-stepper-target="step">
 	<div class="card bg-base-100 shadow-xl border border-base-300">
 		<div
-			class="card-body p-8">
+			class="card-body p-4 md:p-8">
 			{# Section header #}
 			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
 				<div class="bg-secondary/10 text-secondary rounded-xl p-4">
@@ -300,50 +315,54 @@
 							{# Position field #}
 							{{ form_widget(step.position) }}
 
-							{# Step number badge #}
-							<div class="flex items-start gap-4 mb-4">
+							{# Step header with delete button on the right #}
+							<div class="flex items-center justify-between mb-4">
 								<div class="badge badge-secondary badge-lg font-bold">Étape
 									{{ loop.index }}</div>
+								<button type="button" class="btn btn-ghost btn-error btn-sm md:btn-md js-remove" title="Supprimer cette étape">
+									{{ ux_icon('heroicons:trash', {class: 'w-5 h-5'}) }}
+									<span class="sr-only">Supprimer l'étape
+										{{ loop.index }}</span>
+								</button>
 							</div>
 
 							{# Step content and duration #}
-							<div class="grid grid-cols-12 gap-4 items-start">
-								<div class="col-span-9">
+							<div class="flex flex-col gap-4 md:grid md:grid-cols-12 md:gap-4 items-start">
+								<div class="md:col-span-9 w-full">
 									<label class="label">
 										<span class="label-text font-medium">Description de l'étape</span>
 									</label>
 									{{ form_widget(step.content, {'attr': {'class': 'textarea textarea-bordered h-24 w-full focus:textarea-secondary', 'placeholder': 'Décrivez cette étape en détail...'}}) }}
 								</div>
-								<div class="col-span-2">
+								<div class="md:col-span-2 w-full md:w-auto">
 									<label class="label">
 										<span class="label-text font-medium">Durée (min)</span>
 									</label>
 									{{ form_widget(step.durationMinutes, {'attr': {'class': 'input input-bordered w-full focus:input-secondary', 'placeholder': '15'}}) }}
 								</div>
-								<div class="col-span-1 flex items-end">
-									<button type="button" class="btn btn-error btn-outline btn-square js-remove" title="Supprimer cette étape">
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-										</svg>
-									</button>
-								</div>
-							</div>
 
-							{# Multiple pictograms selector #}
-							<div class="mt-6 pt-6 border-t border-base-300">
+							</div>
+							<div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-base-300 w-full">
 								<label class="label">
-									<span class="label-text font-medium flex items-center gap-2">
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-										</svg>
-										Pictogrammes pour cette étape
+									<span class="label-text font-medium flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+
+										<span class="flex items-center gap-2">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+											</svg>
+											Pictogrammes pour cette étape
+										</span>
+
 										<span class="badge badge-sm">Plusieurs possibles</span>
 									</span>
 								</label>
-								{{ include('partials/_pictogram_multiple_widget.html.twig', {
-									'urls_field': step.pictogramUrls,
-									'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'
-								}) }}
+
+								<div class="flex flex-wrap gap-2 w-full">
+									{{ include('partials/_pictogram_multiple_widget.html.twig', {
+										'urls_field': step.pictogramUrls,
+										'placeholder': 'Recherchez des mots-clés : mélanger, beurre, sucre...'
+									}) }}
+								</div>
 							</div>
 						</div>
 					{% else %}
@@ -390,7 +409,7 @@
 <section class="max-w-5xl mx-auto hidden" data-stepper-target="step">
 	<div class="card bg-base-100 shadow-xl border border-base-300">
 		<div
-			class="card-body p-8">
+			class="card-body p-4 md:p-8">
 			{# Section header #}
 			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
 				<div class="bg-info/10 text-info rounded-xl p-4">
@@ -495,27 +514,58 @@
 <script>
 	document.addEventListener( 'DOMContentLoaded', () => {
 
+
+
+
+
 document.querySelectorAll( '.utensil-card' ).forEach( ( label ) => {
+
+
+
+
 
 const input = label.querySelector( 'input[type="checkbox"]' );
 if ( ! input )
 
+
+
 return;
 
 
+
 const updateState = ( checked ) => {
+
+
+
+
 
 const card = label.querySelector( 'div' );
 if ( checked )
 {
 
+
+
+
+
 card.classList.add( 'ring-2', 'ring-info' );
+
+
+
+
 
 }
 else
 {
 
+
+
+
+
 card.classList.remove( 'ring-2', 'ring-info' );
+
+
+
+
 
 }
 
@@ -527,11 +577,27 @@ updateState( input.checked );
 // Update on change
 input.addEventListener( 'change', () => {
 
+
+
+
+
 updateState( input.checked );
 
-} );
+
+
+
 
 } );
+
+
+
+
+
+} );
+
+
+
+
 
 } );
 </script>
@@ -540,7 +606,7 @@ updateState( input.checked );
 <section class="max-w-6xl mx-auto hidden" data-stepper-target="step">
 	<div class="card bg-base-100 shadow-xl border border-base-300">
 		<div
-			class="card-body p-8">
+			class="card-body p-4 md:p-8">
 			{# Section header #}
 			<div class="flex items-center gap-4 mb-6 pb-6 border-b border-base-300">
 				<div class="bg-success/10 text-success rounded-xl p-4">
@@ -556,7 +622,7 @@ updateState( input.checked );
 			</div>
 
 			{# Recipe preview #}
-			<div class="bg-base-200/30 rounded-2xl p-6 mb-6">
+			<div class="bg-base-200/30 rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
 				<div class="recipe-preview">
 					{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
 				</div>
