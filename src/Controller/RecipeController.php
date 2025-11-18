@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Psr\Log\LoggerInterface;
 use App\Entity\Recipe;
 use App\Form\RecipeType;
 use App\Repository\RecipeRepository;
@@ -56,6 +57,12 @@ final class RecipeController extends AbstractController
     public function search(): Response
     {
         return $this->render('recipe/search.html.twig');
+    }
+
+    #[Route('/import', name: 'app_recipe_import', methods: ['GET'])]
+    public function importUrl(): Response
+    {
+        return $this->render('recipe/import.html.twig');
     }
 
     #[Route('/new', name: 'app_recipe_new', methods: ['GET', 'POST'])]
@@ -297,9 +304,22 @@ final class RecipeController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_recipe_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Recipe $recipe, EntityManagerInterface $entityManager, \App\Repository\PictogramRepository $pictogramRepository): Response
+    public function edit(Request $request, Recipe $recipe, EntityManagerInterface $entityManager, \App\Repository\PictogramRepository $pictogramRepository, \Psr\Log\LoggerInterface $logger): Response
     {
         $form = $this->createForm(RecipeType::class, $recipe);
+        // Debug: log request payload for XHR posts to help diagnose invalid payloads
+        if ($request->isXmlHttpRequest()) {
+            // Convert request->request->all() to strings for safe logging
+            $payload = $request->request->all();
+            $recipePayload = $payload['recipe'] ?? null;
+            $logger->debug('RecipeController::edit XHR payload', [
+                'keys' => array_keys($payload),
+                'recipe_is_array' => is_array($recipePayload),
+                'recipe_sample' => is_array($recipePayload) ? json_encode(array_slice($recipePayload, 0, 20)) : (string) $recipePayload,
+            ]);
+            // Log raw request content for additional debugging (truncate for safety)
+            $logger->debug('RecipeController::edit XHR raw content', ['length' => strlen($request->getContent()), 'content' => substr($request->getContent(), 0, 10240)]);
+        }
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -324,6 +344,20 @@ final class RecipeController extends AbstractController
 
             // Après mise à jour, afficher la prévisualisation avec les informations à jour
             return $this->redirectToRoute('app_recipe_preview', ['id' => $recipe->getId()], Response::HTTP_SEE_OTHER);
+        }
+
+        // If XHR and invalid, return a helpful JSON payload for debugging purposes
+        if ($request->isXmlHttpRequest()) {
+            // Extract form errors safely
+            $errors = array_map(function ($e) {
+                if (is_object($e) && method_exists($e, 'getMessage')) {
+                    return $e->getMessage();
+                }
+                return (string) $e;
+            }, iterator_to_array($form->getErrors(true)));
+            $errorText = implode('; ', $errors);
+            $logger->warning('RecipeController::edit form invalid', ['errors' => $errors, 'submitted' => $request->request->all()]);
+            return new JsonResponse(['ok' => false, 'errors' => $errors, 'errorText' => $errorText, 'keys' => array_keys($payload), 'recipe_is_array' => is_array($payload['recipe'] ?? null)], 422);
         }
 
         return $this->render('recipe/edit.html.twig', [

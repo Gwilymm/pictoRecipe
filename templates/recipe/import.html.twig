@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Importer une recette depuis une URL
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-3 md:px-4 py-4 md:py-8" data-controller="recipe-import">
+		<h1 class="text-2xl md:text-3xl font-bold text-center mb-4">📥 Importer une recette par URL</h1>
+
+		<div class="card bg-base-100 p-4 md:p-6 rounded-xl shadow-md w-full max-w-3xl mx-auto">
+			<div class="form-control">
+				<label class="label">
+					<span class="label-text">URL de la recette</span>
+				</label>
+				<input type="text" placeholder="https://www.marmiton.org/recettes/xxx" data-recipe-import-target="url" class="input input-bordered input-md w-full" aria-label="URL de la recette" data-action="keydown.enter->recipe-import#fetchRecipe"/>
+			</div>
+
+			<div class="mt-3 flex gap-2 items-center flex-wrap">
+				<button class="btn btn-primary" data-action="click->recipe-import#fetchRecipe" data-recipe-import-target="fetchBtn">🔎 Récupérer</button>
+				<button class="btn btn-ghost" data-action="click->recipe-import#clear">Effacer</button>
+				<div class="text-sm text-gray-600" data-recipe-import-target="message">&nbsp;</div>
+			</div>
+
+			<div class="divider"></div>
+
+			<div class="space-y-4" data-recipe-import-target="preview"></div>
+
+			<div class="mt-3 flex justify-end gap-2">
+				<button class="btn btn-success hidden" data-recipe-import-target="importBtn" data-action="click->recipe-import#importRecipe">📥 Importer</button>
+			</div>
+		</div>
+	</div>
+{% endblock %}

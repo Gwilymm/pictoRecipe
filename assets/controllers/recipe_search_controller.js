@@ -29,6 +29,19 @@ export default class extends Controller {
 		this.perPage = 8; // results per page
 		this.currentPage = 1;
 		this.totalPages = 0;
+
+		// Listen for sort controller requests (it will provide a sorted array)
+		this.element.addEventListener('sort:apply', (e) => {
+			if (e && e.detail && Array.isArray(e.detail.sorted)) {
+				// When applying results coming from the sort controller, avoid re-dispatching the event
+				this._ignoreSortEvent = true;
+				this.setResults(e.detail.sorted);
+				setTimeout(() => { this._ignoreSortEvent = false; }, 0);
+			}
+		});
+
+		this._ignoreSortEvent = false;
+		this.lastQuery = '';
 	}
 
 	/* ============================================================
@@ -130,6 +143,9 @@ export default class extends Controller {
 					if (!key) return;
 					if (!seen.has(key)) { seen.add(key); unique.push(r); }
 				});
+				this.lastQuery = criteria.query || (this.queryTarget ? this.queryTarget.value : '');
+				// compute scores now that we stored the latest query
+				unique.forEach(r => r.score = this.computeScore(r, this.lastQuery));
 				this.setResults(unique);
 			} else {
 				this.showInfoMessage('Aucune recette trouvée.');
@@ -143,15 +159,62 @@ export default class extends Controller {
 		}
 	}
 
+
+	/* ============================================================
+	   Score utilities
+	============================================================ */
+	parseRating(raw) {
+		if (raw == null) return 0;
+		if (typeof raw === 'number') return Number(raw) || 0;
+		const s = String(raw).trim();
+		const match = s.match(/(\d+(?:[\.\,]\d+)?)/);
+		if (!match) return 0;
+		return parseFloat(match[ 1 ].replace(',', '.')) || 0;
+	}
+
+	computeScore(item, query = '') {
+		const title = (item.title || item.name || '').toLowerCase();
+		const q = (query || '').toLowerCase().trim();
+		let score = 0;
+
+		if (q && title.startsWith(q)) score += 30;
+		if (q && title.includes(q) && !title.startsWith(q)) score += 10;
+
+		const rating = this.parseRating(item.rating);
+		score += (rating * 10);
+
+		const src = (item.source || item.url || '').toLowerCase();
+		if (src.includes('marmiton')) score += 20;
+
+		return Math.round(score * 10) / 10; // round to 1 decimal
+	}
+
 	/* ============================================================
 	   🟦 2. AFFICHAGE DES CARTES + PAGINATION
 	============================================================ */
 	setResults(results) {
+		// Ensure we have the latest query (use stored value or input value)
+		this.lastQuery = this.queryTarget ? (this.queryTarget.value || this.lastQuery) : (this.lastQuery || '');
+		// Compute score for each item if not present
+		results.forEach(r => { r.score = r.score || this.computeScore(r, this.lastQuery); });
 		this.resultsAll = results;
 		this.currentPage = 1;
 		this.totalPages = Math.ceil(this.resultsAll.length / this.perPage);
 		this.renderPage();
 		this.updateCount();
+
+		// Dispatch an event to notify other controllers (sort controller, etc.) that new results are available
+		try {
+			// Avoid flooding the sort controller if we are the result of a sort application
+			if (!this._ignoreSortEvent) {
+				this.resultsTarget.dispatchEvent(new CustomEvent('results:loaded', {
+					bubbles: true,
+					detail: { results: this.resultsAll, query: this.queryTarget ? this.queryTarget.value : '' }
+				}));
+			}
+		} catch (e) {
+			// silent fail — not critical
+		}
 	}
 
 	renderPage() {
@@ -165,7 +228,11 @@ export default class extends Controller {
 		const start = (this.currentPage - 1) * this.perPage;
 		const slice = this.resultsAll.slice(start, start + this.perPage);
 		this.resultsTarget.innerHTML = '';
-		slice.forEach(r => this.resultsTarget.appendChild(this.createRecipeCard(r)));
+		// Ensure each item has a score computed
+		slice.forEach(r => {
+			r.score = r.score || this.computeScore(r, this.lastQuery);
+			this.resultsTarget.appendChild(this.createRecipeCard(r));
+		});
 		this.renderPager();
 		this.updateCount();
 	}
@@ -236,6 +303,12 @@ export default class extends Controller {
 		const card = document.createElement("div");
 		card.className = "card bg-base-100 shadow-md p-3 md:p-4 text-center";
 
+		// Provide dataset attributes so external controller (sorting/filtering) can read metadata
+		card.dataset.itemTitle = (recipe.title || '').toString();
+		card.dataset.itemRating = (recipe.rating || '').toString();
+		card.dataset.itemSource = (recipe.source || '').toString();
+		card.dataset.itemUrl = (recipe.url || '').toString();
+
 		const img = document.createElement("img");
 		img.src = recipe.image;
 		img.className = "w-24 h-24 md:w-32 md:h-32 object-cover mx-auto rounded-lg mb-2 md:mb-3";
@@ -243,6 +316,12 @@ export default class extends Controller {
 		const title = document.createElement("h3");
 		title.className = "font-bold text-sm md:text-base mb-2";
 		title.textContent = recipe.title;
+
+		const meta = document.createElement('div');
+		meta.className = 'text-xs text-gray-500 mb-2 flex gap-2 items-center justify-center flex-wrap';
+		meta.innerHTML = `${recipe.rating ? `<span class="text-yellow-400">⭐</span> <span>${recipe.rating}</span>` : ''}`;
+
+		// score removed UI; no display of score in cards
 
 		const badge = document.createElement("div");
 		badge.className = "badge badge-sm badge-outline gap-1 mb-2";
@@ -258,7 +337,7 @@ export default class extends Controller {
 		btn.textContent = "Voir la recette";
 		btn.addEventListener("click", () => this.openRecipeModal(recipe.url, src));
 
-		card.append(img, title, badge, btn);
+		card.append(img, title, meta, badge, btn);
 		return card;
 	}
 

@@ -4,7 +4,7 @@
 {% endblock %}
 
 {% block body %}
-	<div class="container mx-auto px-3 md:px-4 py-4 md:py-8" data-controller="recipe-search">
+	<div class="container mx-auto px-3 md:px-4 py-4 md:py-8" data-controller="recipe-search sort">
 		<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-4 md:mb-8">🔍 Rechercher des recettes (Marmiton &amp; Cuisine AZ)</h1>
 
 		{# Formulaire de recherche #}
@@ -97,6 +97,17 @@
 			<div id="search-pagination" data-recipe-search-target="pagination"></div>
 		</div>
 
-		<div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-8 w-full max-w-6xl mx-auto" data-recipe-search-target="results"></div>
+		{# Tri des résultats - Stimulus sort controller #}
+		<div class="flex items-center gap-2 my-3 max-w-6xl mx-auto w-full">
+			<label class="font-medium">Trier par :</label>
+			<select data-sort-target="select" class="select select-bordered select-sm">
+				<option value="best">🥇 Pertinence</option>
+				<option value="rating">⭐ Note</option>
+				<option value="name">🔤 Alphabetique</option>
+				<option value="source">🌐 Source</option>
+			</select>
+		</div>
+
+		<div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-8 w-full max-w-6xl mx-auto" data-recipe-search-target="results" data-sort-target="results"></div>
 	</div>
 {% endblock %}

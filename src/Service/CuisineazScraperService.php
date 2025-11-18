@@ -66,6 +66,17 @@ class CuisineazScraperService
 
 			if ($title === '' && $image === '') return;
 
+			// Try to extract rating (if present on search listing)
+			$rating = null;
+			$reviews = null;
+			// CuisineAZ stars block
+			if ($article->filter('.cazStars .value')->count()) {
+				$rating = trim($article->filter('.cazStars .value')->text());
+			}
+			if ($article->filter('.cazStars .count')->count()) {
+				$reviews = trim($article->filter('.cazStars .count')->text());
+			}
+
 			$results[] = [
 				'title' => $title ?: basename($link),
 				'name' => $title ?: basename($link),
@@ -74,6 +85,8 @@ class CuisineazScraperService
 				'image' => $image,
 				'picture' => $image,
 				'source' => 'cuisineaz',
+				'rating' => $rating,
+				'reviews' => $reviews,
 			];
 		});
 

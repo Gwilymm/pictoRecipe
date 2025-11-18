@@ -75,6 +75,38 @@ class MarmitonScraperService
 					? trim($node->filter('.image-label')->text())
 					: null;
 
+				// If the image label explicitly says 'Sponsorisé' (or similar), skip it
+				if ($category && preg_match('/sponsor|sponsoris(e|é)|sponso/i', $category)) {
+					return;
+				}
+
+				// Skip sponsored / promoted results: try heuristics based on common markers
+				$sponsored = false;
+				$adSelectors = ['.ad', '.sponsored', '.search-list__ad', '.tile-ad', '.card--sponsored', '.search-list__item--sponsored', '.tile-promo', '.tile_promoted', '.card__sponsored', '.advert', '.result-ad'];
+				foreach ($adSelectors as $sel) {
+					try {
+						if ($node->filter($sel)->count()) {
+							$sponsored = true;
+							break;
+						}
+					} catch (\Exception $e) {
+						// ignore filter errors for odd selectors
+					}
+				}
+
+				// Additionally check common sponsored words in the node text
+				if (!$sponsored) {
+					$text = mb_strtolower(trim($node->text()));
+					if (preg_match('/sponsor|sponsorisé|sponso|publicit|promotion|promo|partenaire/i', $text)) {
+						$sponsored = true;
+					}
+				}
+
+				if ($sponsored) {
+					// skip this item
+					return;
+				}
+
 				$results[] = [
 					'title' => $title,
 					'name'  => $title,
@@ -85,6 +117,7 @@ class MarmitonScraperService
 					'category' => $category,
 					'rating'   => $rating,
 					'reviews'  => $reviews,
+					'source' => 'marmiton',
 				];
 			}
 		);
