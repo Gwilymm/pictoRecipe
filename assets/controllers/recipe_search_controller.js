@@ -14,6 +14,8 @@ export default class extends Controller {
 		'submitText',
 		'spinner',
 		'results',
+		'pagination',
+		'count',
 		'infoMessage',
 		'errorMessage',
 		'errorText'
@@ -21,6 +23,12 @@ export default class extends Controller {
 
 	connect() {
 		console.log('Recipe controller connected');
+
+		// Pagination state
+		this.resultsAll = [];
+		this.perPage = 8; // results per page
+		this.currentPage = 1;
+		this.totalPages = 0;
 	}
 
 	/* ============================================================
@@ -69,27 +77,63 @@ export default class extends Controller {
 
 			const searchQuery = searchTerms.join(" ").replace(/\s+/g, "-");
 
-			const response = await fetch("/api/marmiton/search", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					q: searchQuery,
-					limit: 40,
-					filters: {}
-				})
+			// Run both searches in parallel for better responsiveness
+			const marmitonReq = fetch('/api/marmiton/search', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ q: searchQuery, limit: 40, filters: {} })
+			});
+			const cuisineReq = fetch('/api/cuisineaz/search', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				// Convert hyphenated searchQuery back to spaces for CuisineAZ
+				body: JSON.stringify({ q: searchQuery.replace(/-/g, ' '), limit: 40 })
 			});
 
-			const data = await response.json();
+			const results = await Promise.allSettled([ marmitonReq, cuisineReq ]);
+			let combined = [];
 
-			if (data.success && data.results.length > 0) {
-				this.displayResults(data.results);
-
-			} else if (data.success) {
-				this.showInfoMessage("Aucune recette trouvée.");
-				this.resultsTarget.innerHTML = "";
-
+			// Process Marmiton result
+			if (results[ 0 ]?.status === 'fulfilled') {
+				try {
+					const data = await results[ 0 ].value.json();
+					if (data.success && data.results.length > 0) {
+						combined = combined.concat(data.results.map(r => ({ ...r, source: r.source || 'marmiton' })));
+					}
+				} catch (e) {
+					console.debug('Marmiton JSON parsing error', e);
+				}
 			} else {
-				this.showError(data.error || "Erreur lors de la recherche.");
+				console.debug('Marmiton search failed', results[ 0 ]?.reason);
+			}
+
+			// Process CuisineAZ result
+			if (results[ 1 ]?.status === 'fulfilled') {
+				try {
+					const data2 = await results[ 1 ].value.json();
+					if (data2.success && data2.results.length > 0) {
+						combined = combined.concat(data2.results.map(r => ({ ...r, source: r.source || 'cuisineaz' })));
+					}
+				} catch (e) {
+					console.debug('CuisineAZ JSON parsing error', e);
+				}
+			} else {
+				console.debug('CuisineAZ search failed', results[ 1 ]?.reason);
+			}
+
+			if (combined.length > 0) {
+				// Deduplicate by URL (keep first occurrence)
+				const seen = new Set();
+				const unique = [];
+				combined.forEach(r => {
+					const key = r.url || r.link || r.title;
+					if (!key) return;
+					if (!seen.has(key)) { seen.add(key); unique.push(r); }
+				});
+				this.setResults(unique);
+			} else {
+				this.showInfoMessage('Aucune recette trouvée.');
+				this.resultsTarget.innerHTML = '';
 			}
 
 		} catch (err) {
@@ -100,11 +144,92 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🟦 2. AFFICHAGE DES CARTES
+	   🟦 2. AFFICHAGE DES CARTES + PAGINATION
 	============================================================ */
-	displayResults(results) {
-		this.resultsTarget.innerHTML = "";
-		results.forEach(r => this.resultsTarget.appendChild(this.createRecipeCard(r)));
+	setResults(results) {
+		this.resultsAll = results;
+		this.currentPage = 1;
+		this.totalPages = Math.ceil(this.resultsAll.length / this.perPage);
+		this.renderPage();
+		this.updateCount();
+	}
+
+	renderPage() {
+		if (!this.resultsAll || this.resultsAll.length === 0) {
+			this.resultsTarget.innerHTML = '';
+			if (this.paginationTarget) this.paginationTarget.innerHTML = '';
+			if (this.countTarget) this.countTarget.textContent = '';
+			return;
+		}
+
+		const start = (this.currentPage - 1) * this.perPage;
+		const slice = this.resultsAll.slice(start, start + this.perPage);
+		this.resultsTarget.innerHTML = '';
+		slice.forEach(r => this.resultsTarget.appendChild(this.createRecipeCard(r)));
+		this.renderPager();
+		this.updateCount();
+	}
+
+	renderPager() {
+		if (!this.paginationTarget) return;
+		this.paginationTarget.innerHTML = '';
+		if (this.totalPages <= 1) return;
+
+		const container = document.createElement('div');
+		container.className = 'btn-group';
+
+		// Prev
+		const prev = document.createElement('button');
+		prev.className = 'btn btn-sm';
+		prev.disabled = this.currentPage <= 1;
+		prev.innerText = '<';
+		prev.dataset.page = Math.max(1, this.currentPage - 1);
+		prev.dataset.action = 'click->recipe-search#gotoPage';
+		container.appendChild(prev);
+
+		// Page numbers (limit to 7 visible)
+		const maxVisible = 7;
+		let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+		let endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
+		if (endPage - startPage + 1 < maxVisible) {
+			startPage = Math.max(1, endPage - maxVisible + 1);
+		}
+
+		for (let p = startPage; p <= endPage; p++) {
+			const btn = document.createElement('button');
+			btn.className = 'btn btn-sm ' + (p === this.currentPage ? 'btn-active' : '');
+			btn.innerText = String(p);
+			btn.dataset.page = p;
+			btn.dataset.action = 'click->recipe-search#gotoPage';
+			container.appendChild(btn);
+		}
+
+		// Next
+		const next = document.createElement('button');
+		next.className = 'btn btn-sm';
+		next.disabled = this.currentPage >= this.totalPages;
+		next.innerText = '>';
+		next.dataset.page = Math.min(this.totalPages, this.currentPage + 1);
+		next.dataset.action = 'click->recipe-search#gotoPage';
+		container.appendChild(next);
+
+		this.paginationTarget.appendChild(container);
+	}
+
+	gotoPage(e) {
+		e.preventDefault();
+		const page = Number(e.currentTarget.dataset.page || e.target.dataset.page);
+		if (isNaN(page) || page < 1) return;
+		this.currentPage = page;
+		this.renderPage();
+	}
+
+	updateCount() {
+		if (!this.countTarget) return;
+		const total = this.resultsAll.length || 0;
+		const start = Math.min(total, (this.currentPage - 1) * this.perPage + 1);
+		const end = Math.min(total, this.currentPage * this.perPage);
+		this.countTarget.textContent = `${total} résultat${total > 1 ? 's' : ''} — affichage ${start}-${end}`;
 	}
 
 	createRecipeCard(recipe) {
@@ -121,12 +246,17 @@ export default class extends Controller {
 
 		const badge = document.createElement("div");
 		badge.className = "badge badge-sm badge-outline gap-1 mb-2";
-		badge.innerHTML = "🥘 Marmiton";
+		const src = (recipe.source || (recipe.url && recipe.url.includes('cuisineaz') ? 'cuisineaz' : 'marmiton'));
+		if (src === 'cuisineaz') {
+			badge.innerHTML = "🍋 Cuisine AZ";
+		} else {
+			badge.innerHTML = "🥘 Marmiton";
+		}
 
 		const btn = document.createElement("button");
 		btn.className = "btn btn-primary btn-xs md:btn-sm w-full mt-2";
 		btn.textContent = "Voir la recette";
-		btn.addEventListener("click", () => this.openRecipeModal(recipe.url));
+		btn.addEventListener("click", () => this.openRecipeModal(recipe.url, src));
 
 		card.append(img, title, badge, btn);
 		return card;
@@ -135,7 +265,7 @@ export default class extends Controller {
 	/* ============================================================
 	   🟧 3. MODALE
 	============================================================ */
-	async openRecipeModal(url) {
+	async openRecipeModal(url, source = 'marmiton') {
 		let modal = document.getElementById("recipe-modal");
 		if (!modal) {
 			modal = document.createElement("dialog");
@@ -157,9 +287,10 @@ export default class extends Controller {
 		const container = document.getElementById("recipe-modal-content");
 		container.innerHTML = `<div class="flex justify-center py-8"><span class="loading loading-spinner loading-lg"></span></div>`;
 
-		const res = await fetch("/api/marmiton/recipe", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
+		const endpoint = (source === 'cuisineaz' || (url && url.includes('cuisineaz'))) ? '/api/cuisineaz/recipe' : '/api/marmiton/recipe';
+		const res = await fetch(endpoint, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ link: url })
 		});
 
@@ -184,6 +315,7 @@ export default class extends Controller {
 					<button class="btn btn-success btn-xs md:btn-sm" id="import-recipe-btn">📥 Importer cette recette</button>
 				</div>
 				${this.sectionPrimary(recipe)}
+				${recipe.description ? `<div class="card bg-base-200 shadow-xl"><div class="card-body p-3 md:p-6"><p class="text-sm md:text-base">${recipe.description}</p>${recipe.author || recipe.published ? `<div class="mt-2 text-xs text-muted">${recipe.author ? `Par ${recipe.author}` : ''}${recipe.author && recipe.published ? ' — ' : ''}${recipe.published ? recipe.published : ''}</div>` : ''}</div></div>` : ''}
 				${this.sectionTimes(recipe.times)}
 				${this.sectionIngredients(recipe.ingredients)}
 				${this.sectionUtensils(recipe.utensils)}

@@ -5,7 +5,7 @@
 
 {% block body %}
 	<div class="container mx-auto px-3 md:px-4 py-4 md:py-8" data-controller="recipe-search">
-		<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-4 md:mb-8">🔍 Rechercher des recettes Marmiton</h1>
+		<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-4 md:mb-8">🔍 Rechercher des recettes (Marmiton &amp; Cuisine AZ)</h1>
 
 		{# Formulaire de recherche #}
 		<div class="card bg-base-100 p-3 md:p-6 rounded-xl shadow-md w-full max-w-2xl mx-auto mt-3 md:mt-6">
@@ -92,6 +92,11 @@
 		</div>
 
 		{# Conteneur des résultats #}
+		<div class="flex items-center justify-between w-full max-w-6xl mx-auto mt-4 md:mt-6">
+			<div class="text-sm text-gray-600" data-recipe-search-target="count">&nbsp;</div>
+			<div id="search-pagination" data-recipe-search-target="pagination"></div>
+		</div>
+
 		<div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-8 w-full max-w-6xl mx-auto" data-recipe-search-target="results"></div>
 	</div>
 {% endblock %}
