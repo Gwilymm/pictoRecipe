@@ -63,7 +63,17 @@ export default class extends Controller {
 		const html = `
       <div class="card bg-base-100 shadow-md p-3 md:p-6">
         <div class="flex items-start gap-4">
-          <img src="${recipe.image || recipe.picture || ''}" class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg mr-2 hidden sm:block" alt="${recipe.title || ''}" />
+					<div class="skeleton w-24 h-24 md:w-32 md:h-32 rounded-lg mr-2 hidden sm:block" data-image-src="${(() => {
+				try {
+					const url = new URL(recipe.image || recipe.picture || '');
+					const host = url.host;
+					const allowedSuffixes = [ 'afcdn.com', 'marmiton.org' ];
+					if (allowedSuffixes.some(s => host.endsWith(s))) return `/api/image-proxy?url=${encodeURIComponent(url.toString())}`;
+				} catch (e) {
+					// ignore URL parse errors
+				}
+				return recipe.image || recipe.picture || '';
+			})()}"></div>
           <div class="flex-1">
             <h2 class="text-xl font-bold mb-2">${recipe.title || 'Titre'}</h2>
             <div class="text-sm text-muted mb-2">${recipe.author ? `Par ${recipe.author}` : ''} ${recipe.published ? `— ${recipe.published}` : ''}</div>
@@ -86,6 +96,40 @@ export default class extends Controller {
         </div>
       </div>`;
 		this.previewTarget.innerHTML = html;
+		// After rendering preview, load skeleton images into real <img> tags
+		this._replaceSkeletonsWithImages(this.previewTarget);
+	}
+
+	_createImageElement(src, alt, cssClass) {
+		const img = document.createElement('img');
+		img.src = src || '';
+		img.alt = alt || '';
+		img.className = cssClass || '';
+		img.referrerPolicy = 'no-referrer';
+		img.loading = 'lazy';
+		return img;
+	}
+
+	_replaceSkeletonsWithImages(root) {
+		if (!root) return;
+		const skeletons = root.querySelectorAll('[data-image-src]');
+		skeletons.forEach(skel => {
+			const src = skel.getAttribute('data-image-src');
+			if (!src) return;
+			const cssClass = 'w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg mr-2 hidden sm:block';
+			const alt = (skel.getAttribute('data-image-alt') || '');
+			const img = this._createImageElement(src, alt, cssClass);
+			img.onload = () => {
+				try { skel.parentNode.replaceChild(img, skel); } catch (e) { console.warn('Replacing skeleton failed', e); }
+			};
+			img.onerror = () => {
+				console.warn('Recipe image failed to load:', src);
+				const fallback = document.createElement('div');
+				fallback.className = 'w-24 h-24 md:w-32 md:h-32 bg-base-300 rounded-lg mr-2 hidden sm:block flex items-center justify-center text-2xl';
+				fallback.textContent = '❌';
+				try { skel.parentNode.replaceChild(fallback, skel); } catch (e) { console.warn('Replacing skeleton with fallback failed', e); }
+			};
+		});
 	}
 
 	async importRecipe(e) {

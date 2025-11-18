@@ -309,9 +309,42 @@ export default class extends Controller {
 		card.dataset.itemSource = (recipe.source || '').toString();
 		card.dataset.itemUrl = (recipe.url || '').toString();
 
-		const img = document.createElement("img");
-		img.src = recipe.image;
-		img.className = "w-24 h-24 md:w-32 md:h-32 object-cover mx-auto rounded-lg mb-2 md:mb-3";
+		const cssClass = 'w-24 h-24 md:w-32 md:h-32 object-cover mx-auto rounded-lg mb-2 md:mb-3';
+		const skeleton = document.createElement('div');
+		skeleton.className = `skeleton ${cssClass}`;
+		skeleton.setAttribute('data-image-src', (() => {
+			try {
+				const parsed = new URL(recipe.image || '');
+				const host = parsed.host;
+				const suffixes = [ 'afcdn.com', 'marmiton.org' ];
+				if (suffixes.some(s => host.endsWith(s))) {
+					return `/api/image-proxy?url=${encodeURIComponent(parsed.toString())}`;
+				}
+			} catch (e) {
+				// ignore parse errors
+			}
+			return recipe.image || '';
+		})());
+
+		// Load image into skeleton asynchronously
+		const loadImage = (sk) => {
+			const src = sk.getAttribute('data-image-src');
+			if (!src) return;
+			const imgEl = document.createElement('img');
+			imgEl.src = src;
+			imgEl.alt = recipe.title || '';
+			imgEl.className = cssClass;
+			imgEl.referrerPolicy = 'no-referrer';
+			imgEl.loading = 'lazy';
+			imgEl.onload = () => { try { sk.parentNode.replaceChild(imgEl, sk); } catch (e) { console.warn('Replace skeleton failed', e); } };
+			imgEl.onerror = () => {
+				console.warn('Recipe card image failed to load:', src);
+				const fallback = document.createElement('div');
+				fallback.className = 'w-24 h-24 md:w-32 md:h-32 bg-base-300 rounded-lg mb-2 md:mb-3 mx-auto flex items-center justify-center text-2xl';
+				fallback.textContent = '❌';
+				try { sk.parentNode.replaceChild(fallback, sk); } catch (e) { console.warn('Replace with fallback failed', e); }
+			};
+		};
 
 		const title = document.createElement("h3");
 		title.className = "font-bold text-sm md:text-base mb-2";
@@ -337,7 +370,9 @@ export default class extends Controller {
 		btn.textContent = "Voir la recette";
 		btn.addEventListener("click", () => this.openRecipeModal(recipe.url, src));
 
-		card.append(img, title, meta, badge, btn);
+		card.append(skeleton, title, meta, badge, btn);
+		// Trigger the loading of the skeleton image
+		loadImage(skeleton);
 		return card;
 	}
 

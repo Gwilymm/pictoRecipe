@@ -113,15 +113,27 @@ export default class extends Controller {
 			const wrapper = document.createElement("div");
 			wrapper.className = "relative group";
 
-			const img = document.createElement("img");
-			img.src = item.image;
-			img.alt = item.name || "";
-			img.className =
-				"w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition-all duration-300 hover:shadow-lg group-hover:scale-150 group-hover:z-50 group-hover:relative";
+			const cssClass = "w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition-all duration-300 hover:shadow-lg group-hover:scale-150 group-hover:z-50 group-hover:relative";
+			const skeleton = document.createElement('div');
+			skeleton.className = `skeleton ${cssClass}`;
+			skeleton.setAttribute('data-image-src', item.image || '');
 
-			img.addEventListener("click", () => this.select(item, img));
+			const loadImageIntoSkeleton = (sk) => {
+				const src = sk.getAttribute('data-image-src');
+				if (!src) return;
+				const imgEl = document.createElement('img');
+				imgEl.alt = item.name || '';
+				imgEl.className = cssClass;
+				imgEl.referrerPolicy = 'no-referrer';
+				imgEl.loading = 'lazy';
+				imgEl.onload = () => { try { sk.parentNode.replaceChild(imgEl, sk); } catch (e) { console.warn('Replace skeleton with img failed', e); } };
+				imgEl.onerror = () => { console.warn('Picto image failed to load:', src); const back = document.createElement('div'); back.className = cssClass.replace('object-contain', 'bg-base-300 flex items-center justify-center text-2xl'); back.textContent = '❌'; try { sk.parentNode.replaceChild(back, sk); } catch (e) { console.warn('Replace with fallback failed', e); } };
+				imgEl.addEventListener('click', () => this.select(item, imgEl));
+				imgEl.src = src;
+			};
 
-			wrapper.appendChild(img);
+			wrapper.appendChild(skeleton);
+			loadImageIntoSkeleton(skeleton);
 			this.resultsTarget.appendChild(wrapper);
 		});
 
