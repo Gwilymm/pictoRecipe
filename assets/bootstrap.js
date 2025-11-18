@@ -17,6 +17,7 @@ import RecipeSearchController from './controllers/recipe_search_controller.js';
 import PictoSearchController from './controllers/picto_search_controller.js';
 import UtensilFilterController from './controllers/utensil_filter_controller.js';
 import PictogramFilterController from './controllers/pictogram_filter_controller.js';
+import ModalController from './controllers/modal_controller.js';
 
 app.register('pictogram-filter', PictogramFilterController);
 app.register('utensil-filter', UtensilFilterController);
@@ -27,5 +28,6 @@ app.register('form-collection', FormCollectionController);
 app.register('csrf-protection', CsrfProtectionController);
 app.register('recipe-search', RecipeSearchController);
 app.register('picto-search', PictoSearchController);
+app.register('modal', ModalController);
 
 export { app };

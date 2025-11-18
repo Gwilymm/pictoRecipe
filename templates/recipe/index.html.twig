@@ -4,11 +4,28 @@
 {% endblock %}
 
 {% block body %}
-	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6">
+	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6" data-controller="modal">
 		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
 			<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">Recettes</h1>
-			<a href="{{ path('app_recipe_new') }}" class="btn btn-success btn-sm md:btn-md w-full sm:w-auto">➕ Ajouter une recette</a>
+			<div class="flex w-full sm:w-auto gap-2">
+				<form method="get" action="{{ path('app_recipe_index') }}" class="flex items-center">
+					<input type="search" name="q" value="{{ q|default('') }}" placeholder="Rechercher une recette..." class="input input-sm"/>
+					<button type="submit" class="btn btn-primary btn-sm ml-2">🔎</button>
+				</form>
+				<a href="{{ path('app_recipe_new') }}" class="btn btn-success btn-sm md:btn-md ml-2">➕ Ajouter une recette</a>
+			</div>
 		</div>
+
+
+		{# Reusable dialog modal partial (uses <dialog>) #}
+		{% include 'partials/_dialog_modal.html.twig' with {
+			id: 'delete-modal',
+			title: 'Supprimer la recette',
+			message: 'Voulez-vous vraiment supprimer la recette',
+			confirm_label: 'Supprimer',
+			cancel_label: 'Annuler',
+			method: 'post'
+		} %}
 
 		{% if recipes is empty %}
 			<div class="alert alert-info">
@@ -51,6 +68,7 @@
 							<div class="flex gap-2">
 								<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-info btn-xs flex-1">👁️ Voir</a>
 								<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-warning btn-xs flex-1">✏️ Modifier</a>
+								<button type="button" class="btn btn-error btn-xs w-full" data-action="modal#open" data-modal-action="{{ path('app_recipe_delete', {'id': recipe.id}) }}" data-modal-token="{{ csrf_token('delete' ~ recipe.id) }}" data-modal-name="{{ recipe.title|e('html_attr') }}">🗑️ Supprimer</button>
 							</div>
 						</div>
 					</div>
@@ -88,12 +106,44 @@
 									<div class="flex flex-col items-end gap-2">
 										<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-xs btn-info w-28 rounded-md shadow">👁️ Voir</a>
 										<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-xs btn-warning w-28 rounded-md shadow">✏️ Modifier</a>
+										<button type="button" class="btn btn-xs btn-error w-28 rounded-md shadow mt-1" data-action="modal#open" data-modal-action="{{ path('app_recipe_delete', {'id': recipe.id}) }}" data-modal-token="{{ csrf_token('delete' ~ recipe.id) }}" data-modal-name="{{ recipe.title|e('html_attr') }}">🗑️ Supprimer</button>
 									</div>
 								</td>
 							</tr>
 						{% endfor %}
 					</tbody>
 				</table>
+
+				{# Pagination controls #}
+				{% if totalPages is defined and totalPages > 1 %}
+					<div class="mt-4 flex justify-center">
+						<nav
+							class="btn-group">
+							{# Previous #}
+							{% if page > 1 %}
+								<a href="{{ path('app_recipe_index', {'page': page-1, 'q': q|default('')}) }}" class="btn">← Préc.</a>
+							{% else %}
+								<button class="btn btn-disabled">← Préc.</button>
+							{% endif %}
+
+							{# page numbers (simple) #}
+							{% for p in 1..totalPages %}
+								{% if p == page %}
+									<button class="btn btn-active">{{ p }}</button>
+								{% else %}
+									<a href="{{ path('app_recipe_index', {'page': p, 'q': q|default('')}) }}" class="btn">{{ p }}</a>
+								{% endif %}
+							{% endfor %}
+
+							{# Next #}
+							{% if page < totalPages %}
+								<a href="{{ path('app_recipe_index', {'page': page+1, 'q': q|default('')}) }}" class="btn">Suiv. →</a>
+							{% else %}
+								<button class="btn btn-disabled">Suiv. →</button>
+							{% endif %}
+						</nav>
+					</div>
+				{% endif %}
 			</div>
 		{% endif %}
 	</div>

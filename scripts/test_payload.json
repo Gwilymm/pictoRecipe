@@ -1,0 +1,12 @@
+{
+    "title": "Test import times",
+    "ingredients": [{ "name": "ingredient", "quantity": "1" }],
+    "steps": [{ "text": "do something" }],
+    "servings": 2,
+    "times": {
+        "details": [
+            { "label": "Préparation", "value": "20 min" },
+            { "label": "Cuisson", "value": "10 min" }
+        ]
+    }
+}

@@ -1,0 +1,35 @@
+{# Reusable DaisyUI dialog modal partial (uses <dialog> + showModal)
+   Usage:
+   {% include 'partials/_dialog_modal.html.twig' with {
+     id: 'delete-modal',
+     title: 'Supprimer',
+     message: 'Voulez-vous supprimer ?',
+     confirm_label: 'Supprimer',
+     cancel_label: 'Annuler',
+     method: 'post'   # optional
+   } %}
+#}
+
+<div>
+	<dialog id="{{ id|default('modal') }}" class="modal modal-bottom sm:modal-middle" data-modal-target="dialog">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">{{ title|default('Confirmer') }}</h3>
+
+			<div class="py-4" data-modal-target="content">
+				{{ message|default('Voulez-vous confirmer cette action ?') }}
+				<strong data-modal-target="title"></strong>
+			</div>
+
+			<div class="modal-action">
+				<form id="{{ id|default('modal') }}-form" method="{{ method|default('post') }}" data-modal-target="form">
+					<input type="hidden" name="_token" value="" data-modal-target="token"/>
+					<button type="button" class="btn" data-action="modal#close">{{ cancel_label|default('Annuler') }}</button>
+					<button type="submit" class="btn btn-error">{{ confirm_label|default('Confirmer') }}</button>
+				</form>
+			</div>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+</div>

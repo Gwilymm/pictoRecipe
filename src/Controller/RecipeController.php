@@ -20,10 +20,35 @@ use Symfony\Component\Routing\Attribute\Route;
 final class RecipeController extends AbstractController
 {
     #[Route(name: 'app_recipe_index', methods: ['GET'])]
-    public function index(RecipeRepository $recipeRepository): Response
+    public function index(Request $request, RecipeRepository $recipeRepository): Response
     {
+        // Pagination & search
+        $q = trim((string)$request->query->get('q', ''));
+        $page = max(1, (int)$request->query->get('page', 1));
+        $perPage = 8;
+
+        $qb = $recipeRepository->createQueryBuilder('r')
+            ->orderBy('r.createdAt', 'DESC');
+
+        if ($q !== '') {
+            $qb->andWhere('r.title LIKE :q OR r.description LIKE :q')
+                ->setParameter('q', '%' . $q . '%');
+        }
+
+        $firstResult = ($page - 1) * $perPage;
+        $qb->setFirstResult($firstResult)->setMaxResults($perPage);
+
+        $paginator = new \Doctrine\ORM\Tools\Pagination\Paginator($qb->getQuery());
+        $total = count($paginator);
+        $totalPages = (int)ceil($total / $perPage);
+
         return $this->render('recipe/index.html.twig', [
-            'recipes' => $recipeRepository->findAll(),
+            'recipes' => iterator_to_array($paginator),
+            'q' => $q,
+            'page' => $page,
+            'perPage' => $perPage,
+            'total' => $total,
+            'totalPages' => $totalPages,
         ]);
     }
 
@@ -378,9 +403,15 @@ final class RecipeController extends AbstractController
     #[Route('/{id}', name: 'app_recipe_delete', methods: ['POST'])]
     public function delete(Request $request, Recipe $recipe, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $recipe->getId(), $request->getPayload()->getString('_token'))) {
+        $token = $request->request->get('_token');
+
+        if ($this->isCsrfTokenValid('delete' . $recipe->getId(), $token)) {
+            $name = $recipe->getTitle();
             $entityManager->remove($recipe);
             $entityManager->flush();
+            $this->addFlash('success', 'Recette "' . $name . '" supprimée.');
+        } else {
+            $this->addFlash('error', 'Jeton CSRF invalide.');
         }
 
         return $this->redirectToRoute('app_recipe_index', [], Response::HTTP_SEE_OTHER);

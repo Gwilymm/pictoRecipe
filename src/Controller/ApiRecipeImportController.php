@@ -60,6 +60,14 @@ class ApiRecipeImportController extends AbstractController
 			$recipe = new Recipe();
 			$recipe->setTitle((string) $recipeData['title']);
 
+			// parse servings if provided
+			if (isset($recipeData['servings'])) {
+				$servings = $this->parseServings($recipeData['servings']);
+				if ($servings !== null) {
+					$recipe->setServings($servings);
+				}
+			}
+
 			// Map times if present
 			$times = $recipeData['times'] ?? null;
 			if (\is_array($times)) {
@@ -146,6 +154,18 @@ class ApiRecipeImportController extends AbstractController
 		}
 	}
 
+	private function parseServings(mixed $value): ?int
+	{
+		if ($value === null) return null;
+		if (is_int($value)) return $value > 0 ? $value : null;
+		$text = (string) $value;
+		if (preg_match('/(\d+)/u', $text, $m)) {
+			$val = (int) $m[1];
+			return $val > 0 ? $val : null;
+		}
+		return null;
+	}
+
 	private function badRequest(string $message): JsonResponse
 	{
 		return new JsonResponse([
@@ -199,14 +219,27 @@ class ApiRecipeImportController extends AbstractController
 		$value = trim(mb_strtolower($value));
 		$minutes = 0;
 
-		// patterns like "1 h 30 min", "1h30", "45 min"
-		if (preg_match('/(?:(\d+)\s*h(?:eures?)?)?\s*(?:(\d+)\s*min(?:utes?)?)?/u', $value, $m)) {
-			$h = isset($m[1]) && $m[1] !== '' ? (int) $m[1] : 0;
-			$min = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : 0;
-			$minutes = $h * 60 + $min;
-		} elseif (preg_match('/(\d{1,3})/u', $value, $m2)) {
-			$minutes = (int) $m2[1];
+		// Extract hours and minutes separately so stray text (like "Préparation : 20 min")
+		// doesn't prevent matching. We prefer explicit "X h" and "Y min" groups,
+		// falling back to any first integer found.
+		$h = 0;
+		$min = 0;
+
+		if (preg_match('/(\d+)\s*h(?:eures?)?/u', $value, $mh)) {
+			$h = (int) $mh[1];
 		}
+		if (preg_match('/(\d+)\s*min(?:utes?)?/u', $value, $mm)) {
+			$min = (int) $mm[1];
+		}
+
+		if ($h === 0 && $min === 0) {
+			// fallback: any integer in the string
+			if (preg_match('/(\d{1,3})/u', $value, $m2)) {
+				$min = (int) $m2[1];
+			}
+		}
+
+		$minutes = $h * 60 + $min;
 
 		return max(0, $minutes);
 	}
