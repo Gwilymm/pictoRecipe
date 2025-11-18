@@ -1,0 +1,27 @@
+<footer class="footer flex flex-col items-start gap-8 sm:flex-row sm:justify-between bg-base-200 text-base-content p-6 sm:p-10 mt-10">
+	<aside class="flex flex-col items-start gap-2">
+		<svg width="50" height="50" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="fill-current">
+			<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">🖼️</text>
+		</svg>
+		<p class="text-sm">
+			<strong class="block text-base">PictoRecette</strong>
+			Recettes en pictogrammes pour tous
+		</p>
+	</aside>
+	<nav class="flex flex-col gap-2">
+		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Recettes</h6>
+		<a href="{{ path('app_recipe_index') }}" class="link link-hover text-sm">Toutes les recettes</a>
+		<a href="{{ path('app_recipe_new') }}" class="link link-hover text-sm">Créer une recette</a>
+		<a href="{{ path('app_recipe_search') }}" class="link link-hover text-sm">Rechercher</a>
+		<a href="{{ path('app_recipe_import') }}" class="link link-hover text-sm">Importer</a>
+	</nav>
+	<nav class="flex flex-col gap-2">
+		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Pictogrammes</h6>
+		<a href="{{ path('app_pictogram_index') }}" class="link link-hover text-sm">Liste des pictogrammes</a>
+		<a href="{{ path('app_pictogram_new') }}" class="link link-hover text-sm">Ajouter un pictogramme</a>
+	</nav>
+	<nav class="flex flex-col gap-2">
+		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Ressources</h6>
+		<a href="https://arasaac.org" target="_blank" class="link link-hover text-sm">ARASAAC</a>
+	</nav>
+</footer>

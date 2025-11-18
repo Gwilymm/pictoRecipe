@@ -55,6 +55,8 @@
 		<main class="container mx-auto px-2 sm:px-4 py-6"> {% block body %}{% endblock %}
 			</main>
 
+			{{ include('partials/_footer.html.twig') }}
+
 			{# Script pour auto-fermer les toasts après 5 secondes #}
 			<script>
 				document.addEventListener( 'DOMContentLoaded', function ()
