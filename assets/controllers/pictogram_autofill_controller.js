@@ -25,7 +25,8 @@ export default class extends Controller {
 			// Process steps (no step assignment per user request)
 			await this._processSteps();
 			// Optional: Update UI for utensils (preview only)
-			await this._processUtensils();
+			// Do not run utensil auto-assign per user request — keep utensils unchanged
+			// await this._processUtensils();
 
 			if (this.statusEl) this.statusEl.textContent = 'Pictogrammes assignés (aperçu). Cliquer sur "Valider tout" pour enregistrer.';
 		} catch (err) {
@@ -67,19 +68,8 @@ export default class extends Controller {
 	}
 
 	async _processUtensils() {
-		const cards = document.querySelectorAll('#preview-utensils-container [data-utensil-index]');
-		for (const card of cards) {
-			const nameEl = card.querySelector('[data-utensil-name]');
-			const name = nameEl ? nameEl.textContent.trim() : '';
-			if (!name) continue;
-			const result = await this._searchBestPictogram(name);
-			if (!result) continue;
-			// DOM preview only; utensils pictogram can't be saved via recipe form (it requires updating Utensil entity)
-			this._updateCardImage(card, result);
-			// show 'Proposer autre' button for utensils (preview-only)
-			this._showButtonsForIngredient(card, true);
-			this._toggleValidateAllButton();
-		}
+		// Intentionally no-op: per user request we do not auto-assign pictograms to utensils
+		return;
 	}
 
 	_showButtonsForIngredient(card, show) {
