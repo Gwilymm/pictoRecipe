@@ -198,26 +198,19 @@ export default class extends Controller {
 			card.classList.add('ring', 'ring-primary', 'ring-offset-2');
 		}
 
-		const cssClass = 'w-full h-full object-contain p-2';
-		const sk = document.createElement('div');
-		sk.className = `skeleton ${cssClass}`;
-		sk.setAttribute('data-image-src', pictogram.imageUrl || '');
+		const img = document.createElement('img');
+		img.src = pictogram.imageUrl || '';
+		img.alt = pictogram.name || 'Pictogramme';
+		img.className = 'w-full h-full object-contain p-2';
+		img.loading = 'lazy';
+		img.referrerPolicy = 'no-referrer';
 
-		const loadImageIntoSk = (skel) => {
-			const src = skel.getAttribute('data-image-src');
-			if (!src) return;
-			const imgEl = document.createElement('img');
-			imgEl.alt = pictogram.name || 'Pictogramme';
-			imgEl.className = cssClass;
-			imgEl.loading = 'lazy';
-			imgEl.referrerPolicy = 'no-referrer';
-			imgEl.onload = () => { try { skel.parentNode.replaceChild(imgEl, skel); } catch (e) { console.warn('Replace skeleton with img failed', e); } };
-			imgEl.onerror = () => { card.innerHTML = '<span class="text-xs text-error">⚠️</span>'; };
-			imgEl.src = src;
+		// Gestion des erreurs de chargement d'image
+		img.onerror = () => {
+			card.innerHTML = '<span class="text-xs text-error">⚠️</span>';
 		};
 
-		card.appendChild(sk);
-		loadImageIntoSk(sk);
+		card.appendChild(img);
 
 		// Tooltip avec le nom
 		if (pictogram.name) {

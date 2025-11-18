@@ -9,10 +9,14 @@ export default class extends Controller {
 		this.itemsPerPage = 12;
 		this.allResults = [];
 
-		this.inputTarget.addEventListener("input", () => {
-			clearTimeout(this.timer);
-			this.timer = setTimeout(() => this.search(), 350);
-		});
+		if (this.hasInputTarget) {
+			this.inputTarget.addEventListener("input", () => {
+				clearTimeout(this.timer);
+				this.timer = setTimeout(() => this.search(), 350);
+			});
+		} else {
+			console.warn('PictoSearchController: no input target found - skipping input listener');
+		}
 
 		// Écouter aussi le champ marque si présent
 		if (this.hasBrandInputTarget) {
@@ -24,7 +28,14 @@ export default class extends Controller {
 	}
 
 	async search() {
-		const q = this.inputTarget.value.trim();
+		// Read query value from the input target; if missing, try event or bail out
+		const q = (this.hasInputTarget ? this.inputTarget.value.trim() : '').trim();
+		if (!q) {
+			// nothing to search, clear results if present
+			if (this.hasResultsTarget) this.resultsTarget.innerHTML = '';
+			if (this.hasPaginationTarget) this.paginationTarget.innerHTML = '';
+			return;
+		}
 		if (q.length < 2) {
 			this.resultsTarget.innerHTML = "";
 			if (this.hasPaginationTarget) {
@@ -34,11 +45,15 @@ export default class extends Controller {
 		}
 
 		// Afficher un indicateur de chargement
-		this.resultsTarget.innerHTML = `
+		if (this.hasResultsTarget) {
+			this.resultsTarget.innerHTML = `
 			<div class="col-span-full flex justify-center items-center py-8">
 				<span class="loading loading-spinner loading-lg text-primary"></span>
 			</div>
 		`;
+		} else {
+			console.warn('PictoSearchController.search: missing results target; skipping UI update');
+		}
 
 		// Récupérer la marque si présente
 		const brand = this.hasBrandInputTarget ? this.brandInputTarget.value.trim() : '';
@@ -87,6 +102,10 @@ export default class extends Controller {
 	}
 
 	renderCurrentPage() {
+		if (!this.hasResultsTarget) {
+			console.warn('PictoSearchController.renderCurrentPage: no results target found');
+			return;
+		}
 		this.resultsTarget.innerHTML = "";
 
 		if (this.allResults.length === 0) {
@@ -113,27 +132,21 @@ export default class extends Controller {
 			const wrapper = document.createElement("div");
 			wrapper.className = "relative group";
 
-			const cssClass = "w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition-all duration-300 hover:shadow-lg group-hover:scale-150 group-hover:z-50 group-hover:relative";
-			const skeleton = document.createElement('div');
-			skeleton.className = `skeleton ${cssClass}`;
-			skeleton.setAttribute('data-image-src', item.image || '');
-
-			const loadImageIntoSkeleton = (sk) => {
-				const src = sk.getAttribute('data-image-src');
-				if (!src) return;
-				const imgEl = document.createElement('img');
-				imgEl.alt = item.name || '';
-				imgEl.className = cssClass;
-				imgEl.referrerPolicy = 'no-referrer';
-				imgEl.loading = 'lazy';
-				imgEl.onload = () => { try { sk.parentNode.replaceChild(imgEl, sk); } catch (e) { console.warn('Replace skeleton with img failed', e); } };
-				imgEl.onerror = () => { console.warn('Picto image failed to load:', src); const back = document.createElement('div'); back.className = cssClass.replace('object-contain', 'bg-base-300 flex items-center justify-center text-2xl'); back.textContent = '❌'; try { sk.parentNode.replaceChild(back, sk); } catch (e) { console.warn('Replace with fallback failed', e); } };
-				imgEl.addEventListener('click', () => this.select(item, imgEl));
-				imgEl.src = src;
+			const img = document.createElement('img');
+			img.src = item.image || '';
+			img.alt = item.name || '';
+			img.className = "w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition-all duration-300 hover:shadow-lg group-hover:scale-150 group-hover:z-50 group-hover:relative";
+			img.referrerPolicy = 'no-referrer';
+			img.loading = 'lazy';
+			img.onerror = function () {
+				console.warn('Picto image failed to load:', this.src);
+				const back = document.createElement('div');
+				back.className = "w-full h-32 bg-base-300 flex items-center justify-center text-2xl p-1 rounded-lg";
+				back.textContent = '❌';
+				try { this.parentNode.replaceChild(back, this); } catch (e) { console.warn('Replace with fallback failed', e); }
 			};
-
-			wrapper.appendChild(skeleton);
-			loadImageIntoSkeleton(skeleton);
+			img.addEventListener('click', () => this.select(item, img));
+			wrapper.appendChild(img);
 			this.resultsTarget.appendChild(wrapper);
 		});
 
