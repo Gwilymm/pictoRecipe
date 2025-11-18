@@ -92,10 +92,14 @@ export default class extends Controller {
 	_normalizeKeyword(keyword) {
 		if (!keyword) return '';
 		let s = String(keyword).toLowerCase();
+		// replace Œ and œ with oe
+		s = s.replace(/Œ/g, 'oe').replace(/œ/g, 'oe');
 		// strip accents
 		s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-		// replace parentheses and punctuation with spaces
-		s = s.replace(/[()\[\]{}\\/,:;!?\u2019'"\-]/g, ' ');
+		// remove content within parentheses and the parentheses themselves
+		s = s.replace(/\([^)]*\)/g, '');
+		// replace other punctuation with spaces
+		s = s.replace(/[\[\]{}\\/,:;!?\u2019'"\-]/g, ' ');
 		// remove digits
 		s = s.replace(/\d+/g, ' ');
 		// collapse spaces
@@ -106,7 +110,7 @@ export default class extends Controller {
 	/**
 	 * Returns { imageUrl, source, match } or null
 	 */
-	async _searchBestPictogram(keyword) {
+	async _searchBestPictogram(keyword, timeout = 3000) {
 		try {
 			const normalized = this._normalizeKeyword(keyword);
 			if (!normalized) return null;
@@ -114,6 +118,11 @@ export default class extends Controller {
 			const tokens = normalized.split(' ').filter(Boolean);
 			// try with full phrase first then tokens (longest first)
 			const queries = [ normalized, ...tokens.sort((a, b) => b.length - a.length) ];
+			// also try without spaces (e.g., "sucre glace" -> "sucreglace")
+			if (tokens.length > 1) {
+				const noSpace = tokens.join('');
+				if (!queries.includes(noSpace)) queries.push(noSpace);
+			}
 			// include singular forms: word without a trailing s
 			for (const t of [ ...queries ]) {
 				if (t.length > 3 && t.endsWith('s')) {
@@ -122,22 +131,44 @@ export default class extends Controller {
 				}
 			}
 
-			for (const q of queries) {
-				const url = `/api/pictograms/search?q=${encodeURIComponent(q)}`;
-				const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-				if (!res.ok) continue;
-				const json = await res.json();
-				if (!json || !json.results || json.results.length === 0) continue;
-				// prefer local
-				const local = json.results.find(r => r.source === 'local');
-				if (local) return { imageUrl: local.imageUrl, source: 'local', match: q };
-				const ar = json.results.find(r => r.source === 'arasaac');
-				if (ar) return { imageUrl: ar.imageUrl, source: 'arasaac', match: q };
-				// fallback to first
-				return { imageUrl: json.results[ 0 ].imageUrl, source: json.results[ 0 ].source || 'unknown', match: q };
+			// Create abort controller for timeout
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+			try {
+				for (const q of queries) {
+					const url = `/api/pictograms/search?q=${encodeURIComponent(q)}`;
+					const res = await fetch(url, {
+						headers: { 'X-Requested-With': 'XMLHttpRequest' },
+						signal: controller.signal
+					});
+					if (!res.ok) continue;
+					const json = await res.json();
+					if (!json || !json.results || json.results.length === 0) continue;
+					// prefer local
+					const local = json.results.find(r => r.source === 'local');
+					if (local) {
+						clearTimeout(timeoutId);
+						return { imageUrl: local.imageUrl, source: 'local', match: q };
+					}
+					const ar = json.results.find(r => r.source === 'arasaac');
+					if (ar) {
+						clearTimeout(timeoutId);
+						return { imageUrl: ar.imageUrl, source: 'arasaac', match: q };
+					}
+					// fallback to first
+					clearTimeout(timeoutId);
+					return { imageUrl: json.results[ 0 ].imageUrl, source: json.results[ 0 ].source || 'unknown', match: q };
+				}
+			} finally {
+				clearTimeout(timeoutId);
 			}
 			return null;
 		} catch (err) {
+			if (err.name === 'AbortError') {
+				console.warn('Pictogram search timeout for:', keyword);
+				return null;
+			}
 			console.error('Pictogram search failed', err);
 			return null;
 		}
@@ -273,43 +304,102 @@ export default class extends Controller {
 	_openProposalsModal(proposals, card, index) {
 		const modal = document.getElementById('pictogram-proposals-modal');
 		const list = document.getElementById('pictogram-proposals-list');
+		const searchInput = document.getElementById('pictogram-proposals-search');
 		if (!modal || !list) return;
-		list.innerHTML = '';
-		proposals.forEach((p) => {
-			const item = document.createElement('div');
-			item.className = 'p-2 border rounded flex flex-col items-center justify-center cursor-pointer hover:shadow';
-			const img = document.createElement('img');
-			img.src = p.imageUrl;
-			img.className = 'w-20 h-20 object-contain';
-			const label = document.createElement('div');
-			label.className = 'text-xs text-base-content/60 mt-1';
-			label.textContent = (p.source === 'local' ? 'Local' : 'ARASAAC');
-			item.appendChild(img);
-			item.appendChild(label);
-			item.addEventListener('click', () => {
-				// update preview and hidden input but don't save immediately — user should validate
-				this._updateCardImage(card, { imageUrl: p.imageUrl, source: p.source, match: '' });
-				const inputName = `recipe[ingredients][${index}][pictogramUrl]`;
-				const formInput = document.querySelector(`#preview-save-form input[name="${inputName}"]`);
-				if (formInput) formInput.value = p.imageUrl;
-				// show validate button again
-				this._showButtonsForIngredient(card, true);
-				this.closeModal();
-			});
-			list.appendChild(item);
-		});
+
+		// Stocker toutes les propositions pour le filtrage
+		this._allProposals = proposals;
+		this._currentCard = card;
+		this._currentIndex = index;
+
+		// Afficher toutes les propositions initialement
+		this._renderProposals(proposals);
+
+		// Configurer la recherche en temps réel
+		if (searchInput) {
+			searchInput.value = '';
+			searchInput.oninput = (e) => {
+				const query = e.target.value.toLowerCase().trim();
+				if (!query) {
+					this._renderProposals(this._allProposals);
+					return;
+				}
+				const filtered = this._allProposals.filter(p => {
+					const name = p.name?.toLowerCase() || '';
+					const source = p.source?.toLowerCase() || '';
+					return name.includes(query) || source.includes(query);
+				});
+				this._renderProposals(filtered);
+			};
+		}
+
 		// attach context
 		modal.setAttribute('data-current-index', String(index));
 		modal.classList.remove('hidden');
 		modal.classList.add('flex');
+
+		// Focus sur le champ de recherche
+		if (searchInput) {
+			setTimeout(() => searchInput.focus(), 100);
+		}
+	}
+
+	_renderProposals(proposals) {
+		const list = document.getElementById('pictogram-proposals-list');
+		if (!list) return;
+
+		list.innerHTML = '';
+
+		if (proposals.length === 0) {
+			list.innerHTML = '<div class="col-span-full text-center text-base-content/60 py-8">Aucun pictogramme trouvé</div>';
+			return;
+		}
+
+		proposals.forEach((p) => {
+			const item = document.createElement('div');
+			item.className = 'p-2 border rounded flex flex-col items-center justify-center cursor-pointer hover:shadow hover:scale-105 transition';
+			const img = document.createElement('img');
+			img.src = p.imageUrl;
+			img.className = 'w-20 h-20 object-contain';
+			img.alt = p.name || '';
+			const label = document.createElement('div');
+			label.className = 'text-xs text-base-content/60 mt-1 truncate w-full text-center';
+			label.textContent = (p.source === 'local' ? 'Local' : 'ARASAAC');
+			label.title = p.name || '';
+			item.appendChild(img);
+			item.appendChild(label);
+			item.addEventListener('click', () => {
+				// update preview and hidden input but don't save immediately — user should validate
+				this._updateCardImage(this._currentCard, { imageUrl: p.imageUrl, source: p.source, match: '' });
+				const inputName = `recipe[ingredients][${this._currentIndex}][pictogramUrl]`;
+				const formInput = document.querySelector(`#preview-save-form input[name="${inputName}"]`);
+				if (formInput) formInput.value = p.imageUrl;
+				// show validate button again
+				this._showButtonsForIngredient(this._currentCard, true);
+				this.closeModal();
+			});
+			list.appendChild(item);
+		});
 	}
 
 	closeModal() {
 		const modal = document.getElementById('pictogram-proposals-modal');
+		const searchInput = document.getElementById('pictogram-proposals-search');
 		if (!modal) return;
 		modal.removeAttribute('data-current-index');
 		modal.classList.add('hidden');
 		modal.classList.remove('flex');
+
+		// Nettoyer les données temporaires
+		this._allProposals = null;
+		this._currentCard = null;
+		this._currentIndex = null;
+
+		// Réinitialiser le champ de recherche
+		if (searchInput) {
+			searchInput.value = '';
+			searchInput.oninput = null;
+		}
 	}
 
 	async validateAll(event) {

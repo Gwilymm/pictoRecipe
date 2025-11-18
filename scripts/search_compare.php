@@ -13,7 +13,7 @@ $sort = $argv[3] ?? 'none'; // 'none' | 'title' | 'rating'
 
 $http = HttpClient::create([
 	'headers' => [
-		'User-Agent' => 'Mozilla/5.0 (compatible; PictoRecipe/1.0)',
+		'User-Agent' => 'Mozilla/5.0 (compatible; PictoRecette/1.0)',
 		'Accept-Language' => 'fr-FR,fr;q=0.9',
 	],
 	'timeout' => 30,

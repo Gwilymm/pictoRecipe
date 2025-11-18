@@ -79,7 +79,11 @@ export default class extends Controller {
 			removeBtn.type = 'button';
 			removeBtn.className = 'btn btn-ghost btn-sm btn-circle js-remove ml-2';
 			removeBtn.setAttribute('title', 'Supprimer');
-			removeBtn.innerHTML = '🗑';
+			removeBtn.innerHTML = `
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M3 6l3 1m0 0l-3 9a5 5 0 006 0L10 7m4 0l3 1m0 0l-3 9a5 5 0 01-6 0L7 7" />
+				</svg>
+			`;
 			wrapper.appendChild(removeBtn);
 		} else {
 			console.log('form-collection: remove button already exists');

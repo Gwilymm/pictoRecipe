@@ -20,6 +20,10 @@ class IngredientType extends AbstractType
             ->add('name', TextType::class, [
                 'attr' => ['class' => 'input input-bordered w-full', 'placeholder' => 'Nom de l\'ingrédient'],
             ])
+            ->add('section', TextType::class, [
+                'required' => false,
+                'attr' => ['class' => 'input input-bordered w-full', 'placeholder' => 'Section (ex: Pâte sablée)'],
+            ])
             ->add('amount', NumberType::class, [
                 'scale' => 2,
                 'attr' => ['class' => 'input input-bordered w-28', 'step' => '0.01'],

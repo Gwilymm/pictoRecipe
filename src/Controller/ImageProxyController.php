@@ -51,7 +51,7 @@ class ImageProxyController extends AbstractController
 		try {
 			$res = $this->http->request('GET', $url, [
 				'headers' => [
-					'User-Agent' => 'PictoRecipe/1.0',
+					'User-Agent' => 'PictoRecette/1.0',
 					'Accept' => 'image/*,*/*;q=0.8'
 				],
 				'timeout' => 30,

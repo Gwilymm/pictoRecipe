@@ -10,7 +10,7 @@ $url = $argv[1] ?? 'https://www.marmiton.org/recettes/recette_creme-de-citron-le
 
 $http = HttpClient::create([
 	'headers' => [
-		'User-Agent' => 'Mozilla/5.0 (compatible; PictoRecipe/1.0)',
+		'User-Agent' => 'Mozilla/5.0 (compatible; PictoRecette/1.0)',
 		'Accept-Language' => 'fr-FR,fr;q=0.9',
 	],
 	'timeout' => 30,

@@ -31,6 +31,9 @@ class Ingredient
     #[Assert\PositiveOrZero]
     private ?int $position = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $section = null;
+
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $pictogramUrl = null;
 
@@ -125,6 +128,18 @@ class Ingredient
     public function setPictogram(?Pictogram $pictogram): static
     {
         $this->pictogram = $pictogram;
+
+        return $this;
+    }
+
+    public function getSection(): ?string
+    {
+        return $this->section;
+    }
+
+    public function setSection(?string $section): static
+    {
+        $this->section = $section;
 
         return $this;
     }

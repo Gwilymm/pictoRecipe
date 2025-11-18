@@ -94,7 +94,7 @@ document.addEventListener( "picto:selected", ( e ) => {
 
 
 const item = e.detail;
-const hidden = document.getElementById( "{{ form.vars.full_name }}_externalImageUrl" );
+const hidden = document.getElementById( "{{ form.vars.full_name }}_externalImageUrl" ) || document.getElementById( 'externalImageTemp' );
 const preview = document.getElementById( "picto-external-preview" );
 
 if ( hidden )

@@ -162,12 +162,19 @@ export default class extends Controller {
 	 * Affiche les résultats dans une grille DaisyUI
 	 */
 	displayResults(results) {
-		// Créer un conteneur avec scroll
+		// Créer un conteneur avec scroll et bouton de fermeture
 		const container = document.createElement('div');
-		container.className = 'card bg-base-100 shadow-lg max-h-64 overflow-y-auto mt-2';
+		container.className = 'card bg-base-100 shadow-lg max-h-96 overflow-y-auto mt-2 relative';
 
 		const cardBody = document.createElement('div');
 		cardBody.className = 'card-body p-2';
+
+		// Bouton de fermeture
+		const closeBtn = document.createElement('button');
+		closeBtn.type = 'button';
+		closeBtn.className = 'btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10';
+		closeBtn.innerHTML = '✕';
+		closeBtn.addEventListener('click', () => this.clearResults());
 
 		const grid = document.createElement('div');
 		grid.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2';
@@ -178,6 +185,7 @@ export default class extends Controller {
 		});
 
 		cardBody.appendChild(grid);
+		container.appendChild(closeBtn);
 		container.appendChild(cardBody);
 
 		this.resultsContainerTarget.innerHTML = '';
@@ -528,12 +536,22 @@ export default class extends Controller {
 			return;
 		}
 
-		// create a scrollable card to contain a compact grid
+		// create a scrollable card to contain a compact grid with close button
 		const wrapper = document.createElement('div');
-		wrapper.className = 'card bg-base-100 shadow-lg max-h-48 overflow-y-auto mt-2';
+		wrapper.className = 'card bg-base-100 shadow-lg max-h-96 overflow-y-auto mt-2 relative';
 
 		const body = document.createElement('div');
 		body.className = 'card-body p-2';
+
+		// Bouton de fermeture
+		const closeBtn = document.createElement('button');
+		closeBtn.type = 'button';
+		closeBtn.className = 'btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10';
+		closeBtn.innerHTML = '✕';
+		closeBtn.addEventListener('click', () => {
+			container.innerHTML = '';
+			container.classList.add('hidden');
+		});
 
 		const grid = document.createElement('div');
 		grid.className = 'grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 items-center justify-items-center';
@@ -555,6 +573,7 @@ export default class extends Controller {
 		});
 
 		body.appendChild(grid);
+		wrapper.appendChild(closeBtn);
 		wrapper.appendChild(body);
 
 		// Vider et afficher

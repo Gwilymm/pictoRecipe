@@ -8,7 +8,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class MarmitonScraperService
 {
-	private const USER_AGENT = 'Mozilla/5.0 (compatible; PictoRecipe/1.0)';
+	private const USER_AGENT = 'Mozilla/5.0 (compatible; PictoRecette/1.0)';
 	private const REQUEST_TIMEOUT = 30;
 
 	public function __construct(

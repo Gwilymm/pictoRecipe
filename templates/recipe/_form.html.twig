@@ -24,6 +24,12 @@
 			</label>
 			{{ form_widget(form.ingredients.vars.prototype.name, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Farine'}}) }}
 		</div>
+		<div class="md:col-span-4">
+			<label class="label">
+				<span class="label-text font-medium">Section (groupe)</span>
+			</label>
+			{{ form_widget(form.ingredients.vars.prototype.section, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Pâte sablée'}}) }}
+		</div>
 		<div class="md:col-span-3">
 			<label class="label">
 				<span class="label-text font-medium">Quantité</span>
@@ -64,7 +70,10 @@
 		<div class="flex-1 w-full">{{ form_widget(form.steps.vars.prototype.content) }}</div>
 		<div class="w-full sm:w-28">{{ form_widget(form.steps.vars.prototype.durationMinutes) }}</div>
 		<div class="flex items-start w-full sm:w-auto">
-			<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto">🗑</button>
+			<button type="button" class="btn btn-xs md:btn-sm btn-ghost btn-error js-remove w-full sm:w-auto flex items-center justify-center gap-2" title="Supprimer">
+				{{ ux_icon('heroicons:trash', {class: 'w-4 h-4'}) }}
+				<span class="sr-only">Supprimer</span>
+			</button>
 		</div>
 	</div>
 	<div class="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-base-300">
@@ -215,6 +224,12 @@
 										<span class="label-text font-medium">Nom de l'ingrédient</span>
 									</label>
 									{{ form_widget(ingredient.name, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Farine'}}) }}
+								</div>
+								<div class="md:col-span-4">
+									<label class="label">
+										<span class="label-text font-medium">Section (groupe)</span>
+									</label>
+									{{ form_widget(ingredient.section, {'attr': {'class': 'input input-bordered w-full focus:input-primary', 'placeholder': 'Ex: Pâte sablée'}}) }}
 								</div>
 								<div class="md:col-span-3">
 									<label class="label">

@@ -51,114 +51,124 @@
 			}
 			.step-text
 			{font-size:10pt;line-height:1.5;word-wrap:break-word;padding-left:15px
-			} /* FOOTER */
-			.footer
-			{text-align:center;margin-top:20px;font-size:9pt;color:#555
+			}
+			.header
+			{text-align:right;font-size:7pt;color:#999;margin-bottom:10px
 			}
 		</style>
 	</head>
 	<body>
 
+		<div class="header">
+			<p>Bonne dégustation ! • Recette créée avec
+				<strong>PictoRecette</strong>
+				•
+				{{ "now"|date("d/m/Y") }}</p>
+		</div>
+
 		<h1>{{ recipe.title|upper }}</h1>
 
 		{# -- Ingrédients -- #}
 		<h2>Ingrédients</h2>
-		<table class="grid">
-			<tr>
-				{% for ingredient in recipe.ingredients %}
-					<td>
-						{# Browsershot needs HTTP URLs or data URIs #}
-						{% if ingredient.pictogram %}
-							<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="60" height="60">
-						{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
-							{% if ingredient.pictogramUrl starts with('http') %}
-								<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
-							{% else %}
-								<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
-							{% endif %}
-						{% else %}
-							<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
-						{% endif %}
-						<span>{{ ingredient.name }}</span>
-						{% if ingredient.amount %}
-							<div style="font-size:8.5pt;color:#2563eb;">
-								{{ ingredient.amount }}
-								{{ ingredient.unit|default('') }}
-							</div>
-						{% endif %}
-					</td>
-					{% if loop.index is divisible by(6) %}
+		<table
+			class="grid">
+			{# Group by section while keeping a 6-column grid #}
+			{% set lastSection = null %}
+			{% set col = 0 %}
+			{% for ingredient in recipe.ingredients %}
+				{% set section = ingredient.section|default('') %}
+				{% if section != lastSection %}
+					{# close current row if open #}
+					{% if col > 0 %}
 					</tr>
+					{% set col = 0 %}
+				{% endif %}
+				{% if section %}
 					<tr>
-					{% endif %}
-				{% endfor %}
-			</tr>
-		</table>
-
-		{# -- Ustensiles -- #}
-		<h2>Ustensiles</h2>
-		<table class="grid">
-			<tr>
-				{% for utensil in recipe.utensils %}
-					<td>
-						{% if utensil.pictogram %}
-							<img src="http://127.0.0.1/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="50" height="50">
-						{% elseif utensil.pictogramUrl %}
-							{% if utensil.pictogramUrl starts with('http') %}
-								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
-							{% else %}
-								<img src="http://127.0.0.1/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
-							{% endif %}
-						{% else %}
-							<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
-						{% endif %}
-						<span>{{ utensil.name }}</span>
-					</td>
-					{% if loop.index is divisible by(6) %}
+						<td colspan="6" class="grid-section" style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;padding:6px 8px;font-weight:bold;color:#1f2937">{{ section }}</td>
 					</tr>
-					<tr>
-					{% endif %}
-				{% endfor %}
-			</tr>
-		</table>
+				{% endif %}
+				{% set lastSection = section %}
+			{% endif %}
 
-		{# -- Préparation -- #}
-		<h2>Préparation</h2>
-		<table class="steps">
-			{% for step in recipe.steps %}
+			{% if col == 0 %}
 				<tr>
-					<td class="num">{{ loop.index }}</td>
-					<td class="step-pictos">
-						{% if step.pictogramUrls and step.pictogramUrls is not empty %}
-							{% for url in step.pictogramUrls %}
-								{% if url starts with('http') %}
-									<img src="{{ url }}" alt="picto" width="64" height="64"/>
-								{% else %}
-									<img src="http://127.0.0.1/{{ url }}" alt="picto" width="64" height="64"/>
-								{% endif %}
-							{% endfor %}
-						{% elseif step.pictogram %}
-							<img src="http://127.0.0.1/{{ step.pictogram.filePath }}" alt="picto" width="64" height="64"/>
-						{% elseif step.pictogramUrl %}
-							{% if step.pictogramUrl starts with('http') %}
-								<img src="{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
-							{% else %}
-								<img src="http://127.0.0.1/{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
-							{% endif %}
+				{% endif %}
+				<td>
+					{# Browsershot needs HTTP URLs or data URIs #}
+					{% if ingredient.pictogram %}
+						<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="60" height="60">
+					{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
+						{% if ingredient.pictogramUrl starts with('http') %}
+							<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
 						{% else %}
-							<div style="width:64px;height:64px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
+							<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
 						{% endif %}
-					</td>
-					<td class="step-text">{{ step.content }}</td>
+					{% else %}
+						<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
+					{% endif %}
+					<span>{{ ingredient.name }}</span>
+					{% if ingredient.amount %}
+						<div style="font-size:8.5pt;color:#2563eb;">{{ ingredient.amount }}
+							{{ ingredient.unit|default('') }}</div>
+					{% endif %}
+				</td>
+				{% set col = col + 1 %}
+				{% if col == 6 %}
 				</tr>
-			{% endfor %}
-		</table>
-		<div class="footer">
-			<p>Bonne dégustation ! 🍰</p>
-			<p>Recette créée avec
-				<strong>PictoRecipe</strong>
-				•
-				{{ "now"|date("d/m/Y") }}</p>
-		</div>
-	</body>
-</html>
+				{% set col = 0 %}
+			{% endif %}
+		{% endfor %}
+		{% if col > 0 %}
+		</tr>
+	{% endif %}
+</html></table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
+<tr>
+	{% for utensil in recipe.utensils %}
+		<td>
+			{% if utensil.pictogram %}
+				<img src="http://127.0.0.1/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="50" height="50">
+			{% elseif utensil.pictogramUrl %}
+				{% if utensil.pictogramUrl starts with('http') %}
+					<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
+				{% else %}
+					<img src="http://127.0.0.1/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
+				{% endif %}
+			{% else %}
+				<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
+			{% endif %}
+			<span>{{ utensil.name }}</span>
+		</td>
+		{% if loop.index is divisible by(6) %}
+		</tr>
+		<tr>
+		{% endif %}
+	{% endfor %}
+</tr></table>{# -- Préparation -- #}<h2>Préparation</h2><table class="steps">
+{% for step in recipe.steps %}
+	<tr>
+		<td class="num">{{ loop.index }}</td>
+		<td class="step-pictos">
+			{% if step.pictogramUrls and step.pictogramUrls is not empty %}
+				{% for url in step.pictogramUrls %}
+					{% if url starts with('http') %}
+						<img src="{{ url }}" alt="picto" width="64" height="64"/>
+					{% else %}
+						<img src="http://127.0.0.1/{{ url }}" alt="picto" width="64" height="64"/>
+					{% endif %}
+				{% endfor %}
+			{% elseif step.pictogram %}
+				<img src="http://127.0.0.1/{{ step.pictogram.filePath }}" alt="picto" width="64" height="64"/>
+			{% elseif step.pictogramUrl %}
+				{% if step.pictogramUrl starts with('http') %}
+					<img src="{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
+				{% else %}
+					<img src="http://127.0.0.1/{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
+				{% endif %}
+			{% else %}
+				<div style="width:64px;height:64px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
+			{% endif %}
+		</td>
+		<td class="step-text">{{ step.content }}</td>
+	</tr>
+{% endfor %}</table></body></html>

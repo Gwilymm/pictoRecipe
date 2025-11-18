@@ -101,6 +101,13 @@ class ApiRecipeImportController extends AbstractController
 				$unit = $ing['unit'] ?? null;
 				$ingredient->setUnit($unit !== '' ? (string) $unit : null);
 
+				// Optional section/group (e.g., Marmiton: mrtn-recette_ingredients-items-group-title)
+				$section = $ing['group'] ?? $ing['section'] ?? null;
+				if (is_string($section)) {
+					$section = trim($section);
+				}
+				$ingredient->setSection($section !== '' ? $section : null);
+
 				$ingredient->setPosition($position++);
 				$recipe->addIngredient($ingredient);
 			}
@@ -115,17 +122,26 @@ class ApiRecipeImportController extends AbstractController
 				$recipe->addStep($step);
 			}
 
-			// Utensils (optional): find or create by name
+			// Utensils (optional): find or create by name (case-insensitive)
 			foreach (($recipeData['utensils'] ?? []) as $ut) {
 				$name = trim((string) ($ut['name'] ?? ''));
 				if ($name === '') {
 					continue;
 				}
-				$existing = $this->utensilRepository->findOneBy(['name' => $name]);
-				$utensil = $existing ?? (new Utensil())->setName($name);
-				$recipe->addUtensil($utensil);
-				if (!$existing) {
+				// Case-insensitive search to avoid duplicates like "Four" vs "four"
+				$existing = $this->utensilRepository->createQueryBuilder('u')
+					->where('LOWER(u.name) = LOWER(:name)')
+					->setParameter('name', $name)
+					->setMaxResults(1)
+					->getQuery()
+					->getOneOrNullResult();
+
+				if ($existing) {
+					$recipe->addUtensil($existing);
+				} else {
+					$utensil = (new Utensil())->setName($name);
 					$this->em->persist($utensil);
+					$recipe->addUtensil($utensil);
 				}
 			}
 

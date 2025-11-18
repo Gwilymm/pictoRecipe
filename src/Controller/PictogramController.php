@@ -117,13 +117,31 @@ final class PictogramController extends AbstractController
 	}
 
 	#[Route('/{id}/edit', name: 'app_pictogram_edit', methods: ['GET', 'POST'])]
-	public function edit(Request $request, Pictogram $pictogram, EntityManagerInterface $entityManager): Response
+	public function edit(Request $request, Pictogram $pictogram, EntityManagerInterface $entityManager, HttpClientInterface $http): Response
 	{
 		$form = $this->createForm(PictogramType::class, $pictogram);
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted() && $form->isValid()) {
 			$file = $form->get('imageFile')->getData();
+			$externalUrl  = $request->request->get('externalImageTemp');
+
+			// If no uploaded file but an external image was selected via the UI,
+			// download it and turn it into a temporary File object to be processed
+			if (!$file && $externalUrl) {
+				try {
+					$resp = $http->request('GET', $externalUrl);
+					$bytes = $resp->getContent();
+
+					$tempPath = tempnam(sys_get_temp_dir(), 'picto_');
+					file_put_contents($tempPath, $bytes);
+
+					$file = new \Symfony\Component\HttpFoundation\File\File($tempPath);
+				} catch (\Throwable $e) {
+					$this->addFlash('error', "Impossible de télécharger l'image externe.");
+					return $this->redirectToRoute('app_pictogram_edit', ['id' => $pictogram->getId()]);
+				}
+			}
 			if ($file) {
 				$mime = $file->getMimeType();
 				if ($mime === 'image/svg+xml') {
@@ -139,6 +157,10 @@ final class PictogramController extends AbstractController
 					if ($this->convertToPng($source, $destination, $mime)) {
 						$pictogram->setFilePath('uploads/pictograms/' . $newFilename);
 						$pictogram->setFormat('png');
+
+						$thumbDir = $this->getParameter('pictogram_directory') . '/thumbs';
+						if (!is_dir($thumbDir)) mkdir($thumbDir, 0755, true);
+						$this->createThumbnail($destination, $thumbDir . '/' . $newFilename, 70);
 					} else {
 						$origFilename = uniqid() . '.' . $file->guessExtension();
 						$file->move($this->getParameter('pictogram_directory'), $origFilename);
