@@ -30,7 +30,7 @@ services:
       APP_SECRET: ${APP_SECRET:-ChangeMe}
       SERVER_NAME: ${SERVER_NAME:-:80}
       # BDD PostgreSQL
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-motdepassefort}@database:5432/${POSTGRES_DB:-picto}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8"
       # Configuration Caddy (optionnel)
       # CADDY_GLOBAL_OPTIONS: "debug"  # Pour activer les logs de debug
     networks:
@@ -51,8 +51,8 @@ services:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_DB: ${POSTGRES_DB:-picto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-motdepassefort}
       POSTGRES_USER: ${POSTGRES_USER:-app}
     healthcheck:
       test:
@@ -60,7 +60,7 @@ services:
           "CMD",
           "pg_isready",
           "-d",
-          "${POSTGRES_DB:-app}",
+          "${POSTGRES_DB:-picto}",
           "-U",
           "${POSTGRES_USER:-app}",
         ]
