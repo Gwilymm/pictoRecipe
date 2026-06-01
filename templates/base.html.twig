@@ -25,6 +25,20 @@
   plausible.init()
 </script>
 
+		{% if app.environment == 'prod' %}
+			{# Privacy-friendly analytics by Plausible #}
+			<script async src="https://analytics.doc2sail.com/js/pa-sryYXEKPoMesf_-yBFfSG.js"></script>
+			<script>
+				window.plausible = window.plausible || function () {
+					(plausible.q = plausible.q || []).push(arguments);
+				};
+				plausible.init = plausible.init || function (i) {
+					plausible.o = i || {};
+				};
+				plausible.init();
+			</script>
+		{% endif %}
+
 
 	</head>
 	<body class="min-h-screen">
