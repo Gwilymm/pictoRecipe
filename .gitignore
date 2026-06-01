@@ -22,3 +22,4 @@
 .pnpm-store/
 public/uploads/
 .github/copilot-instructions.md
+/graphify-out/
