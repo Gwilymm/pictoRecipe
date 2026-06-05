@@ -19,7 +19,7 @@ final class PictogramController extends AbstractController
 	public function index(PictogramRepository $pictogramRepository): Response
 	{
 		return $this->render('pictogram/index.html.twig', [
-			'pictograms' => $pictogramRepository->findAll(),
+			'pictograms' => $pictogramRepository->findBy([], ['createdAt' => 'DESC', 'id' => 'DESC']),
 		]);
 	}
 
@@ -105,6 +105,19 @@ final class PictogramController extends AbstractController
 			'pictogram' => $pictogram,
 			'form' => $form,
 		]);
+	}
+
+	#[Route('/{id}/validate', name: 'app_pictogram_validate', methods: ['POST'])]
+	public function validate(Request $request, Pictogram $pictogram, EntityManagerInterface $entityManager): Response
+	{
+		if ($this->isCsrfTokenValid('validate' . $pictogram->getId(), $request->getPayload()->getString('_token'))) {
+			$pictogram->setValidated(true);
+			$entityManager->flush();
+
+			$this->addFlash('success', 'Image validée pour la recherche automatique.');
+		}
+
+		return $this->redirect($request->headers->get('referer') ?: $this->generateUrl('app_pictogram_index'));
 	}
 
 

@@ -49,8 +49,11 @@ FROM dunglas/frankenphp:1-php8.3-alpine AS runtime
 # Variables d'environnement pour production
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
+    APP_SECRET=ChangeMe \
     COMPOSER_ALLOW_SUPERUSER=1 \
-    SERVER_NAME=:80
+    SERVER_NAME=:80 \
+    DEFAULT_URI=http://localhost \
+    DATABASE_URL=postgresql://app:motdepassefort@database:5432/picto?serverVersion=16&charset=utf8
 
 # ---- Browsershot / Puppeteer / Chromium ----
 RUN apk add --no-cache \

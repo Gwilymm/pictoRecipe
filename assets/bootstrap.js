@@ -21,9 +21,11 @@ import PictoSearchController from './controllers/picto_search_controller.js';
 import UtensilFilterController from './controllers/utensil_filter_controller.js';
 import PictogramFilterController from './controllers/pictogram_filter_controller.js';
 import ModalController from './controllers/modal_controller.js';
+import WikimediaImagePickerController from './controllers/wikimedia_image_picker_controller.js';
 
 app.register('pictogram-filter', PictogramFilterController);
 app.register('utensil-filter', UtensilFilterController);
+app.register('wikimedia-image-picker', WikimediaImagePickerController);
 app.register('theme', ThemeController);
 app.register('stepper', StepperController);
 app.register('pictogram', PictogramController);

@@ -231,8 +231,10 @@ final class RecipeController extends AbstractController
         }
 
         $cachePath = $cacheDir . DIRECTORY_SEPARATOR . $recipe->getId() . '.pdf';
-        // Content hash of the rendered HTML to detect any change impacting the PDF
-        $htmlHash = sha1($html);
+        // Include the template source hash so layout-only changes invalidate cached PDFs.
+        $templatePath = rtrim($this->getParameter('kernel.project_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'recipe' . DIRECTORY_SEPARATOR . 'pdf.html.twig';
+        $templateHash = is_readable($templatePath) ? sha1_file($templatePath) : '';
+        $htmlHash = sha1($html . '|' . ($templateHash ?: ''));
         $hashPath = $cachePath . '.sha1';
         $force = $request->query->get('force') === '1';
 

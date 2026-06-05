@@ -23,3 +23,5 @@
 public/uploads/
 .github/copilot-instructions.md
 /graphify-out/
+.env.dev
+.env.test

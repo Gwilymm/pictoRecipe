@@ -1,59 +1,122 @@
+{% set gridColumns = 4 %}
+{% set gridPictoSize = 122 %}
+{% set stepPictoSize = 112 %}
 <!DOCTYPE html>
 <html lang="fr">
 	<head>
 		<meta charset="UTF-8">
 		<title>{{ recipe.title }}</title>
 		<style>
-			*
-			{box-sizing:border-box;margin:0;padding:0
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0
 			}
-			body
-			{font-family:'DejaVu Sans',Arial,sans-serif;font-size:10pt;line-height:1.4;color:#000;padding:20px
+			body {
+				font-family: 'DejaVu Sans', Arial, sans-serif;
+				font-size: 10pt;
+				line-height: 1.4;
+				color: #000;
+				padding: 20px
 			}
 
-			h1
-			{text-align:center;font-size:22pt;color:#222;margin-bottom:20px;text-transform:uppercase;border-bottom:3px solid #222;padding-bottom:6px
+			h1 {
+				text-align: center;
+				font-size: 22pt;
+				color: #222;
+				margin-bottom: 20px;
+				text-transform: uppercase;
+				border-bottom: 3px solid #222;
+				padding-bottom: 6px
 			}
-			h2
-			{background:#f3f4f6;border-left:6px solid #2563eb;padding:6px 10px;font-size:13pt;margin:18px 0 8px
+			h2 {
+				background: #f3f4f6;
+				border-left: 6px solid #2563eb;
+				padding: 6px 10px;
+				font-size: 13pt;
+				margin: 18px 0 8px
 			}
 
 			/* --- GRILLES INGREDIENTS & USTENSILES --- */
-			.grid
-			{width:100%;border-collapse:collapse;margin-bottom:15px
+			.grid {
+				width: 100%;
+				border-collapse: collapse;
+				margin-bottom: 15px
 			}
-			.grid td
-			{border:1px solid #ddd;text-align:center;padding:8px;width:14%;vertical-align:top
+			.grid td {
+				border: 1px solid #ddd;
+				text-align: center;
+				padding: 10px;
+				width: 25%;
+				vertical-align: top
 			}
-			.grid img
-			{width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 5px
+			.grid img,
+			.grid-placeholder {
+				width: {{ gridPictoSize }}px;
+				height: {{ gridPictoSize }}px;
+				object-fit: contain;
+				display: block;
+				margin: 0 auto 5px
 			}
-			.grid span
-			{display:block;font-size:9pt;font-weight:bold;color:#333
+			.grid span {
+				display: block;
+				font-size: 9pt;
+				font-weight: bold;
+				color: #333
 			}
 
 			/* --- TABLEAU ÉTAPES --- */
-			.steps
-			{width:100%;border-collapse:collapse;margin-top:10px;table-layout:auto
+			.steps {
+				width: 100%;
+				border-collapse: collapse;
+				margin-top: 10px;
+				table-layout: auto
 			}
 			/* keep borders on cells only to avoid double/dashed lines on page breaks */
-			.steps td
-			{border:1px solid #000;vertical-align:middle;padding:10px;page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;-webkit-page-break-inside:avoid
+			.steps td {
+				border: 1px solid #000;
+				vertical-align: middle;
+				padding: 10px;
+				page-break-inside: avoid;
+				break-inside: avoid;
+				-webkit-column-break-inside: avoid;
+				-webkit-page-break-inside: avoid
 			}
-			.num
-			{width:48px;text-align:center;font-size:12pt;font-weight:bold;background:#dbeafe
+			.num {
+				width: 48px;
+				text-align: center;
+				font-size: 12pt;
+				font-weight: bold;
+				background: #dbeafe
 			}
-			.step-pictos
-			{text-align:center;background:#f9fafb;border-right:2px solid #2563eb;padding:8px;width:300px;white-space:normal
+			.step-pictos {
+				text-align: center;
+				background: #f9fafb;
+				border-right: 2px solid #2563eb;
+				padding: 8px;
+				width: 360px;
+				white-space: normal
 			}
-			.step-pictos img
-			{width:64px;height:64px;object-fit:contain;display:inline-block;margin:3px;vertical-align:middle
+			.step-pictos img,
+			.step-placeholder {
+				width: {{ stepPictoSize }}px;
+				height: {{ stepPictoSize }}px;
+				object-fit: contain;
+				display: inline-block;
+				margin: 3px;
+				vertical-align: middle
 			}
-			.step-text
-			{font-size:10pt;line-height:1.5;word-wrap:break-word;padding-left:15px
+			.step-text {
+				font-size: 10pt;
+				line-height: 1.5;
+				word-wrap: break-word;
+				padding-left: 15px
 			}
-			.header
-			{text-align:right;font-size:7pt;color:#999;margin-bottom:10px
+			.header {
+				text-align: right;
+				font-size: 7pt;
+				color: #999;
+				margin-bottom: 10px
 			}
 		</style>
 	</head>
@@ -72,7 +135,7 @@
 		<h2>Ingrédients</h2>
 		<table
 			class="grid">
-			{# Group by section while keeping a 6-column grid #}
+			{# Group by section while keeping a gridColumns-column grid #}
 			{% set lastSection = null %}
 			{% set col = 0 %}
 			{% for ingredient in recipe.ingredients %}
@@ -85,7 +148,7 @@
 				{% endif %}
 				{% if section %}
 					<tr>
-						<td colspan="6" class="grid-section" style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;padding:6px 8px;font-weight:bold;color:#1f2937">{{ section }}</td>
+						<td colspan="{{ gridColumns }}" class="grid-section" style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;padding:6px 8px;font-weight:bold;color:#1f2937">{{ section }}</td>
 					</tr>
 				{% endif %}
 				{% set lastSection = section %}
@@ -97,15 +160,15 @@
 				<td>
 					{# Browsershot needs HTTP URLs or data URIs #}
 					{% if ingredient.pictogram %}
-						<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="60" height="60">
+						<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 					{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
 						{% if ingredient.pictogramUrl starts with('http') %}
-							<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
+							<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 						{% else %}
-							<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="60" height="60">
+							<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 						{% endif %}
 					{% else %}
-						<div style="width:60px;height:60px;background:#e5e7eb;border-radius:6px;margin:0 auto 6px;"></div>
+						<div class="grid-placeholder" style="background:#e5e7eb;border-radius:6px;margin-bottom:6px;"></div>
 					{% endif %}
 					<span>{{ ingredient.name }}</span>
 					{% if ingredient.amount %}
@@ -114,7 +177,7 @@
 					{% endif %}
 				</td>
 				{% set col = col + 1 %}
-				{% if col == 6 %}
+				{% if col == gridColumns %}
 				</tr>
 				{% set col = 0 %}
 			{% endif %}
@@ -122,24 +185,24 @@
 		{% if col > 0 %}
 		</tr>
 	{% endif %}
-</html></table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
+</table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
 <tr>
 	{% for utensil in recipe.utensils %}
 		<td>
 			{% if utensil.pictogram %}
-				<img src="http://127.0.0.1/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="50" height="50">
+				<img src="http://127.0.0.1/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 			{% elseif utensil.pictogramUrl %}
 				{% if utensil.pictogramUrl starts with('http') %}
-					<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
+					<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 				{% else %}
-					<img src="http://127.0.0.1/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="50" height="50">
+					<img src="http://127.0.0.1/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 				{% endif %}
 			{% else %}
-				<div style="width:50px;height:50px;background:#fef3c7;border-radius:6px;margin:0 auto 5px;"></div>
+				<div class="grid-placeholder" style="background:#fef3c7;border-radius:6px;"></div>
 			{% endif %}
 			<span>{{ utensil.name }}</span>
 		</td>
-		{% if loop.index is divisible by(6) %}
+		{% if loop.index is divisible by(gridColumns) and not loop.last %}
 		</tr>
 		<tr>
 		{% endif %}
@@ -152,21 +215,21 @@
 			{% if step.pictogramUrls and step.pictogramUrls is not empty %}
 				{% for url in step.pictogramUrls %}
 					{% if url starts with('http') %}
-						<img src="{{ url }}" alt="picto" width="64" height="64"/>
+						<img src="{{ url }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
 					{% else %}
-						<img src="http://127.0.0.1/{{ url }}" alt="picto" width="64" height="64"/>
+						<img src="http://127.0.0.1/{{ url }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
 					{% endif %}
 				{% endfor %}
 			{% elseif step.pictogram %}
-				<img src="http://127.0.0.1/{{ step.pictogram.filePath }}" alt="picto" width="64" height="64"/>
+				<img src="http://127.0.0.1/{{ step.pictogram.filePath }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
 			{% elseif step.pictogramUrl %}
 				{% if step.pictogramUrl starts with('http') %}
-					<img src="{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
+					<img src="{{ step.pictogramUrl }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
 				{% else %}
-					<img src="http://127.0.0.1/{{ step.pictogramUrl }}" alt="picto" width="64" height="64"/>
+					<img src="http://127.0.0.1/{{ step.pictogramUrl }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
 				{% endif %}
 			{% else %}
-				<div style="width:64px;height:64px;background:#e5e7eb;border-radius:8px;margin:auto;"></div>
+				<div class="step-placeholder" style="background:#e5e7eb;border-radius:8px;margin:auto;"></div>
 			{% endif %}
 		</td>
 		<td class="step-text">{{ step.content }}</td>

@@ -51,6 +51,8 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 COPY . .
 
 # Install Composer dependencies (dev)
+# Provide a build-time DATABASE_URL so Symfony auto-scripts (cache:clear) can run.
+ENV DATABASE_URL="postgresql://app:motdepassefort@database:5432/picto?serverVersion=16&charset=utf8"
 RUN composer install --no-interaction --prefer-dist
 
 # Node deps (si tu utilises pnpm ou autre)

@@ -15,10 +15,54 @@
 			<h2 class="card-title">{{ pictogram.name }}</h2>
 			<p class="text-sm text-gray-500">Format :
 				{{ pictogram.format ? pictogram.format|upper : '—' }}</p>
+			<p class="text-sm text-gray-500">Source :
+				{{ pictogram.sourceDisplayName }}</p>
+			<p class="text-sm text-gray-500">Validation :
+				{{ pictogram.validated ? 'Validé' : 'À valider' }}</p>
 			<p class="text-xs text-base-content/60">Créé le :
 				{{ pictogram.createdAt ? pictogram.createdAt|date('Y-m-d') : '—' }}</p>
 
+			{% if pictogram.license or pictogram.attribution %}
+				<div class="divider my-2"></div>
+				<div class="space-y-2 text-sm">
+					{% if pictogram.license %}
+						<p>
+							<span class="font-semibold">Licence :</span>
+							{% if pictogram.licenseUrl %}
+								<a href="{{ pictogram.licenseUrl }}" target="_blank" rel="noopener noreferrer" class="link link-primary">{{ pictogram.license }}</a>
+							{% else %}
+								{{ pictogram.license }}
+							{% endif %}
+						</p>
+					{% endif %}
+					{% if pictogram.author %}
+						<p>
+							<span class="font-semibold">Auteur :</span>
+							{{ pictogram.author }}
+						</p>
+					{% endif %}
+					{% if pictogram.credit %}
+						<p>
+							<span class="font-semibold">Crédit :</span>
+							{{ pictogram.credit }}
+						</p>
+					{% endif %}
+					{% if pictogram.attribution %}
+						<p>
+							<span class="font-semibold">Attribution :</span>
+							{{ pictogram.attribution }}
+						</p>
+					{% endif %}
+				</div>
+			{% endif %}
+
 			<div class="card-actions mt-4">
+				{% if not pictogram.validated %}
+					<form method="post" action="{{ path('app_pictogram_validate', {'id': pictogram.id}) }}">
+						<input type="hidden" name="_token" value="{{ csrf_token('validate' ~ pictogram.id) }}">
+						<button type="submit" class="btn btn-success btn-sm">Valider</button>
+					</form>
+				{% endif %}
 				<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-warning btn-sm">Modifier</a>
 				<a href="{{ path('app_pictogram_index') }}" class="btn btn-outline btn-sm">⬅ Retour</a>
 			</div>

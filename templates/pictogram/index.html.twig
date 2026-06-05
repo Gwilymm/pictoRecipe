@@ -20,6 +20,35 @@
 			</a>
 		</div>
 
+		<section class="mb-4 md:mb-6 border border-base-300 rounded-lg p-3 md:p-4" data-controller="wikimedia-image-picker">
+			<div class="flex flex-col gap-3">
+				<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+					<h2 class="text-lg md:text-xl font-semibold">Wikimedia Commons</h2>
+					<div class="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+						<span class="badge badge-outline">Source complementaire</span>
+						<span class="badge badge-warning">Validation manuelle</span>
+					</div>
+				</div>
+
+				<form class="flex flex-col sm:flex-row gap-2" data-action="submit->wikimedia-image-picker#search">
+					<input type="text" class="input input-bordered input-sm md:input-md flex-1" placeholder="fraise, farine, tomato..." data-wikimedia-image-picker-target="input">
+					<select class="select select-bordered select-sm md:select-md w-full sm:w-28" data-wikimedia-image-picker-target="limit">
+						<option value="8">8</option>
+						<option value="12" selected>12</option>
+						<option value="20">20</option>
+					</select>
+					<button type="submit" class="btn btn-primary btn-sm md:btn-md">
+						{{ ux_icon('heroicons:magnifying-glass', {class: 'w-4 h-4 md:w-5 md:h-5'}) }}
+						Rechercher
+					</button>
+					<span class="loading loading-spinner text-primary hidden self-center" data-wikimedia-image-picker-target="spinner"></span>
+				</form>
+
+				<div data-wikimedia-image-picker-target="status" class="text-sm min-h-5"></div>
+				<div data-wikimedia-image-picker-target="results"></div>
+			</div>
+		</section>
+
 		{% if pictograms is empty %}
 			<div class="alert alert-info text-sm md:text-base">
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5 md:w-6 md:h-6">
@@ -48,15 +77,34 @@
 
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2 md:gap-4 overflow-visible" data-pictogram-filter-target="grid">
 				{% for pictogram in pictograms %}
-					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow pictogram-card group" data-pictogram-filter-target="card" data-name="{{ pictogram.name|lower }}" data-format="{{ pictogram.format|lower }}">
+					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow pictogram-card group" data-pictogram-filter-target="card" data-name="{{ pictogram.name|lower }}" data-format="{{ pictogram.format|lower }}" data-source="{{ pictogram.source|lower }}">
 						<figure class="pt-2 md:pt-4 relative overflow-visible">
 							<img src="{{ asset(pictogram.filePath) }}" alt="{{ pictogram.name }}" class="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 object-contain transition-all duration-300 group-hover:scale-150 group-hover:z-50 group-hover:relative">
 						</figure>
 						<div class="card-body p-2 md:p-3 flex flex-col items-center text-center gap-1 md:gap-2">
 							<h3 class="font-semibold text-xs md:text-sm line-clamp-2">{{ pictogram.name }}</h3>
-							<span class="badge badge-xs">{{ pictogram.format|upper }}</span>
+							<div class="flex flex-wrap justify-center gap-1">
+								<span class="badge badge-xs">{{ pictogram.format|upper }}</span>
+								<span class="badge badge-xs badge-outline">{{ pictogram.sourceDisplayName }}</span>
+								{% if pictogram.wikimediaCommons %}
+									<span class="badge badge-xs {{ pictogram.validated ? 'badge-success' : 'badge-warning' }}">
+										{{ pictogram.validated ? 'Validé' : 'À valider' }}
+									</span>
+								{% endif %}
+							</div>
+							{% if pictogram.license %}
+								<p class="text-xs text-base-content/60 line-clamp-2">{{ pictogram.license }}</p>
+							{% endif %}
 
-							<div class="card-actions w-full flex gap-1">
+							<div class="card-actions w-full flex flex-wrap gap-1">
+								{% if not pictogram.validated %}
+									<form method="post" action="{{ path('app_pictogram_validate', {'id': pictogram.id}) }}" class="flex-1">
+										<input type="hidden" name="_token" value="{{ csrf_token('validate' ~ pictogram.id) }}">
+										<button type="submit" class="btn btn-xs md:btn-sm btn-success w-full">
+											Valider
+										</button>
+									</form>
+								{% endif %}
 								<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-xs md:btn-sm btn-warning flex-1">
 									{{ ux_icon('heroicons:pencil-square', {class: 'w-3 h-3 md:w-4 md:h-4'}) }}
 									Modifier
