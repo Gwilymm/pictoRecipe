@@ -15,16 +15,45 @@
 					{{ form_row(form.name) }}
 				</div>
 
-				<div class="divider">Pictogramme</div>
+				<div class="divider">Image</div>
 
-				<div class="form-control">
-					{{ include('partials/_pictogram_widget.html.twig', {
-						'form_field': form.name,
-						'url_field': form.pictogramUrl,
-						'placeholder': 'Rechercher un pictogramme pour cet ustensile...'
-						
-					}) }}
+				<div class="form-control" data-controller="picto-search">
+					<label class="label">
+						<span class="label-text font-semibold flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+							</svg>
+							Rechercher une image (OpenFoodFacts + Wikimedia)
+						</span>
+					</label>
+
+					<div class="space-y-3">
+						<input
+						type="text"
+						data-picto-search-target="input"
+						placeholder="Ex: spatule, casserole, verre..."
+						class="input input-bordered w-full"/>
+
+						<div class="flex flex-wrap gap-2" data-picto-search-target="filters">
+							<button type="button" class="btn btn-xs btn-primary" data-source="openfoodfacts" data-action="click->picto-search#toggleSource">OpenFoodFacts</button>
+							<button type="button" class="btn btn-xs btn-primary" data-source="arasaac" data-action="click->picto-search#toggleSource">ARASAAC</button>
+							<button type="button" class="btn btn-xs btn-primary" data-source="wikimedia" data-action="click->picto-search#toggleSource">Wikimedia</button>
+							<button type="button" class="btn btn-xs btn-primary" data-source="local" data-action="click->picto-search#toggleSource">Local</button>
+						</div>
+
+						{{ form_widget(form.pictogramUrl, {
+							'attr': {
+								'data-picto-search-target': 'urlInput'
+							}
+						}) }}
+
+						<div data-picto-search-target="status" class="text-sm min-h-5"></div>
+						<div data-picto-search-target="results" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-visible"></div>
+						<div data-picto-search-target="pagination"></div>
+					</div>
 				</div>
+
+				<div id="utensil-external-preview" class="mt-3"></div>
 
 				<div class="card-actions justify-end mt-4">
 					<div class="flex gap-2">
@@ -40,6 +69,18 @@
 		</div>
 
 		{{ form_end(form) }}
+
+		<script>
+document.addEventListener('picto:selected', (e) => {
+	const item = e.detail;
+	const preview = document.getElementById('utensil-external-preview');
+	if (!preview) return;
+	preview.innerHTML = `
+		<img src="${item.image}" class="w-24 h-24 object-contain rounded-lg shadow">
+		<div class="mt-1 text-sm opacity-75">${item.name || ''}</div>
+	`;
+});
+		</script>
 
 		{# Delete form moved outside the item form to avoid nested forms which can break CSRF or submission #}
 		<form method="post" action="{{ path('app_utensil_delete', {'id': utensil.id}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet ustensile ?');" class="mt-4">

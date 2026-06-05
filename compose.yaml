@@ -30,7 +30,7 @@ services:
       APP_SECRET: ${APP_SECRET:-ChangeMe}
       SERVER_NAME: ${SERVER_NAME:-:80}
       # BDD PostgreSQL
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-motdepassefort}@database:5432/${POSTGRES_DB:-picto}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-picto}:${POSTGRES_PASSWORD:-motdepassefort}@database:5432/${POSTGRES_DB:-picto}?serverVersion=${POSTGRES_VERSION:-16}&charset=utf8"
       # Configuration Caddy (optionnel)
       # CADDY_GLOBAL_OPTIONS: "debug"  # Pour activer les logs de debug
     networks:

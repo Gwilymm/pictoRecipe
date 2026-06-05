@@ -20,34 +20,6 @@
 			</a>
 		</div>
 
-		<section class="mb-4 md:mb-6 border border-base-300 rounded-lg p-3 md:p-4" data-controller="wikimedia-image-picker">
-			<div class="flex flex-col gap-3">
-				<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-					<h2 class="text-lg md:text-xl font-semibold">Wikimedia Commons</h2>
-					<div class="flex flex-wrap items-center gap-2 text-xs md:text-sm">
-						<span class="badge badge-outline">Source complementaire</span>
-						<span class="badge badge-warning">Validation manuelle</span>
-					</div>
-				</div>
-
-				<form class="flex flex-col sm:flex-row gap-2" data-action="submit->wikimedia-image-picker#search">
-					<input type="text" class="input input-bordered input-sm md:input-md flex-1" placeholder="fraise, farine, tomato..." data-wikimedia-image-picker-target="input">
-					<select class="select select-bordered select-sm md:select-md w-full sm:w-28" data-wikimedia-image-picker-target="limit">
-						<option value="8">8</option>
-						<option value="12" selected>12</option>
-						<option value="20">20</option>
-					</select>
-					<button type="submit" class="btn btn-primary btn-sm md:btn-md">
-						{{ ux_icon('heroicons:magnifying-glass', {class: 'w-4 h-4 md:w-5 md:h-5'}) }}
-						Rechercher
-					</button>
-					<span class="loading loading-spinner text-primary hidden self-center" data-wikimedia-image-picker-target="spinner"></span>
-				</form>
-
-				<div data-wikimedia-image-picker-target="status" class="text-sm min-h-5"></div>
-				<div data-wikimedia-image-picker-target="results"></div>
-			</div>
-		</section>
 
 		{% if pictograms is empty %}
 			<div class="alert alert-info text-sm md:text-base">

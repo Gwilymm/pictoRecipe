@@ -40,7 +40,8 @@ class ArasaacApiService
 		try {
 			$response = $this->client->request(
 				'GET',
-				sprintf('%s/pictograms/fr/search/%s', self::API_BASE_URL, urlencode($keyword))
+				sprintf('%s/pictograms/fr/search/%s', self::API_BASE_URL, urlencode($keyword)),
+				['timeout' => 5]
 			);
 
 			$statusCode = $response->getStatusCode();
@@ -74,9 +75,9 @@ class ArasaacApiService
 					'id' => $pictogram['_id'] ?? null,
 					'keywords' => $pictogram['keywords'] ?? [],
 					'name' => $pictogram['keywords'][0]['keyword'] ?? 'Sans nom',
-					'imageUrl' => $this->imageExists($imageUrl) ? $imageUrl : null,
+					'imageUrl' => $imageUrl,
 					'detailUrl' => sprintf('https://arasaac.org/pictograms/fr/%s', $pictogram['_id'] ?? ''),
-					'notFound' => !$this->imageExists($imageUrl),
+					'notFound' => false,
 				];
 			}, $data);
 		} catch (TransportExceptionInterface $e) {
@@ -97,7 +98,10 @@ class ArasaacApiService
 	private function imageExists(string $url): bool
 	{
 		try {
-			$res = $this->client->request('HEAD', $url, ['max_redirects' => 0]);
+			$res = $this->client->request('HEAD', $url, [
+				'max_redirects' => 0,
+				'timeout' => 2,
+			]);
 			return $res->getStatusCode() === 200;
 		} catch (\Throwable $e) {
 			return false;

@@ -1,15 +1,45 @@
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
-	static targets = [ 'input', 'limit', 'results', 'status', 'spinner' ];
+	static targets = [ 'input', 'limit', 'results', 'status', 'spinner', 'detailsTab', 'wikimediaTab' ];
 
 	static values = {
 		searchUrl: { type: String, default: '/api/pictograms/wikimedia/search' },
 		importUrl: { type: String, default: '/api/pictograms/import' },
+		mode: { type: String, default: 'import' },
 	};
 
 	connect() {
 		this.results = [];
+
+		if (this.hasInputTarget) {
+			this.inputTarget.addEventListener('input', () => {
+				clearTimeout(this.timer);
+				this.timer = setTimeout(() => this.search(), 350);
+			});
+		}
+
+		this.showTab({ params: { tab: 'details' } });
+	}
+
+	showTab(event) {
+		event?.preventDefault?.();
+		const tab = event?.params?.tab || event?.currentTarget?.dataset?.tab;
+		if (!tab) {
+			return;
+		}
+
+		if (this.hasDetailsTabTarget) {
+			this.detailsTabTarget.classList.toggle('hidden', tab !== 'details');
+		}
+		if (this.hasWikimediaTabTarget) {
+			this.wikimediaTabTarget.classList.toggle('hidden', tab !== 'wikimedia');
+		}
+
+		const tabs = this.element.querySelectorAll('.tabs button');
+		tabs.forEach((button) => {
+			button.classList.toggle('tab-active', button.dataset.tab === tab);
+		});
 	}
 
 	async search(event) {
@@ -19,8 +49,8 @@ export default class extends Controller {
 		const limit = this.hasLimitTarget ? this.limitTarget.value : '12';
 
 		if (query.length < 2) {
-			this.setStatus('Saisissez au moins 2 caractères.', 'warning');
 			this.clearResults();
+			this.setStatus('', null);
 			return;
 		}
 
@@ -67,6 +97,12 @@ export default class extends Controller {
 	createResultCard(item) {
 		const card = document.createElement('article');
 		card.className = 'card bg-base-100 border border-base-300 rounded-lg overflow-hidden';
+		card.style.position = 'relative';
+
+		const badge = document.createElement('span');
+		badge.className = 'badge badge-sm badge-primary absolute top-2 left-2 z-10 shadow';
+		badge.textContent = 'Wikimedia';
+		card.appendChild(badge);
 
 		const figure = document.createElement('figure');
 		figure.className = 'bg-white h-40 p-3';
@@ -105,14 +141,44 @@ export default class extends Controller {
 		const button = document.createElement('button');
 		button.type = 'button';
 		button.className = 'btn btn-primary btn-sm';
-		button.textContent = 'Utiliser cette image';
-		button.addEventListener('click', () => this.importItem(item, button));
+		button.textContent = this.modeValue === 'select' ? 'Utiliser cette image' : 'Importer dans la bibliotheque';
+		button.addEventListener('click', () => {
+			if (this.modeValue === 'select') {
+				this.selectItem(item, button);
+				return;
+			}
+			this.importItem(item, button);
+		});
 		actions.appendChild(button);
 
 		body.appendChild(actions);
 		card.appendChild(body);
 
 		return card;
+	}
+
+	selectItem(item, button) {
+		const imageUrl = item.file_url || item.thumbnail_url || '';
+		if (!imageUrl) {
+			this.setStatus("Impossible d'utiliser cette image Wikimedia.", 'error');
+			return;
+		}
+
+		button.classList.remove('btn-primary');
+		button.classList.add('btn-success');
+		button.textContent = 'Image selectionnee';
+		this.setStatus('Image Wikimedia selectionnee.', 'success');
+
+		this.element.dispatchEvent(
+			new CustomEvent('picto:selected', {
+				detail: {
+					image: imageUrl,
+					name: this.cleanTitle(item.title),
+					source: item.source || 'wikimedia_commons',
+				},
+				bubbles: true,
+			})
+		);
 	}
 
 	async importItem(item, button) {

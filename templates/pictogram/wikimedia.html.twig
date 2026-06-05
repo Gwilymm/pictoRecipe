@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recherche Wikimedia{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6">
+		<div class="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-6">
+			<div>
+				<h1 class="text-3xl font-bold">Recherche Wikimedia</h1>
+				<p class="text-base text-base-content/70 mt-2">Recherchez une image Wikimedia et importez-la dans la bibliothèque de pictogrammes.</p>
+			</div>
+			<div class="flex flex-wrap gap-2">
+				<a href="{{ path('app_pictogram_new') }}" class="btn btn-outline btn-sm md:btn-md">Créer un pictogramme</a>
+				<a href="{{ path('app_pictogram_index') }}" class="btn btn-secondary btn-sm md:btn-md">Retour à la galerie</a>
+			</div>
+		</div>
+
+		<section class="border border-base-300 rounded-lg p-4 bg-base-100" data-controller="wikimedia-image-picker">
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+				<div>
+					<h2 class="text-xl font-semibold">Importer depuis Wikimedia Commons</h2>
+					<p class="text-sm text-base-content/70 mt-1">Tapez un mot-clé, puis importez l’image dans la bibliothèque pour l’utiliser comme pictogramme.</p>
+				</div>
+				<div class="badge badge-outline">Import direct</div>
+			</div>
+
+			<form class="flex flex-col sm:flex-row gap-2" data-action="submit->wikimedia-image-picker#search">
+				<input type="text" class="input input-bordered input-sm md:input-md flex-1" placeholder="fraise, farine, tomato..." data-wikimedia-image-picker-target="input">
+				<select class="select select-bordered select-sm md:select-md w-full sm:w-28" data-wikimedia-image-picker-target="limit">
+					<option value="8">8</option>
+					<option value="12" selected>12</option>
+					<option value="20">20</option>
+				</select>
+				<button type="submit" class="btn btn-primary btn-sm md:btn-md">
+					{{ ux_icon('heroicons:magnifying-glass', {class: 'w-4 h-4 md:w-5 md:h-5'}) }}
+					Rechercher
+				</button>
+				<span class="loading loading-spinner text-primary hidden self-center" data-wikimedia-image-picker-target="spinner"></span>
+			</form>
+
+			<div data-wikimedia-image-picker-target="status" class="text-sm min-h-5 mt-3"></div>
+			<div data-wikimedia-image-picker-target="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4"></div>
+		</section>
+	</div>
+{% endblock %}

@@ -23,6 +23,12 @@ final class PictogramController extends AbstractController
 		]);
 	}
 
+	#[Route('/wikimedia', name: 'app_pictogram_wikimedia', methods: ['GET'])]
+	public function wikimedia(): Response
+	{
+		return $this->render('pictogram/wikimedia.html.twig');
+	}
+
 	#[Route('/new', name: 'app_pictogram_new', methods: ['GET', 'POST'])]
 	public function new(
 		Request $request,
