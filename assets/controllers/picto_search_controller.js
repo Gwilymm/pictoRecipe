@@ -92,7 +92,7 @@ export default class extends Controller {
 		const arasaacUrl = this.buildArasaacUrl(normalizedQuery);
 
 		try {
-			const [offResult, wikiResult, arasaacResult] = await Promise.allSettled([
+			const [ offResult, wikiResult, arasaacResult ] = await Promise.allSettled([
 				fetch(offUrl),
 				fetch(wikiUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } }),
 				fetch(arasaacUrl),

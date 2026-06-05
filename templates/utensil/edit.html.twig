@@ -28,11 +28,7 @@
 					</label>
 
 					<div class="space-y-3">
-						<input
-						type="text"
-						data-picto-search-target="input"
-						placeholder="Ex: spatule, casserole, verre..."
-						class="input input-bordered w-full"/>
+						<input type="text" data-picto-search-target="input" placeholder="Ex: spatule, casserole, verre..." class="input input-bordered w-full"/>
 
 						<div class="flex flex-wrap gap-2" data-picto-search-target="filters">
 							<button type="button" class="btn btn-xs btn-primary" data-source="openfoodfacts" data-action="click->picto-search#toggleSource">OpenFoodFacts</button>
@@ -71,13 +67,19 @@
 		{{ form_end(form) }}
 
 		<script>
-document.addEventListener('picto:selected', (e) => {
-	const item = e.detail;
-	const preview = document.getElementById('utensil-external-preview');
-	if (!preview) return;
-	preview.innerHTML = `
-		<img src="${item.image}" class="w-24 h-24 object-contain rounded-lg shadow">
-		<div class="mt-1 text-sm opacity-75">${item.name || ''}</div>
+			document.addEventListener('picto:selected', (e) => {
+const item = e.detail;
+const preview = document.getElementById('utensil-external-preview');
+if (! preview) 
+return;
+
+preview.innerHTML = `
+		<img src="${
+item.image
+}" class="w-24 h-24 object-contain rounded-lg shadow">
+		<div class="mt-1 text-sm opacity-75">${
+item.name || ''
+}</div>
 	`;
 });
 		</script>

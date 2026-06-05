@@ -11,6 +11,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\Mime\MimeTypes;
 
 #[Route('/pictogram')]
 final class PictogramController extends AbstractController
@@ -49,19 +51,9 @@ final class PictogramController extends AbstractController
 			 */
 			if (!$uploadedFile && $externalUrl) {
 				try {
-					$response = $http->request('GET', $externalUrl);
-					$bytes = $response->getContent();
-
-					// Temp file pour imiter un upload
-					$tempPath = tempnam(sys_get_temp_dir(), 'picto_');
-					file_put_contents($tempPath, $bytes);
-
-					// Symfony UploadedFile-like behaviour
-					$uploadedFile = new \Symfony\Component\HttpFoundation\File\File(
-						$tempPath
-					);
+					$uploadedFile = $this->downloadExternalImage($externalUrl, $http);
 				} catch (\Throwable $e) {
-					$this->addFlash('error', "Impossible de télécharger l'image externe.");
+					$this->addFlash('error', "Impossible de télécharger l'image externe : " . $e->getMessage());
 					return $this->redirectToRoute('app_pictogram_new');
 				}
 			}
@@ -149,15 +141,9 @@ final class PictogramController extends AbstractController
 			// download it and turn it into a temporary File object to be processed
 			if (!$file && $externalUrl) {
 				try {
-					$resp = $http->request('GET', $externalUrl);
-					$bytes = $resp->getContent();
-
-					$tempPath = tempnam(sys_get_temp_dir(), 'picto_');
-					file_put_contents($tempPath, $bytes);
-
-					$file = new \Symfony\Component\HttpFoundation\File\File($tempPath);
+					$file = $this->downloadExternalImage($externalUrl, $http);
 				} catch (\Throwable $e) {
-					$this->addFlash('error', "Impossible de télécharger l'image externe.");
+					$this->addFlash('error', "Impossible de télécharger l'image externe : " . $e->getMessage());
 					return $this->redirectToRoute('app_pictogram_edit', ['id' => $pictogram->getId()]);
 				}
 			}
@@ -221,48 +207,58 @@ final class PictogramController extends AbstractController
 	private function convertToPng(string $sourcePath, string $destinationPath, ?string $mime): bool
 	{
 		try {
-			// Charger l'image source
 			switch ($mime) {
 				case 'image/jpeg':
 				case 'image/jpg':
 					$src = @imagecreatefromjpeg($sourcePath);
 					break;
+
 				case 'image/png':
 					$src = @imagecreatefrompng($sourcePath);
 					break;
+
 				case 'image/gif':
 					$src = @imagecreatefromgif($sourcePath);
 					break;
+
 				case 'image/webp':
 					$src = @imagecreatefromwebp($sourcePath);
 					break;
+
 				default:
 					return false;
 			}
 
-			if (!$src) return false;
+			if (!$src) {
+				return false;
+			}
 
 			$srcW = imagesx($src);
 			$srcH = imagesy($src);
 
-			// === FORMAT FINAL 256x256 ===
+			if ($srcW <= 0 || $srcH <= 0) {
+				unset($src);
+				return false;
+			}
+
 			$finalSize = 256;
 
-			// Créer canvas final carré avec fond blanc
 			$canvas = imagecreatetruecolor($finalSize, $finalSize);
+			if (!$canvas) {
+				unset($src);
+				return false;
+			}
+
 			$white = imagecolorallocate($canvas, 255, 255, 255);
 			imagefilledrectangle($canvas, 0, 0, $finalSize, $finalSize, $white);
 
-			// Calcul du ratio
 			$ratio = min($finalSize / $srcW, $finalSize / $srcH);
-			$newW = (int)($srcW * $ratio);
-			$newH = (int)($srcH * $ratio);
+			$newW = (int) ($srcW * $ratio);
+			$newH = (int) ($srcH * $ratio);
 
-			// Positionnement centré
-			$dstX = (int)(($finalSize - $newW) / 2);
-			$dstY = (int)(($finalSize - $newH) / 2);
+			$dstX = (int) (($finalSize - $newW) / 2);
+			$dstY = (int) (($finalSize - $newH) / 2);
 
-			// Redimensionnement dans le carré
 			imagecopyresampled(
 				$canvas,
 				$src,
@@ -276,14 +272,12 @@ final class PictogramController extends AbstractController
 				$srcH
 			);
 
-			// Enregistrer PNG final
 			$ok = imagepng($canvas, $destinationPath, 9);
 
-			imagedestroy($src);
-			imagedestroy($canvas);
+			unset($src, $canvas);
 
 			return $ok;
-		} catch (\Throwable $e) {
+		} catch (\Throwable) {
 			return false;
 		}
 	}
@@ -295,33 +289,142 @@ final class PictogramController extends AbstractController
 	 */
 	private function createThumbnail(string $sourcePath, string $thumbnailPath, int $size = 70): bool
 	{
-		if (!file_exists($sourcePath)) return false;
+		if (!file_exists($sourcePath)) {
+			return false;
+		}
 
 		$src = @imagecreatefrompng($sourcePath);
-		if (!$src) return false;
+		if (!$src) {
+			return false;
+		}
+
+		$canvas = imagecreatetruecolor($size, $size);
+		if (!$canvas) {
+			return false;
+		}
 
 		// Canvas carré blanc
-		$canvas = imagecreatetruecolor($size, $size);
 		$white = imagecolorallocate($canvas, 255, 255, 255);
 		imagefilledrectangle($canvas, 0, 0, $size, $size, $white);
 
 		$srcW = imagesx($src);
 		$srcH = imagesy($src);
 
+		if ($srcW <= 0 || $srcH <= 0) {
+			return false;
+		}
+
 		$ratio = min($size / $srcW, $size / $srcH);
-		$newW = (int)($srcW * $ratio);
-		$newH = (int)($srcH * $ratio);
+		$newW = (int) ($srcW * $ratio);
+		$newH = (int) ($srcH * $ratio);
 
-		$dstX = (int)(($size - $newW) / 2);
-		$dstY = (int)(($size - $newH) / 2);
+		$dstX = (int) (($size - $newW) / 2);
+		$dstY = (int) (($size - $newH) / 2);
 
-		imagecopyresampled($canvas, $src, $dstX, $dstY, 0, 0, $newW, $newH, $srcW, $srcH);
+		imagecopyresampled(
+			$canvas,
+			$src,
+			$dstX,
+			$dstY,
+			0,
+			0,
+			$newW,
+			$newH,
+			$srcW,
+			$srcH
+		);
 
 		$ok = imagepng($canvas, $thumbnailPath, 9);
 
-		imagedestroy($src);
-		imagedestroy($canvas);
+		unset($src, $canvas);
 
 		return $ok;
+	}
+
+	private function downloadExternalImage(string $url, HttpClientInterface $http): File
+	{
+		$parts = parse_url($url);
+
+		if (($parts['scheme'] ?? null) !== 'https') {
+			throw new \RuntimeException('URL externe non sécurisée.');
+		}
+
+		$host = $parts['host'] ?? null;
+
+		$allowedHosts = [
+			'upload.wikimedia.org',
+			'commons.wikimedia.org',
+			'images.openfoodfacts.org',
+			'static.arasaac.org',
+			'api.arasaac.org',
+		];
+
+		if ($host === null || !in_array($host, $allowedHosts, true)) {
+			throw new \RuntimeException('Domaine image non autorisé : ' . ($host ?? 'inconnu'));
+		}
+
+		$response = $http->request('GET', $url, [
+			'headers' => [
+				'User-Agent' => 'PictoRecette/1.0',
+				'Accept' => 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+			],
+			'timeout' => 15,
+			'max_redirects' => 3,
+		]);
+
+		$statusCode = $response->getStatusCode();
+
+		if ($statusCode === 429) {
+			throw new \RuntimeException(
+				'Wikimedia a temporairement limité les téléchargements. Réessaie dans quelques minutes.'
+			);
+		}
+
+		if ($statusCode !== 200) {
+			throw new \RuntimeException('Status HTTP image externe : ' . $statusCode);
+		}
+
+		$headers = $response->getHeaders(false);
+		$contentType = $headers['content-type'][0] ?? '';
+
+		if (str_contains($contentType, ';')) {
+			$contentType = trim(explode(';', $contentType)[0]);
+		}
+
+		$allowedMimeTypes = [
+			'image/jpeg',
+			'image/png',
+			'image/webp',
+			'image/gif',
+			'image/svg+xml',
+		];
+
+		if (!in_array($contentType, $allowedMimeTypes, true)) {
+			throw new \RuntimeException('Type de fichier non autorisé : ' . $contentType);
+		}
+
+		$extensions = [
+			'image/jpeg' => 'jpg',
+			'image/png' => 'png',
+			'image/webp' => 'webp',
+			'image/gif' => 'gif',
+			'image/svg+xml' => 'svg',
+		];
+
+		$extension = $extensions[$contentType] ?? 'img';
+
+		$tempPath = tempnam(sys_get_temp_dir(), 'picto_');
+
+		if ($tempPath === false) {
+			throw new \RuntimeException('Impossible de créer le fichier temporaire.');
+		}
+
+		$tempPathWithExtension = $tempPath . '.' . $extension;
+
+		file_put_contents($tempPathWithExtension, $response->getContent());
+
+		@unlink($tempPath);
+
+		return new File($tempPathWithExtension);
 	}
 }

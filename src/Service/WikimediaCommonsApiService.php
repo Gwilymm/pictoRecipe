@@ -56,12 +56,13 @@ final class WikimediaCommonsApiService
 		'carotte' => 'carrot',
 	];
 
+	private const THUMB_WIDTH = 400;
+
 	public function __construct(
 		private readonly HttpClientInterface $client,
 		private readonly CacheInterface $cache,
 		private readonly LoggerInterface $logger,
-	) {
-	}
+	) {}
 
 	/**
 	 * @return ImageSearchResult[]
@@ -137,7 +138,7 @@ final class WikimediaCommonsApiService
 					'gsrlimit' => (string) $limit,
 					'prop' => 'imageinfo',
 					'iiprop' => 'url|mime|size|extmetadata',
-					'iiurlwidth' => '400',
+					'iiurlwidth' => (string) self::THUMB_WIDTH,
 					'iiextmetadatalanguage' => 'fr',
 					'iiextmetadatafilter' => implode('|', self::EXT_METADATA_KEYS),
 				],
@@ -198,8 +199,10 @@ final class WikimediaCommonsApiService
 			return null;
 		}
 
-		$fileUrl = isset($imageInfo['url']) ? (string) $imageInfo['url'] : null;
-		if ($fileUrl === null || $fileUrl === '') {
+		$originalUrl = isset($imageInfo['url']) ? (string) $imageInfo['url'] : null;
+		$thumbnailUrl = isset($imageInfo['thumburl']) ? (string) $imageInfo['thumburl'] : $originalUrl;
+
+		if ($thumbnailUrl === null || $thumbnailUrl === '') {
 			return null;
 		}
 
@@ -218,10 +221,10 @@ final class WikimediaCommonsApiService
 			title: $title,
 			source: self::SOURCE,
 			sourceId: isset($page['pageid']) ? (string) $page['pageid'] : $title,
-			fileUrl: $fileUrl,
-			thumbnailUrl: isset($imageInfo['thumburl']) ? (string) $imageInfo['thumburl'] : $fileUrl,
-			width: isset($imageInfo['width']) ? (int) $imageInfo['width'] : null,
-			height: isset($imageInfo['height']) ? (int) $imageInfo['height'] : null,
+			fileUrl: $thumbnailUrl,
+			thumbnailUrl: $thumbnailUrl,
+			width: isset($imageInfo['thumbwidth']) ? (int) $imageInfo['thumbwidth'] : null,
+			height: isset($imageInfo['thumbheight']) ? (int) $imageInfo['thumbheight'] : null,
 			mime: $mime,
 			license: $license,
 			licenseUrl: $this->metadataValue($metadata, 'LicenseUrl'),
