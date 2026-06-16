@@ -5,6 +5,7 @@ namespace App\Service;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Psr\Log\LoggerInterface;
 use OpenFoodFacts\Api as OpenFoodFactsApi;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Service pour interroger OpenFoodFacts via le SDK officiel,
@@ -17,6 +18,7 @@ final class OpenFoodFactsService
 
 	public function __construct(
 		private readonly HttpClientInterface $httpClient,
+		#[Autowire(service: 'monolog.logger')]
 		private readonly LoggerInterface $logger
 	) {}
 
@@ -110,6 +112,16 @@ final class OpenFoodFactsService
 				'query'   => $params,
 				'timeout' => 5,
 			]);
+			$statusCode = $response->getStatusCode();
+			if ($statusCode !== 200) {
+				$this->logger->warning('pictogram.search.failed', [
+					'source' => 'openfoodfacts',
+					'keyword' => $query,
+					'status_code' => $statusCode,
+				]);
+
+				return [];
+			}
 
 			$data = $response->toArray(false);
 

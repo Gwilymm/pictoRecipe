@@ -7,6 +7,7 @@ namespace App\Service;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Service de communication avec l'API ARASAAC
@@ -21,6 +22,7 @@ class ArasaacApiService
 
 	public function __construct(
 		private readonly HttpClientInterface $client,
+		#[Autowire(service: 'monolog.logger')]
 		private readonly LoggerInterface $logger
 	) {}
 

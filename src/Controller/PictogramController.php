@@ -6,7 +6,9 @@ use App\Entity\Pictogram;
 use App\Form\PictogramType;
 use App\Repository\PictogramRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -35,8 +37,11 @@ final class PictogramController extends AbstractController
 	public function new(
 		Request $request,
 		EntityManagerInterface $entityManager,
-		HttpClientInterface $http
+		HttpClientInterface $http,
+		#[Autowire(service: 'monolog.logger')]
+		LoggerInterface $logger
 	): Response {
+		$t0 = microtime(true);
 		$pictogram = new Pictogram();
 		$form = $this->createForm(PictogramType::class, $pictogram);
 		$form->handleRequest($request);
@@ -45,6 +50,13 @@ final class PictogramController extends AbstractController
 
 			$uploadedFile = $form->get('imageFile')->getData();
 			$externalUrl  = $request->request->get('externalImageTemp');
+			$uploadContext = array_merge($this->requestLogContext($request), [
+				'action' => 'new',
+				'source' => $uploadedFile ? 'form_upload' : ($externalUrl ? 'external_url' : 'missing'),
+				'external_host' => is_string($externalUrl) ? parse_url($externalUrl, PHP_URL_HOST) : null,
+			], $this->fileLogContext($uploadedFile));
+
+			$logger->info('pictogram.upload.requested', $uploadContext);
 
 			/**
 			 * Si une IMAGE OFF est choisie → on LA TÉLÉCHARGE comme si c’était un file upload
@@ -52,7 +64,14 @@ final class PictogramController extends AbstractController
 			if (!$uploadedFile && $externalUrl) {
 				try {
 					$uploadedFile = $this->downloadExternalImage($externalUrl, $http);
+					$uploadContext = array_merge($uploadContext, $this->fileLogContext($uploadedFile));
 				} catch (\Throwable $e) {
+					$logger->error('pictogram.upload.failed', array_merge($uploadContext, [
+						'reason' => 'external_download_failed',
+						'exception_class' => $e::class,
+						'exception_message' => $e->getMessage(),
+						'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+					]));
 					$this->addFlash('error', "Impossible de télécharger l'image externe : " . $e->getMessage());
 					return $this->redirectToRoute('app_pictogram_new');
 				}
@@ -88,6 +107,10 @@ final class PictogramController extends AbstractController
 					}
 				}
 			} else {
+				$logger->warning('pictogram.upload.failed', array_merge($uploadContext, [
+					'reason' => 'missing_image',
+					'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+				]));
 				$this->addFlash('error', 'Veuillez uploader une image ou en sélectionner une.');
 				return $this->redirectToRoute('app_pictogram_new');
 			}
@@ -95,8 +118,24 @@ final class PictogramController extends AbstractController
 			$entityManager->persist($pictogram);
 			$entityManager->flush();
 
+			$logger->info('pictogram.upload.saved', array_merge($uploadContext, [
+				'pictogram_id' => $pictogram->getId(),
+				'name_preview' => $this->previewText($pictogram->getName()),
+				'file_path' => $pictogram->getFilePath(),
+				'format' => $pictogram->getFormat(),
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			$this->addFlash('success', '✅ Pictogramme "' . $pictogram->getName() . '" ajouté avec succès !');
 			return $this->redirectToRoute('app_pictogram_index');
+		}
+
+		if ($form->isSubmitted()) {
+			$logger->warning('pictogram.upload.failed', array_merge($this->requestLogContext($request), [
+				'action' => 'new',
+				'reason' => 'invalid_form',
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
 		}
 
 		return $this->render('pictogram/new.html.twig', [
@@ -128,21 +167,46 @@ final class PictogramController extends AbstractController
 	}
 
 	#[Route('/{id}/edit', name: 'app_pictogram_edit', methods: ['GET', 'POST'])]
-	public function edit(Request $request, Pictogram $pictogram, EntityManagerInterface $entityManager, HttpClientInterface $http): Response
+	public function edit(
+		Request $request,
+		Pictogram $pictogram,
+		EntityManagerInterface $entityManager,
+		HttpClientInterface $http,
+		#[Autowire(service: 'monolog.logger')]
+		LoggerInterface $logger
+	): Response
 	{
+		$t0 = microtime(true);
 		$form = $this->createForm(PictogramType::class, $pictogram);
 		$form->handleRequest($request);
 
 		if ($form->isSubmitted() && $form->isValid()) {
 			$file = $form->get('imageFile')->getData();
 			$externalUrl  = $request->request->get('externalImageTemp');
+			$uploadContext = array_merge($this->requestLogContext($request), [
+				'action' => 'edit',
+				'pictogram_id' => $pictogram->getId(),
+				'source' => $file ? 'form_upload' : ($externalUrl ? 'external_url' : 'none'),
+				'external_host' => is_string($externalUrl) ? parse_url($externalUrl, PHP_URL_HOST) : null,
+			], $this->fileLogContext($file));
+
+			if ($file || $externalUrl) {
+				$logger->info('pictogram.upload.requested', $uploadContext);
+			}
 
 			// If no uploaded file but an external image was selected via the UI,
 			// download it and turn it into a temporary File object to be processed
 			if (!$file && $externalUrl) {
 				try {
 					$file = $this->downloadExternalImage($externalUrl, $http);
+					$uploadContext = array_merge($uploadContext, $this->fileLogContext($file));
 				} catch (\Throwable $e) {
+					$logger->error('pictogram.upload.failed', array_merge($uploadContext, [
+						'reason' => 'external_download_failed',
+						'exception_class' => $e::class,
+						'exception_message' => $e->getMessage(),
+						'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+					]));
 					$this->addFlash('error', "Impossible de télécharger l'image externe : " . $e->getMessage());
 					return $this->redirectToRoute('app_pictogram_edit', ['id' => $pictogram->getId()]);
 				}
@@ -177,8 +241,27 @@ final class PictogramController extends AbstractController
 
 			$entityManager->flush();
 
+			if ($file || $externalUrl) {
+				$logger->info('pictogram.upload.saved', array_merge($uploadContext, [
+					'pictogram_id' => $pictogram->getId(),
+					'name_preview' => $this->previewText($pictogram->getName()),
+					'file_path' => $pictogram->getFilePath(),
+					'format' => $pictogram->getFormat(),
+					'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+				]));
+			}
+
 			$this->addFlash('success', '✅ Pictogramme "' . $pictogram->getName() . '" modifié avec succès !');
 			return $this->redirectToRoute('app_pictogram_index', [], Response::HTTP_SEE_OTHER);
+		}
+
+		if ($form->isSubmitted()) {
+			$logger->warning('pictogram.upload.failed', array_merge($this->requestLogContext($request), [
+				'action' => 'edit',
+				'pictogram_id' => $pictogram->getId(),
+				'reason' => 'invalid_form',
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
 		}
 
 		return $this->render('pictogram/edit.html.twig', [
@@ -339,6 +422,66 @@ final class PictogramController extends AbstractController
 		unset($src, $canvas);
 
 		return $ok;
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function requestLogContext(Request $request): array
+	{
+		return [
+			'request_id' => $request->attributes->get('request_id'),
+			'route' => $request->attributes->get('_route'),
+			'method' => $request->getMethod(),
+			'content_length' => $this->contentLength($request),
+		];
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function fileLogContext(?File $file): array
+	{
+		if ($file === null) {
+			return [
+				'original_filename' => null,
+				'mime_type' => null,
+				'file_size' => null,
+			];
+		}
+
+		$originalName = method_exists($file, 'getClientOriginalName')
+			? $file->getClientOriginalName()
+			: $file->getFilename();
+
+		return [
+			'original_filename' => $this->previewText($originalName, 120),
+			'mime_type' => $file->getMimeType(),
+			'file_size' => $file->getSize(),
+		];
+	}
+
+	private function previewText(mixed $value, int $maxLength = 80): ?string
+	{
+		if (!is_scalar($value)) {
+			return null;
+		}
+
+		$text = trim(preg_replace('/\s+/u', ' ', (string) $value) ?? (string) $value);
+		if ($text === '') {
+			return null;
+		}
+
+		if (mb_strlen($text) <= $maxLength) {
+			return $text;
+		}
+
+		return mb_substr($text, 0, $maxLength) . '...';
+	}
+
+	private function contentLength(Request $request): int
+	{
+		return max(0, (int) $request->headers->get('content-length', 0));
 	}
 
 	private function downloadExternalImage(string $url, HttpClientInterface $http): File

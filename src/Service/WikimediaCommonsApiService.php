@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Dto\ImageSearchResult;
 use App\Entity\Pictogram;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -61,6 +62,7 @@ final class WikimediaCommonsApiService
 	public function __construct(
 		private readonly HttpClientInterface $client,
 		private readonly CacheInterface $cache,
+		#[Autowire(service: 'monolog.logger')]
 		private readonly LoggerInterface $logger,
 	) {}
 

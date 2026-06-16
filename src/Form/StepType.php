@@ -15,6 +15,10 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class StepType extends AbstractType
 {
+    public function __construct(private readonly JsonToArrayTransformer $jsonToArrayTransformer)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -41,7 +45,7 @@ class StepType extends AbstractType
 
         // Ajouter le transformer pour convertir JSON <-> Array
         $builder->get('pictogramUrls')
-            ->addModelTransformer(new JsonToArrayTransformer());
+            ->addModelTransformer($this->jsonToArrayTransformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

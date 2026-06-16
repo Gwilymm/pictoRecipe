@@ -7,6 +7,7 @@ use App\Service\ArasaacApiService;
 use App\Repository\PictogramRepository;
 use App\Service\WikimediaCommonsApiService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -31,6 +32,8 @@ class PictogramApiController extends AbstractController
 		private readonly EntityManagerInterface $entityManager,
 		#[Autowire('%pictogram_directory%')]
 		private readonly string $pictogramDirectory,
+		#[Autowire(service: 'monolog.logger')]
+		private readonly LoggerInterface $logger,
 	) {}
 
 	/**
@@ -42,9 +45,22 @@ class PictogramApiController extends AbstractController
 	#[Route('/api/pictograms/search', name: 'api_pictogram_search', methods: ['GET'])]
 	public function search(Request $request, PictogramRepository $pictogramRepository): JsonResponse
 	{
+		$t0 = microtime(true);
 		$keyword = trim((string) $request->query->get('q', ''));
+		$baseContext = array_merge($this->requestLogContext($request), [
+			'source' => 'local_arasaac',
+			'keyword' => $keyword,
+		]);
+
+		$this->logger->info('pictogram.search.requested', $baseContext);
 
 		if ($keyword === '') {
+			$this->logger->warning('pictogram.search.failed', array_merge($baseContext, [
+				'reason' => 'missing_keyword',
+				'status' => Response::HTTP_BAD_REQUEST,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'success' => false,
 				'message' => 'Le mot-clé de recherche est requis',
@@ -57,6 +73,7 @@ class PictogramApiController extends AbstractController
 
 		// 1) Local pictograms matching the keyword. Unvalidated Wikimedia imports stay out of this automatic flow.
 		$locals = $pictogramRepository->findSearchableByKeyword($keyword, 50);
+		$localCount = count($locals);
 
 		foreach ($locals as $local) {
 			if (!$local->getFilePath()) {
@@ -76,6 +93,7 @@ class PictogramApiController extends AbstractController
 		// 2) ARASAAC results (best-effort). If ARASAAC fails, return only locals.
 		try {
 			$arasaac = $this->arasaacService->search($keyword);
+			$arasaacCount = count($arasaac);
 
 			// annotate source and append
 			foreach ($arasaac as $item) {
@@ -83,9 +101,23 @@ class PictogramApiController extends AbstractController
 				$aggregated[] = $item;
 			}
 		} catch (\Exception $e) {
-			// log and continue — we'll still return local results
-			// (the service already logs internally)
+			$arasaacCount = null;
+			$this->logger->warning('pictogram.search.failed', array_merge($baseContext, [
+				'source' => 'arasaac',
+				'exception_class' => $e::class,
+				'exception_message' => $e->getMessage(),
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
 		}
+
+		$event = count($aggregated) > 0 ? 'pictogram.search.completed' : 'pictogram.search.no_result';
+		$this->logger->info($event, array_merge($baseContext, [
+			'local_count' => $localCount,
+			'arasaac_count' => $arasaacCount ?? 0,
+			'result_count' => count($aggregated),
+			'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			'status' => Response::HTTP_OK,
+		]));
 
 		return $this->json([
 			'success' => true,
@@ -98,10 +130,24 @@ class PictogramApiController extends AbstractController
 	#[Route('/api/pictograms/wikimedia/search', name: 'api_pictogram_wikimedia_search', methods: ['GET'])]
 	public function searchWikimedia(Request $request): JsonResponse
 	{
+		$t0 = microtime(true);
 		$query = trim((string) $request->query->get('q', ''));
 		$limit = (int) $request->query->get('limit', 12);
+		$baseContext = array_merge($this->requestLogContext($request), [
+			'source' => Pictogram::SOURCE_WIKIMEDIA_COMMONS,
+			'keyword' => $query,
+			'limit' => $limit,
+		]);
+
+		$this->logger->info('pictogram.search.requested', $baseContext);
 
 		if ($query === '') {
+			$this->logger->warning('pictogram.search.failed', array_merge($baseContext, [
+				'reason' => 'missing_keyword',
+				'status' => Response::HTTP_BAD_REQUEST,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'Le paramètre q est obligatoire.',
 				'results' => [],
@@ -113,6 +159,13 @@ class PictogramApiController extends AbstractController
 			$this->wikimediaCommonsService->search($query, $limit)
 		);
 
+		$event = count($results) > 0 ? 'pictogram.search.completed' : 'pictogram.search.no_result';
+		$this->logger->info($event, array_merge($baseContext, [
+			'result_count' => count($results),
+			'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			'status' => Response::HTTP_OK,
+		]));
+
 		return $this->json([
 			'source' => Pictogram::SOURCE_WIKIMEDIA_COMMONS,
 			'query' => $query,
@@ -123,9 +176,24 @@ class PictogramApiController extends AbstractController
 	#[Route('/api/pictograms/import', name: 'api_pictogram_import', methods: ['POST'])]
 	public function import(Request $request, PictogramRepository $pictogramRepository): JsonResponse
 	{
+		$t0 = microtime(true);
+		$baseContext = array_merge($this->requestLogContext($request), [
+			'source' => Pictogram::SOURCE_WIKIMEDIA_COMMONS,
+			'content_length' => $this->contentLength($request),
+		]);
+		$this->logger->info('pictogram.upload.requested', $baseContext);
+
 		try {
 			$payload = $request->toArray();
-		} catch (\Throwable) {
+		} catch (\Throwable $e) {
+			$this->logger->warning('pictogram.upload.failed', array_merge($baseContext, [
+				'reason' => 'invalid_json',
+				'exception_class' => $e::class,
+				'exception_message' => $e->getMessage(),
+				'status' => Response::HTTP_BAD_REQUEST,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'Le JSON envoyé est invalide.',
 				'results' => [],
@@ -133,6 +201,12 @@ class PictogramApiController extends AbstractController
 		}
 
 		if (($this->payloadString($payload, 'source') ?? '') !== Pictogram::SOURCE_WIKIMEDIA_COMMONS) {
+			$this->logger->warning('pictogram.upload.failed', array_merge($baseContext, [
+				'reason' => 'unsupported_source',
+				'status' => Response::HTTP_BAD_REQUEST,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'Seules les images Wikimedia Commons peuvent être importées par cette route.',
 				'results' => [],
@@ -144,8 +218,20 @@ class PictogramApiController extends AbstractController
 		$license = $this->payloadString($payload, 'license');
 		$attribution = $this->payloadString($payload, 'attribution');
 		$mime = $this->payloadString($payload, 'mime');
+		$importContext = array_merge($baseContext, [
+			'source_id' => $sourceId,
+			'image_host' => $imageUrl ? parse_url($imageUrl, PHP_URL_HOST) : null,
+			'mime' => $mime,
+			'license' => $license,
+		]);
 
 		if ($sourceId === null || $imageUrl === null || $license === null || $attribution === null || $mime === null) {
+			$this->logger->warning('pictogram.upload.failed', array_merge($importContext, [
+				'reason' => 'missing_required_fields',
+				'status' => Response::HTTP_BAD_REQUEST,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'source_id, image_url, license, attribution et mime sont obligatoires.',
 				'results' => [],
@@ -153,6 +239,12 @@ class PictogramApiController extends AbstractController
 		}
 
 		if (!$this->wikimediaCommonsService->isAllowedLicense($license)) {
+			$this->logger->warning('pictogram.upload.failed', array_merge($importContext, [
+				'reason' => 'unsupported_license',
+				'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'Cette licence Wikimedia n’est pas prise en charge pour le moment.',
 				'results' => [],
@@ -160,6 +252,12 @@ class PictogramApiController extends AbstractController
 		}
 
 		if (!$this->wikimediaCommonsService->isAllowedMime($mime)) {
+			$this->logger->warning('pictogram.upload.failed', array_merge($importContext, [
+				'reason' => 'unsupported_mime',
+				'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'Ce format d’image Wikimedia n’est pas pris en charge.',
 				'results' => [],
@@ -167,6 +265,12 @@ class PictogramApiController extends AbstractController
 		}
 
 		if (!$this->isAllowedWikimediaImageUrl($imageUrl)) {
+			$this->logger->warning('pictogram.upload.failed', array_merge($importContext, [
+				'reason' => 'disallowed_image_url',
+				'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => 'URL Wikimedia non autorisée.',
 				'results' => [],
@@ -200,6 +304,14 @@ class PictogramApiController extends AbstractController
 					->setMime($storedImage['mime']);
 			}
 		} catch (\Throwable $e) {
+			$this->logger->error('pictogram.upload.failed', array_merge($importContext, [
+				'reason' => 'store_wikimedia_image_failed',
+				'exception_class' => $e::class,
+				'exception_message' => $e->getMessage(),
+				'status' => Response::HTTP_BAD_GATEWAY,
+				'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+			]));
+
 			return $this->json([
 				'error' => "Impossible d'enregistrer l'image Wikimedia.",
 				'details' => $e->getMessage(),
@@ -223,6 +335,14 @@ class PictogramApiController extends AbstractController
 
 		$this->entityManager->flush();
 
+		$this->logger->info('pictogram.upload.saved', array_merge($importContext, [
+			'pictogram_id' => $pictogram->getId(),
+			'is_new' => $isNew,
+			'file_path' => $pictogram->getFilePath(),
+			'status' => $isNew ? Response::HTTP_CREATED : Response::HTTP_OK,
+			'duration_ms' => round((microtime(true) - $t0) * 1000, 1),
+		]));
+
 		return $this->json([
 			'id' => $pictogram->getId(),
 			'message' => 'Image Wikimedia enregistrée dans la bibliothèque.',
@@ -237,6 +357,19 @@ class PictogramApiController extends AbstractController
 		], $isNew ? Response::HTTP_CREATED : Response::HTTP_OK);
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function requestLogContext(Request $request): array
+	{
+		return [
+			'request_id' => $request->attributes->get('request_id'),
+			'route' => $request->attributes->get('_route'),
+			'method' => $request->getMethod(),
+			'content_length' => $this->contentLength($request),
+		];
+	}
+
 	private function payloadString(array $payload, string $key): ?string
 	{
 		$value = $payload[$key] ?? null;
@@ -247,6 +380,11 @@ class PictogramApiController extends AbstractController
 		$value = trim((string) $value);
 
 		return $value === '' ? null : $value;
+	}
+
+	private function contentLength(Request $request): int
+	{
+		return max(0, (int) $request->headers->get('content-length', 0));
 	}
 
 	private function buildPictogramLabel(array $payload): string

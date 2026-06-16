@@ -2,6 +2,8 @@
 
 namespace App\Form\DataTransformer;
 
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 
@@ -11,6 +13,11 @@ use Symfony\Component\Form\Exception\TransformationFailedException;
  */
 class JsonToArrayTransformer implements DataTransformerInterface
 {
+	public function __construct(
+		#[Autowire(service: 'monolog.logger')]
+		private readonly ?LoggerInterface $logger = null,
+	) {}
+
 	/**
 	 * Transforme un array en string JSON (pour l'affichage dans le formulaire)
 	 *
@@ -58,6 +65,11 @@ class JsonToArrayTransformer implements DataTransformerInterface
 		$decoded = json_decode($value, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
+			$this->logger?->warning('pictogram_urls.transform.invalid_json', [
+				'error' => json_last_error_msg(),
+				'value_length' => is_string($value) ? strlen($value) : null,
+			]);
+
 			throw new TransformationFailedException(sprintf(
 				'JSON invalide pour le champ pictogrammes: %s',
 				json_last_error_msg()
@@ -65,6 +77,12 @@ class JsonToArrayTransformer implements DataTransformerInterface
 		}
 
 		if (!is_array($decoded)) {
+			$this->logger?->warning('pictogram_urls.transform.invalid_json', [
+				'error' => 'decoded_value_is_not_array',
+				'decoded_type' => get_debug_type($decoded),
+				'value_length' => is_string($value) ? strlen($value) : null,
+			]);
+
 			throw new TransformationFailedException('Le champ pictogrammes doit contenir un tableau JSON.');
 		}
 
