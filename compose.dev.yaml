@@ -63,7 +63,7 @@ services:
       # Ne pas activer actions/shell en prod sauf besoin explicite
       # - DOZZLE_ENABLE_ACTIONS=true
       # - DOZZLE_ENABLE_SHELL=true
-
+      
 volumes:
   database_data_dev:
   dozzle_data:
