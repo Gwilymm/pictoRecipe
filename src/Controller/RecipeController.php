@@ -309,10 +309,15 @@ final class RecipeController extends AbstractController
     public function edit(Request $request, Recipe $recipe, EntityManagerInterface $entityManager, \App\Repository\PictogramRepository $pictogramRepository, \Psr\Log\LoggerInterface $logger): Response
     {
         $form = $this->createForm(RecipeType::class, $recipe);
+        $payload = $request->request->all();
+
+        if ($request->isMethod('POST')) {
+            $logger->info('RecipeController::edit submitted step pictograms payload', $this->buildSubmittedStepsLogContext($recipe, $payload));
+        }
+
         // Debug: log request payload for XHR posts to help diagnose invalid payloads
         if ($request->isXmlHttpRequest()) {
             // Convert request->request->all() to strings for safe logging
-            $payload = $request->request->all();
             $recipePayload = $payload['recipe'] ?? null;
             $logger->debug('RecipeController::edit XHR payload', [
                 'keys' => array_keys($payload),
@@ -342,6 +347,8 @@ final class RecipeController extends AbstractController
             // update timestamp to indicate recipe changed
             $recipe->setUpdatedAt(new \DateTime());
 
+            $logger->info('RecipeController::edit step pictograms before flush', $this->buildRecipeStepsLogContext($recipe));
+
             $entityManager->flush();
 
             // Après mise à jour, afficher la prévisualisation avec les informations à jour
@@ -366,6 +373,63 @@ final class RecipeController extends AbstractController
             'recipe' => $recipe,
             'form' => $form,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>
+     */
+    private function buildSubmittedStepsLogContext(Recipe $recipe, array $payload): array
+    {
+        $recipePayload = $payload['recipe'] ?? [];
+        $submittedSteps = is_array($recipePayload) && isset($recipePayload['steps']) && is_array($recipePayload['steps'])
+            ? $recipePayload['steps']
+            : [];
+
+        $steps = [];
+        foreach ($submittedSteps as $index => $stepPayload) {
+            if (!is_array($stepPayload)) {
+                continue;
+            }
+
+            $steps[] = [
+                'index' => $index,
+                'position' => $stepPayload['position'] ?? null,
+                'content' => $stepPayload['content'] ?? null,
+                'pictogramUrl' => $stepPayload['pictogramUrl'] ?? null,
+                'pictogramUrls' => $stepPayload['pictogramUrls'] ?? null,
+            ];
+        }
+
+        return [
+            'recipe_id' => $recipe->getId(),
+            'steps_count' => count($submittedSteps),
+            'steps' => $steps,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildRecipeStepsLogContext(Recipe $recipe): array
+    {
+        $steps = [];
+        foreach ($recipe->getSteps() as $step) {
+            $steps[] = [
+                'id' => $step->getId(),
+                'position' => $step->getPosition(),
+                'content' => $step->getContent(),
+                'pictogramUrl' => $step->getPictogramUrl(),
+                'pictogramUrls' => $step->getPictogramUrls(),
+            ];
+        }
+
+        return [
+            'recipe_id' => $recipe->getId(),
+            'steps_count' => count($steps),
+            'steps' => $steps,
+        ];
     }
 
     private function mapPictogramsOnRecipe(Recipe $recipe, \App\Repository\PictogramRepository $pictogramRepository): void

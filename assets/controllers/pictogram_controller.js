@@ -36,6 +36,7 @@ export default class extends Controller {
 
 	connect() {
 		this.debounceTimer = null;
+		this.formSubmitHandler = null;
 
 		// Déterminer le mode depuis l'attribut data
 		if (this.element.dataset.pictogramMode) {
@@ -76,12 +77,17 @@ export default class extends Controller {
 		// Mode multiple : charger les pictogrammes existants
 		if (this.modeValue === 'multiple') {
 			this.loadExistingPictograms();
+			this.registerSubmitSynchronization();
 		}
 	}
 
 	disconnect() {
 		if (this.debounceTimer) {
 			clearTimeout(this.debounceTimer);
+		}
+
+		if (this.formSubmitHandler && this.formElement) {
+			this.formElement.removeEventListener('submit', this.formSubmitHandler);
 		}
 	}
 
@@ -474,11 +480,38 @@ export default class extends Controller {
 		const hiddenField = document.getElementById(this.targetValue);
 		if (!hiddenField) return;
 
-		const urls = Array.from(this.selectedContainerTarget.querySelectorAll('[data-pictogram-url]'))
-			.map(badge => badge.dataset.pictogramUrl);
+		const urls = this.getSelectedPictogramUrls();
 
 		hiddenField.value = JSON.stringify(urls);
 		hiddenField.dispatchEvent(new Event('change', { bubbles: true }));
+
+		return urls;
+	}
+
+	registerSubmitSynchronization() {
+		this.formElement = this.element.closest('form');
+		if (!this.formElement) return;
+
+		this.formSubmitHandler = () => {
+			const urls = this.updateHiddenField() || [];
+			const hiddenField = this.targetValue ? document.getElementById(this.targetValue) : null;
+
+			console.debug('pictogram: multiple field synced before submit', {
+				field: hiddenField?.name || this.targetValue,
+				count: urls.length,
+				urls,
+			});
+		};
+
+		this.formElement.addEventListener('submit', this.formSubmitHandler);
+	}
+
+	getSelectedPictogramUrls() {
+		if (!this.hasSelectedContainerTarget) return [];
+
+		return Array.from(this.selectedContainerTarget.querySelectorAll('[data-pictogram-url]'))
+			.map(badge => badge.dataset.pictogramUrl)
+			.filter(url => typeof url === 'string' && url.length > 0);
 	}
 
 	// Note: input handling is implemented in `onSearchInput` and `onSearchClick`.

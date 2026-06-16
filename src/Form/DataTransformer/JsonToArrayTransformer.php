@@ -27,7 +27,16 @@ class JsonToArrayTransformer implements DataTransformerInterface
 			return $value;
 		}
 
-		return json_encode($value);
+		$json = json_encode($value);
+
+		if (false === $json) {
+			throw new TransformationFailedException(sprintf(
+				'Impossible de convertir le tableau en JSON: %s',
+				json_last_error_msg()
+			));
+		}
+
+		return $json;
 	}
 
 	/**
@@ -49,8 +58,14 @@ class JsonToArrayTransformer implements DataTransformerInterface
 		$decoded = json_decode($value, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			// Si ce n'est pas du JSON valide, retourner null
-			return null;
+			throw new TransformationFailedException(sprintf(
+				'JSON invalide pour le champ pictogrammes: %s',
+				json_last_error_msg()
+			));
+		}
+
+		if (!is_array($decoded)) {
+			throw new TransformationFailedException('Le champ pictogrammes doit contenir un tableau JSON.');
 		}
 
 		return $decoded;
