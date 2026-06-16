@@ -4,7 +4,6 @@ export default class extends Controller {
 	static targets = [ "input", "results", "brandInput", "pagination", "status", "urlInput", "filters", "detailsTab", "wikimediaTab" ];
 
 	connect() {
-		console.log("PictoSearchController connected");
 		this.currentPage = 1;
 		this.itemsPerPage = 12;
 		this.allResults = [];

@@ -46,7 +46,10 @@ docker exec pictorecette-app sh -lc 'grep "\"request_id\":\"REQUEST_ID_ICI\"" va
 - `recipe.pdf.requested`
 - `recipe.pdf.skipped`
 - `recipe.pdf.cache_hit`
+- `recipe.pdf.cache_hit_after_wait`
 - `recipe.pdf.cache_miss`
+- `recipe.pdf.lock_wait`
+- `recipe.pdf.lock_busy`
 - `recipe.pdf.rendered_html`
 - `recipe.pdf.generated`
 - `recipe.pdf.failed`

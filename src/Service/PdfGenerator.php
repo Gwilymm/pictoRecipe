@@ -6,7 +6,7 @@ use Spatie\Browsershot\Browsershot;
 
 class PdfGenerator
 {
-	public function generateFromHtml(string $html, ?string $projectPublicDir = null): string
+	public function generateFromHtml(string $html, ?string $projectPublicDir = null, int $timeoutSeconds = 120): string
 	{
 		// If a project public dir is provided, inline local image files as base64 data URIs
 		if ($projectPublicDir) {
@@ -46,6 +46,7 @@ class PdfGenerator
 		return Browsershot::html($html)
 			->setOption('landscape', false)
 			->format('A4')
+			->timeout($timeoutSeconds)
 			->margins(10, 10, 10, 10)
 			->showBackground()
 			->waitUntilNetworkIdle()
