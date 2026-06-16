@@ -1,6 +1,6 @@
 {% set gridColumns = 4 %}
-{% set gridPictoSize = 122 %}
-{% set stepPictoSize = 112 %}
+{% set gridPictoSize = 112 %}
+{% set stepPictoSize = 102 %}
 <!DOCTYPE html>
 <html lang="fr">
 	<head>
@@ -52,8 +52,10 @@
 			}
 			.grid img,
 			.grid-placeholder {
-				width: {{ gridPictoSize }}px;
-				height: {{ gridPictoSize }}px;
+				width: {{gridPictoSize}}
+				px;
+				height: {{gridPictoSize}}
+				px;
 				object-fit: contain;
 				display: block;
 				margin: 0 auto 5px
@@ -99,8 +101,10 @@
 			}
 			.step-pictos img,
 			.step-placeholder {
-				width: {{ stepPictoSize }}px;
-				height: {{ stepPictoSize }}px;
+				width: {{stepPictoSize}}
+				px;
+				height: {{stepPictoSize}}
+				px;
 				object-fit: contain;
 				display: inline-block;
 				margin: 3px;
@@ -185,7 +189,7 @@
 		{% if col > 0 %}
 		</tr>
 	{% endif %}
-</table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
+</html></table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
 <tr>
 	{% for utensil in recipe.utensils %}
 		<td>

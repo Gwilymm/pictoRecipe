@@ -1,79 +1,29 @@
-# Dockerfile optimisé pour Raspberry Pi 5 (ARM64)
-# Version production - Assets pré-compilés en local
+# syntax=docker/dockerfile:1.7
 
 # ============================================
-# Stage 1: Composer - Install PHP dependencies
+# PictoRecette - Symfony + FrankenPHP
+# Production image for ARM64 / Raspberry Pi 5
+# Assets compiled inside Docker image
 # ============================================
-FROM dunglas/frankenphp:1-php8.3-alpine AS composer-builder
 
-# Configurer les DNS pour le build
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf.override || true
+ARG PHP_VERSION=8.3
+ARG FRANKENPHP_VERSION=1
+
+# ============================================
+# Base PHP image with shared extensions
+# ============================================
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}-alpine AS php-base
 
 WORKDIR /app
 
-# Installer Composer
-COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
-
-# Installer les extensions PHP nécessaires pour Composer
-RUN install-php-extensions \
-    pdo_pgsql \
-    pgsql \
-    gd \
-    intl \
-    zip \
-    xsl \
-    gmp
-
-# Copier seulement les fichiers de dépendances
-COPY composer.json composer.lock symfony.lock ./
-
-# Installer les dépendances
-# Utiliser --no-dev uniquement en production (via ARG)
-ARG APP_ENV=prod
-RUN if [ "$APP_ENV" = "dev" ]; then \
-        composer install --no-scripts --no-autoloader --prefer-dist; \
-    else \
-        composer install --no-dev --no-scripts --no-autoloader --prefer-dist --optimize-autoloader; \
-    fi
-
-# Copier le reste et finaliser autoload
-COPY . .
-
-RUN composer dump-autoload --optimize --classmap-authoritative
-
-# ============================================
-# Stage 2: Runtime - Image finale légère
-# ============================================
-FROM dunglas/frankenphp:1-php8.3-alpine AS runtime
-
-# Variables d'environnement pour production
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
-    APP_SECRET=ChangeMe \
     COMPOSER_ALLOW_SUPERUSER=1 \
     SERVER_NAME=:80 \
     DEFAULT_URI=http://localhost \
-    DATABASE_URL=postgresql://app:motdepassefort@database:5432/picto?serverVersion=16&charset=utf8
+    APP_SECRET=build_time_secret_do_not_use_in_prod \
+    DATABASE_URL="postgresql://app:app@database:5432/picto?serverVersion=16&charset=utf8"
 
-# ---- Browsershot / Puppeteer / Chromium ----
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    libstdc++ \
-    ttf-freefont \
-    nodejs \
-    npm
-
-ENV PUPPETEER_SKIP_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-
-WORKDIR /app
-
-RUN npm install puppeteer
-
-# Installer uniquement les extensions PHP nécessaires (version Alpine = plus rapide)
 RUN install-php-extensions \
     pdo_pgsql \
     pgsql \
@@ -85,42 +35,92 @@ RUN install-php-extensions \
     gmp \
     apcu
 
+# ============================================
+# Composer builder
+# ============================================
+FROM php-base AS app-builder
 
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
-# Copier les dépendances Composer depuis le builder
-COPY --from=composer-builder /app/vendor ./vendor
+RUN apk add --no-cache \
+    git \
+    unzip
 
-# Copier le code de l'application
+# Copier uniquement les fichiers Composer d'abord pour profiter du cache Docker
+COPY composer.json composer.lock symfony.lock ./
+
+RUN composer install \
+    --no-dev \
+    --prefer-dist \
+    --no-progress \
+    --no-interaction \
+    --no-scripts \
+    --no-autoloader
+
+# Copier le code complet
 COPY . .
 
-# Les assets doivent être pré-compilés en local et copiés
-# Vérifier que public/build existe
+# Optimiser l'autoload maintenant que le code est présent
+RUN composer dump-autoload \
+    --no-dev \
+    --optimize \
+    --classmap-authoritative
 
-RUN  php bin/console tailwind:build --minify
-RUN php bin/console asset-map:compile 
+# Compiler les assets Symfony
+RUN php bin/console tailwind:build --minify \
+    && php bin/console asset-map:compile
 
+# Préparer le cache Symfony prod
+RUN php bin/console cache:clear --no-warmup --env=prod \
+    && php bin/console cache:warmup --env=prod
 
+# ============================================
+# Runtime image
+# ============================================
+FROM php-base AS runtime
 
-# Créer les répertoires nécessaires et définir les permissions
-RUN mkdir -p var/cache var/log var/tmp public/uploads && \
-    chown -R www-data:www-data var public/uploads && \
-    chmod -R 775 var public/uploads
+# Chromium + Node nécessaires pour Browsershot/Puppeteer
+RUN apk add --no-cache \
+    curl \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    libstdc++ \
+    ttf-freefont \
+    nodejs \
+    npm
 
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    NODE_PATH=/opt/node/node_modules
 
-# Configuration OPcache pour production
-RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "upload_max_filesize=50M" > /usr/local/etc/php/conf.d/99-upload-size.ini && \
-    echo "post_max_size=50M" >> /usr/local/etc/php/conf.d/99-upload-size.ini
+# Installer Puppeteer sans télécharger Chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# Warmup cache Symfony
-RUN php bin/console cache:clear --no-warmup --env=prod && php bin/console cache:warmup --env=prod || true
+RUN npm install -g --omit=dev --no-audit --no-fund puppeteer
+
+WORKDIR /app
+
+# Copier l'application déjà préparée
+COPY --from=app-builder --chown=www-data:www-data /app /app
+
+# Répertoires runtime
+RUN mkdir -p var/cache var/log var/tmp public/uploads \
+    && chown -R www-data:www-data var public/uploads \
+    && chmod -R 775 var public/uploads
+
+# Configuration PHP production
+RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/99-opcache.ini \
+    && echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/99-opcache.ini \
+    && echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/99-opcache.ini \
+    && echo "opcache.validate_timestamps=1">> /usr/local/etc/php/conf.d/99-opcache.ini \
+    && echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/99-opcache.ini \
+    && echo "upload_max_filesize=50M" > /usr/local/etc/php/conf.d/99-upload-size.ini \
+    && echo "post_max_size=50M" >> /usr/local/etc/php/conf.d/99-upload-size.ini
 
 EXPOSE 80
 
-# Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD curl -f http://localhost/ || exit 1
