@@ -65,6 +65,21 @@ services:
       - pictorecette-network
   ###< Base de données PostgreSQL ###
 
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - dozzle_data:/data
+    environment:
+      - DOZZLE_HOSTNAME=picto-prod
+      # Ne pas activer actions/shell en prod sauf besoin explicite
+      # - DOZZLE_ENABLE_ACTIONS=true
+      # - DOZZLE_ENABLE_SHELL=true
+
 volumes:
   pictorecette-uploads:
     driver: local
@@ -73,6 +88,7 @@ volumes:
   # Volumes pour Caddy (certificats SSL et configuration)
   caddy_data:
   caddy_config:
+  dozzle_data:
 
 networks:
   pictorecette-network:
