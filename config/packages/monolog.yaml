@@ -56,6 +56,13 @@ when@prod:
                 excluded_http_codes: [404, 405]
                 channels: ["!deprecation"]
                 buffer_size: 50
+                
+            app_stderr:
+                type: stream
+                path: php://stderr
+                level: info
+                channels: ["app"]
+                formatter: monolog.formatter.json
 
             nested:
                 type: stream
