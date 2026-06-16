@@ -22,6 +22,9 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/recipe')]
 final class RecipeController extends AbstractController
 {
+    private const PDF_GENERATION_TIMEOUT_SECONDS = 120;
+    private const PDF_LOCK_WAIT_SECONDS = 25;
+
     #[Route(name: 'app_recipe_index', methods: ['GET'])]
     public function index(Request $request, RecipeRepository $recipeRepository): Response
     {
@@ -239,6 +242,9 @@ final class RecipeController extends AbstractController
     {
         // Start timing
         $t0 = microtime(true);
+        $this->raisePdfRuntimeLimit();
+        $lockHandle = null;
+
         $baseContext = array_merge(
             $this->requestLogContext($request),
             [
@@ -322,16 +328,7 @@ final class RecipeController extends AbstractController
                         'recipe_updated' => $updatedAt ? $updatedAt->format('Y-m-d H:i:s') : null,
                         'hash_match' => true,
                     ]));
-                    $response = new BinaryFileResponse($cachePath);
-                    $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
-                    // Avoid browser-level caching of the download
-                    $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-                    $response->headers->set('Pragma', 'no-cache');
-                    if ($cacheMTime) {
-                        $response->setLastModified(\DateTime::createFromFormat('U', (string)$cacheMTime) ?: new \DateTime());
-                    }
-                    $response->setEtag('W/"' . $htmlHash . '"');
-                    return $response;
+                    return $this->pdfFileResponse($recipe, $cachePath, $htmlHash, $cacheMTime ?: null);
                 }
 
                 $logger->info('recipe.pdf.cache_miss', array_merge($cacheContext, [
@@ -346,9 +343,72 @@ final class RecipeController extends AbstractController
                 ]));
             }
 
-            // Generate PDF via DOMPDF
+            $lockDir = rtrim($this->getParameter('kernel.project_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'lock' . DIRECTORY_SEPARATOR . 'pdf';
+            if (!is_dir($lockDir) && !mkdir($lockDir, 0775, true) && !is_dir($lockDir)) {
+                throw new \RuntimeException('Impossible de creer le dossier des verrous PDF.');
+            }
+
+            $lockPath = $lockDir . DIRECTORY_SEPARATOR . $recipe->getId() . '.lock';
+            $lockHandle = @fopen($lockPath, 'c');
+            if (!is_resource($lockHandle)) {
+                throw new \RuntimeException('Impossible de créer le verrou de génération PDF.');
+            }
+
+            if (!flock($lockHandle, LOCK_EX | LOCK_NB)) {
+                $logger->info('recipe.pdf.lock_wait', array_merge($cacheContext, [
+                    'lock_path' => $lockPath,
+                    'wait_seconds' => self::PDF_LOCK_WAIT_SECONDS,
+                ]));
+
+                $waitStart = microtime(true);
+                while ((microtime(true) - $waitStart) < self::PDF_LOCK_WAIT_SECONDS) {
+                    usleep(250000);
+                    if (!$force && $this->isFreshPdfCache($cachePath, $hashPath, $htmlHash, $recipe)) {
+                        $cacheMTime = filemtime($cachePath);
+                        $logger->info('recipe.pdf.cache_hit_after_wait', array_merge($cacheContext, [
+                            'wait_duration_ms' => round((microtime(true) - $waitStart) * 1000, 1),
+                            'cache_mtime' => $cacheMTime ? date('Y-m-d H:i:s', $cacheMTime) : null,
+                        ]));
+
+                        fclose($lockHandle);
+
+                        return $this->pdfFileResponse($recipe, $cachePath, $htmlHash, $cacheMTime ?: null);
+                    }
+                }
+
+                $logger->warning('recipe.pdf.lock_busy', array_merge($cacheContext, [
+                    'lock_path' => $lockPath,
+                    'wait_duration_ms' => round((microtime(true) - $waitStart) * 1000, 1),
+                    'status' => Response::HTTP_ACCEPTED,
+                ]));
+
+                fclose($lockHandle);
+                $lockHandle = null;
+
+                return new Response('PDF en cours de génération. Réessayez dans quelques secondes.', Response::HTTP_ACCEPTED, [
+                    'Retry-After' => '5',
+                    'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                ]);
+            }
+
+            if (!$force && $this->isFreshPdfCache($cachePath, $hashPath, $htmlHash, $recipe)) {
+                $cacheMTime = filemtime($cachePath);
+                $logger->info('recipe.pdf.cache_hit', array_merge($cacheContext, [
+                    'cache_mtime' => $cacheMTime ? date('Y-m-d H:i:s', $cacheMTime) : null,
+                    'hash_match' => true,
+                    'after_lock' => true,
+                ]));
+
+                flock($lockHandle, LOCK_UN);
+                fclose($lockHandle);
+                $lockHandle = null;
+
+                return $this->pdfFileResponse($recipe, $cachePath, $htmlHash, $cacheMTime ?: null);
+            }
+
+            // Generate PDF via Browsershot/Chromium.
             $tPdfStart = microtime(true);
-            $pdfOutput = $pdfGenerator->generateFromHtml($html, $projectPublic);
+            $pdfOutput = $pdfGenerator->generateFromHtml($html, $projectPublic, self::PDF_GENERATION_TIMEOUT_SECONDS);
             $tPdfEnd = microtime(true);
 
             $pdfBytes = strlen($pdfOutput);
@@ -359,21 +419,25 @@ final class RecipeController extends AbstractController
                 'pdf_bytes' => $pdfBytes,
             ]));
 
-            // Store in cache
-            if ($pdfOutput !== false) {
-                @file_put_contents($cachePath, $pdfOutput);
-                @file_put_contents($hashPath, $htmlHash);
+            $tmpPath = $cachePath . '.' . bin2hex(random_bytes(6)) . '.tmp';
+            if (@file_put_contents($tmpPath, $pdfOutput, LOCK_EX) === false || !@rename($tmpPath, $cachePath)) {
+                @unlink($tmpPath);
+                throw new \RuntimeException("Impossible d'ecrire le cache PDF.");
             }
+            @file_put_contents($hashPath, $htmlHash, LOCK_EX);
+
+            flock($lockHandle, LOCK_UN);
+            fclose($lockHandle);
+            $lockHandle = null;
 
             // Return cached file response (serves the freshly created file)
-            $response = new BinaryFileResponse($cachePath);
-            $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string)$recipe->getTitle())) . '.pdf');
-            // Avoid browser-level caching of the download
-            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-            $response->headers->set('Pragma', 'no-cache');
-            $response->setEtag('W/"' . $htmlHash . '"');
-            return $response;
+            return $this->pdfFileResponse($recipe, $cachePath, $htmlHash, filemtime($cachePath) ?: null);
         } catch (\Throwable $e) {
+            if (is_resource($lockHandle)) {
+                flock($lockHandle, LOCK_UN);
+                fclose($lockHandle);
+            }
+
             $logger->error('recipe.pdf.failed', array_merge($baseContext, [
                 'exception_class' => $e::class,
                 'exception_message' => $e->getMessage(),
@@ -631,6 +695,52 @@ final class RecipeController extends AbstractController
     private function contentLength(Request $request): int
     {
         return max(0, (int) $request->headers->get('content-length', 0));
+    }
+
+    private function raisePdfRuntimeLimit(): void
+    {
+        if (!function_exists('set_time_limit')) {
+            return;
+        }
+
+        try {
+            @set_time_limit(self::PDF_GENERATION_TIMEOUT_SECONDS);
+        } catch (\Throwable) {
+            // Some hosts disable set_time_limit; Browsershot still has its own timeout.
+        }
+    }
+
+    private function isFreshPdfCache(string $cachePath, string $hashPath, string $htmlHash, Recipe $recipe): bool
+    {
+        if (!file_exists($cachePath) || !is_readable($cachePath)) {
+            return false;
+        }
+
+        $cacheMTime = filemtime($cachePath);
+        $updatedAt = $recipe->getUpdatedAt();
+        $storedHash = is_readable($hashPath) ? @trim((string) file_get_contents($hashPath)) : null;
+
+        $mtimeFresh = $cacheMTime !== false && (!$updatedAt instanceof \DateTimeInterface || $cacheMTime > $updatedAt->getTimestamp());
+        $hashFresh = is_string($storedHash) && $storedHash !== '' && hash_equals($storedHash, $htmlHash);
+
+        return $mtimeFresh && $hashFresh;
+    }
+
+    private function pdfFileResponse(Recipe $recipe, string $cachePath, string $htmlHash, ?int $cacheMTime = null): BinaryFileResponse
+    {
+        $response = new BinaryFileResponse($cachePath);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            preg_replace('/[^A-Za-z0-9_\-]/', '_', trim((string) $recipe->getTitle())) . '.pdf'
+        );
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        if ($cacheMTime) {
+            $response->setLastModified(\DateTime::createFromFormat('U', (string) $cacheMTime) ?: new \DateTime());
+        }
+        $response->setEtag('W/"' . $htmlHash . '"');
+
+        return $response;
     }
 
     private function countSubmittedPictogramUrls(mixed $value): ?int
