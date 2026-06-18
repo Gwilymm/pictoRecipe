@@ -4,13 +4,15 @@ namespace App\Form;
 
 use App\Entity\Recipe;
 use App\Entity\Utensil;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\Form\Extension\Core\Type\CollectionType;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class RecipeType extends AbstractType
@@ -76,6 +78,15 @@ class RecipeType extends AbstractType
                 ],
             ])
         ;
+
+        $builder->addEventListener(FormEvents::PRE_SUBMIT, function (FormEvent $event): void {
+            $data = $event->getData();
+            if (!is_array($data)) {
+                return;
+            }
+
+            $event->setData($this->removeEmptySubmittedSteps($data));
+        });
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -83,5 +94,96 @@ class RecipeType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Recipe::class,
         ]);
+    }
+
+    /**
+     * Remove ghost collection rows that only contain technical empty fields.
+     *
+     * A step with pictograms but no text is intentionally kept so NotBlank can
+     * report a real validation error instead of silently dropping user input.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function removeEmptySubmittedSteps(array $data): array
+    {
+        if (!isset($data['steps']) || !is_array($data['steps'])) {
+            return $data;
+        }
+
+        foreach ($data['steps'] as $index => $stepPayload) {
+            if ($this->isEmptySubmittedStep($stepPayload)) {
+                unset($data['steps'][$index]);
+            }
+        }
+
+        return $data;
+    }
+
+    private function isEmptySubmittedStep(mixed $stepPayload): bool
+    {
+        if (!is_array($stepPayload)) {
+            return false;
+        }
+
+        return $this->isBlankSubmittedValue($stepPayload['content'] ?? null)
+            && $this->isBlankSubmittedValue($stepPayload['durationMinutes'] ?? null)
+            && $this->isBlankSubmittedValue($stepPayload['pictogramUrl'] ?? null)
+            && !$this->hasSubmittedPictogramUrls($stepPayload['pictogramUrls'] ?? null);
+    }
+
+    private function isBlankSubmittedValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        if (is_scalar($value)) {
+            return trim((string) $value) === '';
+        }
+
+        return false;
+    }
+
+    private function hasSubmittedPictogramUrls(mixed $value): bool
+    {
+        if (is_array($value)) {
+            return $this->arrayContainsNonBlankValue($value);
+        }
+
+        if (!is_string($value)) {
+            return false;
+        }
+
+        $value = trim($value);
+        if ($value === '') {
+            return false;
+        }
+
+        $decoded = json_decode($value, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return true;
+        }
+
+        if (is_array($decoded)) {
+            return $this->arrayContainsNonBlankValue($decoded);
+        }
+
+        return !$this->isBlankSubmittedValue($decoded);
+    }
+
+    /**
+     * @param array<mixed> $values
+     */
+    private function arrayContainsNonBlankValue(array $values): bool
+    {
+        foreach ($values as $value) {
+            if (!$this->isBlankSubmittedValue($value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
