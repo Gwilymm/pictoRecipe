@@ -59,7 +59,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - dozzle_data:/data
     environment:
-      - DOZZLE_HOSTNAME=picto-prod
+      - DOZZLE_HOSTNAME=picto-dev
       # Ne pas activer actions/shell en prod sauf besoin explicite
       # - DOZZLE_ENABLE_ACTIONS=true
       # - DOZZLE_ENABLE_SHELL=true

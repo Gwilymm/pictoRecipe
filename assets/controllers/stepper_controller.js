@@ -8,11 +8,21 @@ export default class extends Controller {
 	connect() {
 		this.index = 0;
 		this.totalSteps = this.stepTargets.length;
+		this.cleanEmptyStepItemsBeforeSubmit = () => this.removeEmptyStepItems();
+		this.element.addEventListener('submit', this.cleanEmptyStepItemsBeforeSubmit);
 		this.showCurrent();
+	}
+
+	disconnect() {
+		this.element.removeEventListener('submit', this.cleanEmptyStepItemsBeforeSubmit);
 	}
 
 	next(event) {
 		event?.preventDefault();
+		if (!this.canLeaveCurrentStep()) {
+			return;
+		}
+
 		if (this.index < this.totalSteps - 1) {
 			this.index++;
 			this.showCurrent();
@@ -74,6 +84,127 @@ export default class extends Controller {
 				}
 			});
 		}
+	}
+
+	canLeaveCurrentStep() {
+		// Step 3: preparation steps must have text before moving forward.
+		if (this.index === 2) {
+			return this.validateStepsStep();
+		}
+
+		return true;
+	}
+
+	validateStepsStep() {
+		const section = this.stepTargets[ this.index ];
+		if (!section) {
+			return true;
+		}
+
+		this.clearStepContentErrors(section);
+
+		const stepItems = Array.from(section.querySelectorAll('.collection-item'))
+			.filter(item => item.querySelector('[name$="[content]"], textarea[name*="[steps]"][name*="[content]"]'));
+
+		if (stepItems.length === 0) {
+			this.showSectionError(section, 'Ajoutez au moins une étape avant de continuer.');
+			return false;
+		}
+
+		const emptyContentFields = stepItems
+			.map(item => item.querySelector('[name$="[content]"], textarea[name*="[steps]"][name*="[content]"]'))
+			.filter(field => field && !field.value.trim());
+
+		if (emptyContentFields.length === 0) {
+			return true;
+		}
+
+		emptyContentFields.forEach(field => {
+			this.showFieldError(field, 'Renseignez la description de cette étape avant de continuer.');
+		});
+
+		emptyContentFields[ 0 ].focus();
+		emptyContentFields[ 0 ].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+		return false;
+	}
+
+	removeEmptyStepItems() {
+		this.stepTargets.forEach(section => {
+			section.querySelectorAll('.collection-item').forEach(item => {
+				if (this.isEmptyStepItem(item)) {
+					item.remove();
+				}
+			});
+		});
+	}
+
+	isEmptyStepItem(item) {
+		const contentInput = item.querySelector('[name$="[content]"], textarea[name*="[steps]"][name*="[content]"]');
+		if (!contentInput) {
+			return false;
+		}
+
+		const durationInput = item.querySelector('[name*="[durationMinutes]"]');
+		const pictogramUrlInput = item.querySelector('[name*="[pictogramUrl]"]:not([name*="[pictogramUrls]"])');
+		const pictogramUrlsInput = item.querySelector('[name*="[pictogramUrls]"]');
+
+		return !contentInput.value.trim()
+			&& !durationInput?.value.trim()
+			&& !pictogramUrlInput?.value.trim()
+			&& !this.hasPictogramUrls(pictogramUrlsInput?.value);
+	}
+
+	hasPictogramUrls(value) {
+		if (!value?.trim()) {
+			return false;
+		}
+
+		try {
+			const urls = JSON.parse(value);
+			return Array.isArray(urls) && urls.some(url => String(url).trim() !== '');
+		} catch (error) {
+			return true;
+		}
+	}
+
+	clearStepContentErrors(section) {
+		section.querySelectorAll('.step-content-error').forEach(error => error.remove());
+		section.querySelectorAll('[name$="[content]"], textarea[name*="[steps]"][name*="[content]"]').forEach(field => {
+			field.classList.remove('textarea-error', 'border-error');
+			field.removeAttribute('aria-invalid');
+			field.removeAttribute('aria-describedby');
+		});
+	}
+
+	showSectionError(section, message) {
+		const header = section.querySelector('.card-body > .flex.items-center');
+		const error = document.createElement('div');
+		error.className = 'step-content-error alert alert-error mt-4';
+		error.setAttribute('role', 'alert');
+		error.textContent = message;
+
+		if (header) {
+			header.insertAdjacentElement('afterend', error);
+		} else {
+			section.prepend(error);
+		}
+	}
+
+	showFieldError(field, message) {
+		const errorId = `${field.id || field.name.replace(/[^a-z0-9_-]/gi, '_')}_error`;
+		const error = document.createElement('p');
+		error.id = errorId;
+		error.className = 'step-content-error text-error text-sm mt-2';
+		error.setAttribute('role', 'alert');
+		error.textContent = message;
+
+		field.classList.add('textarea-error', 'border-error');
+		field.setAttribute('aria-invalid', 'true');
+		field.setAttribute('aria-describedby', errorId);
+
+		const fieldWrapper = field.closest('.md\\:col-span-9, .flex-1') || field.parentElement;
+		fieldWrapper?.appendChild(error);
 	}
 
 	updatePreview() {
