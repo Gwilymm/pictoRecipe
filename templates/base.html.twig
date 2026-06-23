@@ -19,23 +19,6 @@
 			{{ importmap('app') }}
 		{% endblock %}
 
-		{% block javascripts %}
-			{% if app.environment == 'prod' %}
-				{# Privacy-friendly analytics by Plausible #}
-				<script async src="https://analytics.doc2sail.com/js/pa-sryYXEKPoMesf_-yBFfSG.js"></script>
-				<script>
-					window.plausible = window.plausible || function () {
-						(plausible.q = plausible.q || []).push(arguments);
-					};
-					plausible.init = plausible.init || function (i) {
-						plausible.o = i || {};
-					};
-					plausible.init();
-				</script>
-			{% endif %}
-		{% endblock %}
-
-
 	</head>
 	<body class="min-h-screen">
 		{{ include('partials/_navbar.html.twig') }}
@@ -75,63 +58,35 @@
 
 			{# Script pour auto-fermer les toasts après 5 secondes #}
 			<script>
-				document.addEventListener( 'DOMContentLoaded', function ()
-{
+				document.addEventListener('DOMContentLoaded', function () {
 
 
+const toasts = document.querySelectorAll('.toast .alert');
+toasts.forEach(function (toast) {
 
 
-
-const toasts = document.querySelectorAll( '.toast .alert' );
-toasts.forEach( function ( toast )
-{
-
-
-
-
-
-setTimeout( function ()
-{
-
-
-
+setTimeout(function () {
 
 
 toast.style.transition = 'opacity 0.5s, transform 0.5s';
 toast.style.opacity = '0';
 toast.style.transform = 'translateX(100%)';
-setTimeout( function ()
-{
-
-
-
+setTimeout(function () {
 
 
 toast.remove();
 
 
+}, 500);
 
 
-
-}, 500 );
-
+}, 5000);
 
 
+});
 
 
-}, 5000 );
-
-
-
-
-
-} );
-
-
-
-
-
-} );
+});
 			</script>
 		</body>
 	</html>
