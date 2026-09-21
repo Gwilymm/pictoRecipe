@@ -168,19 +168,59 @@ class MarmitonScraperService
 
 		$html = $response->getContent();
 		$crawler = new Crawler($html);
+		$jsonLd = $this->findRecipeJsonLd($crawler);
+		$ingredients = $this->extractIngredients($crawler);
+		$steps = $this->extractSteps($crawler);
 
 		$data = [
 			'ok' => true,
-			'title' => $this->extractTitle($crawler),
+			'title' => $this->extractTitle($crawler) ?: (string) ($jsonLd['name'] ?? ''),
 			'primary' => $this->extractPrimary($crawler),
 			'times' => $this->extractTimes($crawler),
 			'servings' => $this->extractServings($crawler),
-			'ingredients' => $this->extractIngredients($crawler),
+			'ingredients' => $ingredients ?: $this->ingredientsFromJsonLd($jsonLd),
 			'utensils' => $this->extractUtensils($crawler),
-			'steps' => $this->extractSteps($crawler),
+			'steps' => $steps ?: $this->stepsFromJsonLd($jsonLd),
 		];
 
 		return $data;
+	}
+
+	/** @return array<string, mixed>|null */
+	private function findRecipeJsonLd(Crawler $crawler): ?array
+	{
+		$found = null;
+		$crawler->filter('script[type="application/ld+json"]')->each(function (Crawler $script) use (&$found): void {
+			if ($found !== null) return;
+			$decoded = json_decode(trim($script->text()), true);
+			if (!is_array($decoded)) return;
+			$objects = isset($decoded['@graph']) && is_array($decoded['@graph']) ? $decoded['@graph'] : (array_is_list($decoded) ? $decoded : [$decoded]);
+			foreach ($objects as $object) {
+				if (!is_array($object)) continue;
+				$type = $object['@type'] ?? null;
+				$types = is_array($type) ? $type : [$type];
+				if (in_array('Recipe', array_map(static fn ($v): string => (string) $v, $types), true)) {
+					$found = $object;
+					return;
+				}
+			}
+		});
+		return $found;
+	}
+
+	private function ingredientsFromJsonLd(?array $recipe): array
+	{
+		return array_map(static fn ($value): array => ['group' => null, 'name' => (string) $value, 'quantity' => '', 'unit' => '', 'complement' => ''], is_array($recipe['recipeIngredient'] ?? null) ? $recipe['recipeIngredient'] : []);
+	}
+
+	private function stepsFromJsonLd(?array $recipe): array
+	{
+		$result = [];
+		foreach (is_array($recipe['recipeInstructions'] ?? null) ? $recipe['recipeInstructions'] : [] as $index => $instruction) {
+			$text = is_array($instruction) ? ($instruction['text'] ?? '') : $instruction;
+			if (trim((string) $text) !== '') $result[] = ['number' => 'Étape ' . ($index + 1), 'text' => trim((string) $text)];
+		}
+		return $result;
 	}
 
 	/* -----------------------------------------

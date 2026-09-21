@@ -121,26 +121,11 @@ class CuisineazScraperService
 		$html = $response->getContent();
 		$crawler = new Crawler($html);
 
-		// Prefer JSON-LD recipe if present
-		$script = $crawler->filter('script[type="application/ld+json"]')->first();
-		if ($script->count()) {
-			$text = trim($script->text());
-			$decoded = json_decode($text, true);
-			if (is_array($decoded)) {
-				// If it's an array, find the recipe object
-				if (isset($decoded['@type']) && strtolower($decoded['@type']) === 'recipe') {
-					$recipeObj = $decoded;
-				} else {
-					$recipeObj = null;
-					foreach ($decoded as $d) {
-						if (is_array($d) && isset($d['@type']) && strtolower($d['@type']) === 'recipe') {
-							$recipeObj = $d;
-							break;
-						}
-					}
-				}
+		// Prefer JSON-LD recipe if present. The format varies between pages:
+		// one object, an @graph, or @type as a string/array.
+		$recipeObj = $this->findRecipeJsonLd($crawler);
+		if ($recipeObj !== null) {
 
-				if (!empty($recipeObj) && is_array($recipeObj)) {
 					$title = $recipeObj['name'] ?? '';
 					$ingredients = [];
 					foreach (($recipeObj['recipeIngredient'] ?? []) as $ing) {
@@ -239,9 +224,7 @@ class CuisineazScraperService
 						'kcal' => $kcal,
 						'budget' => $budget,
 					];
-				}
 			}
-		}
 
 		// Fallback to DOM extraction
 		$title = '';
@@ -364,5 +347,35 @@ class CuisineazScraperService
 			'kcal' => $kcal,
 			'budget' => $budget,
 		];
+	}
+
+	/** @return array<string, mixed>|null */
+	private function findRecipeJsonLd(Crawler $crawler): ?array
+	{
+		$found = null;
+		$crawler->filter('script[type="application/ld+json"]')->each(function (Crawler $script) use (&$found): void {
+			if ($found !== null) return;
+			$decoded = json_decode(trim($script->text()), true);
+			if (!is_array($decoded)) return;
+			$objects = [];
+			if (isset($decoded['@graph']) && is_array($decoded['@graph'])) {
+				$objects = $decoded['@graph'];
+			} elseif (array_is_list($decoded)) {
+				$objects = $decoded;
+			} else {
+				$objects = [$decoded];
+			}
+			foreach ($objects as $object) {
+				if (!is_array($object)) continue;
+				$type = $object['@type'] ?? null;
+				$types = is_array($type) ? $type : [$type];
+				$types = array_map(static fn ($value): string => strtolower((string) $value), $types);
+				if (in_array('recipe', $types, true)) {
+					$found = $object;
+					return;
+				}
+			}
+		});
+		return $found;
 	}
 }
