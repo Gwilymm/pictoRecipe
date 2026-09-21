@@ -109,12 +109,14 @@ export default class extends Controller {
 			// Process Marmiton result
 			if (results[ 0 ]?.status === 'fulfilled') {
 				try {
-					const data = await results[ 0 ].value.json();
-					if (data.success && data.results.length > 0) {
-						combined = combined.concat(data.results.map(r => ({ ...r, source: r.source || 'marmiton' })));
+					const response = results[ 0 ].value;
+					const data = await response.json();
+					const marmitonResults = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+					if (response.ok && (data.success !== false) && marmitonResults.length > 0) {
+						combined = combined.concat(marmitonResults.map(r => ({ ...r, source: r.source || 'marmiton' })));
 					}
 				} catch (e) {
-					console.debug('Marmiton JSON parsing error', e);
+					console.error('Marmiton response handling error', e);
 				}
 			} else {
 				console.debug('Marmiton search failed', results[ 0 ]?.reason);
@@ -123,12 +125,14 @@ export default class extends Controller {
 			// Process CuisineAZ result
 			if (results[ 1 ]?.status === 'fulfilled') {
 				try {
-					const data2 = await results[ 1 ].value.json();
-					if (data2.success && data2.results.length > 0) {
-						combined = combined.concat(data2.results.map(r => ({ ...r, source: r.source || 'cuisineaz' })));
+					const response2 = results[ 1 ].value;
+					const data2 = await response2.json();
+					const cuisineResults = Array.isArray(data2) ? data2 : (Array.isArray(data2.results) ? data2.results : []);
+					if (response2.ok && (data2.success !== false) && cuisineResults.length > 0) {
+						combined = combined.concat(cuisineResults.map(r => ({ ...r, source: r.source || 'cuisineaz' })));
 					}
 				} catch (e) {
-					console.debug('CuisineAZ JSON parsing error', e);
+					console.error('CuisineAZ response handling error', e);
 				}
 			} else {
 				console.debug('CuisineAZ search failed', results[ 1 ]?.reason);
