@@ -199,7 +199,8 @@ class MarmitonScraperService
 				if (!is_array($object)) continue;
 				$type = $object['@type'] ?? null;
 				$types = is_array($type) ? $type : [$type];
-				if (in_array('Recipe', array_map(static fn ($v): string => (string) $v, $types), true)) {
+				$types = array_map(static fn ($v): string => strtolower((string) $v), $types);
+				if (in_array('recipe', $types, true)) {
 					$found = $object;
 					return;
 				}
@@ -210,13 +211,21 @@ class MarmitonScraperService
 
 	private function ingredientsFromJsonLd(?array $recipe): array
 	{
-		return array_map(static fn ($value): array => ['group' => null, 'name' => (string) $value, 'quantity' => '', 'unit' => '', 'complement' => ''], is_array($recipe['recipeIngredient'] ?? null) ? $recipe['recipeIngredient'] : []);
+		$result = [];
+		foreach (is_array($recipe['recipeIngredient'] ?? null) ? $recipe['recipeIngredient'] : [] as $value) {
+			if (is_string($value) && trim($value) !== '') {
+				$result[] = ['group' => null, 'name' => trim($value), 'quantity' => '', 'unit' => '', 'complement' => ''];
+			}
+		}
+		return $result;
 	}
 
 	private function stepsFromJsonLd(?array $recipe): array
 	{
 		$result = [];
-		foreach (is_array($recipe['recipeInstructions'] ?? null) ? $recipe['recipeInstructions'] : [] as $index => $instruction) {
+		$instructions = $recipe['recipeInstructions'] ?? [];
+		if (is_string($instructions)) $instructions = [$instructions];
+		foreach (is_array($instructions) ? $instructions : [] as $index => $instruction) {
 			$text = is_array($instruction) ? ($instruction['text'] ?? '') : $instruction;
 			if (trim((string) $text) !== '') $result[] = ['number' => 'Étape ' . ($index + 1), 'text' => trim((string) $text)];
 		}
