@@ -15,7 +15,7 @@ final class PapillesEtPupillesScraperServiceTest extends TestCase
 		$html = <<<'HTML'
 		<html><body>
 		<script type="application/ld+json">
-		{"@type":"Recipe","name":"Cake test","recipeYield":["8"],"prepTime":"PT15M","recipeIngredient":["Farine"],"recipeInstructions":[]}
+		{"@type":"Recipe","name":"Cake test","image":["https://images.example/cake.jpg"],"recipeYield":["8"],"prepTime":"PT15M","recipeIngredient":["Farine"],"recipeInstructions":[]}
 		</script>
 		<div id="the_content"><div class="post_content">
 		<h2>Ingrédients</h2>
@@ -35,6 +35,7 @@ final class PapillesEtPupillesScraperServiceTest extends TestCase
 		$recipe = $service->fetchRecipe('https://www.papillesetpupilles.fr/cake-test/');
 
 		self::assertSame('8', $recipe['servings']);
+		self::assertSame('https://images.example/cake.jpg', $recipe['image']);
 		self::assertSame('160', $recipe['ingredients'][0]['quantity']);
 		self::assertSame('g', $recipe['ingredients'][0]['unit']);
 		self::assertSame('farine', $recipe['ingredients'][0]['name']);

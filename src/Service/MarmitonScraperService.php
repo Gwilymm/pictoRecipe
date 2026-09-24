@@ -175,6 +175,7 @@ class MarmitonScraperService
 		$data = [
 			'ok' => true,
 			'title' => $this->extractTitle($crawler) ?: (string) ($jsonLd['name'] ?? ''),
+			'image' => $this->extractRecipeImage($jsonLd, $crawler),
 			'primary' => $this->extractPrimary($crawler),
 			'times' => $this->extractTimes($crawler),
 			'servings' => $this->extractServings($crawler),
@@ -184,6 +185,43 @@ class MarmitonScraperService
 		];
 
 		return $data;
+	}
+
+	private function extractRecipeImage(?array $recipe, Crawler $crawler): ?string
+	{
+		$image = $this->normalizeImageValue($recipe['image'] ?? null);
+		if ($image !== null) return $image;
+
+		foreach (['meta[property="og:image"]', 'meta[name="twitter:image"]', '[itemprop="image"]'] as $selector) {
+			$node = $crawler->filter($selector)->first();
+			if (!$node->count()) continue;
+			foreach (['content', 'src', 'data-src'] as $attribute) {
+				$value = trim((string) $node->attr($attribute));
+				if ($value !== '') return $value;
+			}
+		}
+
+		return null;
+	}
+
+	private function normalizeImageValue(mixed $value): ?string
+	{
+		if (is_string($value)) {
+			$value = trim($value);
+			return $value !== '' ? $value : null;
+		}
+		if (!is_array($value)) return null;
+
+		foreach (['url', 'contentUrl', 'thumbnailUrl'] as $key) {
+			$image = $this->normalizeImageValue($value[$key] ?? null);
+			if ($image !== null) return $image;
+		}
+		foreach ($value as $item) {
+			$image = $this->normalizeImageValue($item);
+			if ($image !== null) return $image;
+		}
+
+		return null;
 	}
 
 	/** @return array<string, mixed>|null */
@@ -329,6 +367,15 @@ class MarmitonScraperService
 	----------------------------------------- */
 	private function extractServings(Crawler $crawler): ?int
 	{
+		$jsonLd = $this->findRecipeJsonLd($crawler);
+		if (isset($jsonLd['recipeYield'])) {
+			$yield = is_array($jsonLd['recipeYield'])
+				? ($jsonLd['recipeYield'][0] ?? null)
+				: $jsonLd['recipeYield'];
+			$match = $this->extractIntFromString((string) $yield);
+			if ($match !== null) return $match;
+		}
+
 		// 1) Try to find servings in JSON-LD script (recipeYield) or Marmiton JS data
 		try {
 			$crawler->filter('script[type="application/ld+json"]')->each(function (Crawler $script) use (&$crawler) {

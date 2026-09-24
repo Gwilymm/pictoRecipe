@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/recipe')]
@@ -110,6 +111,8 @@ final class RecipeController extends AbstractController
             // Map submitted pictogramUrl fields to local Pictogram relations when applicable
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
 
+            $this->storeRecipeImage($form, $recipe);
+
             // mark updatedAt so cache invalidation works correctly
             $recipe->setUpdatedAt(new \DateTime());
 
@@ -202,6 +205,8 @@ final class RecipeController extends AbstractController
 
             // Map pictogramUrl -> Pictogram relation for local pictograms
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
+
+            $this->storeRecipeImage($form, $recipe);
 
             // update timestamp to indicate recipe changed
             $recipe->setUpdatedAt(new \DateTime());
@@ -493,6 +498,8 @@ final class RecipeController extends AbstractController
 
             // Map pictogramUrl -> Pictogram relation for local pictograms
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
+
+            $this->storeRecipeImage($form, $recipe);
 
             // update timestamp to indicate recipe changed
             $recipe->setUpdatedAt(new \DateTime());
@@ -813,6 +820,28 @@ final class RecipeController extends AbstractController
                 }
             }
         }
+    }
+
+    private function storeRecipeImage(FormInterface $form, Recipe $recipe): void
+    {
+        if (!$form->has('imageFile')) {
+            return;
+        }
+
+        $image = $form->get('imageFile')->getData();
+        if (!$image instanceof UploadedFile) {
+            return;
+        }
+
+        $directory = (string) $this->getParameter('recipe_image_directory');
+        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+            throw new \RuntimeException("Impossible de créer le dossier des images de recettes.");
+        }
+
+        $extension = $image->guessExtension() ?: 'jpg';
+        $filename = bin2hex(random_bytes(16)) . '.' . $extension;
+        $image->move($directory, $filename);
+        $recipe->setImagePath('uploads/recipes/' . $filename);
     }
 
     private function normalizeIngredientPositions(Recipe $recipe): void

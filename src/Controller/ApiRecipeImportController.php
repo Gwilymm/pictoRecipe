@@ -59,6 +59,9 @@ class ApiRecipeImportController extends AbstractController
 
 			$recipe = new Recipe();
 			$recipe->setTitle((string) $recipeData['title']);
+			$recipe->setImagePath($this->normalizeImageValue(
+				$recipeData['image'] ?? $recipeData['picture'] ?? null
+			));
 
 			// parse servings if provided
 			if (isset($recipeData['servings'])) {
@@ -179,6 +182,32 @@ class ApiRecipeImportController extends AbstractController
 			$val = (int) $m[1];
 			return $val > 0 ? $val : null;
 		}
+		return null;
+	}
+
+	private function normalizeImageValue(mixed $value): ?string
+	{
+		if (is_string($value)) {
+			$value = trim($value);
+			return $value !== '' ? $value : null;
+		}
+
+		if (!is_array($value)) {
+			return null;
+		}
+
+		foreach (['url', 'contentUrl', 'thumbnailUrl'] as $key) {
+			if (array_key_exists($key, $value)) {
+				$image = $this->normalizeImageValue($value[$key]);
+				if ($image !== null) return $image;
+			}
+		}
+
+		foreach ($value as $item) {
+			$image = $this->normalizeImageValue($item);
+			if ($image !== null) return $image;
+		}
+
 		return null;
 	}
 

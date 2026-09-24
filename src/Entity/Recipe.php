@@ -25,6 +25,21 @@ class Recipe
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $imagePath = null;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 50])]
+    #[Assert\Range(min: 0, max: 100)]
+    private int $imagePositionX = 50;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 50])]
+    #[Assert\Range(min: 0, max: 100)]
+    private int $imagePositionY = 50;
+
+    #[ORM\Column(type: Types::FLOAT, options: ['default' => 1])]
+    #[Assert\Range(min: 1, max: 3)]
+    private float $imageZoom = 1.0;
+
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
     #[Assert\PositiveOrZero]
     private ?int $servings = null;
@@ -97,6 +112,55 @@ class Recipe
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getImagePath(): ?string
+    {
+        return $this->imagePath;
+    }
+
+    public function setImagePath(?string $imagePath): static
+    {
+        $imagePath = is_string($imagePath) ? trim($imagePath) : null;
+        $this->imagePath = $imagePath !== '' ? $imagePath : null;
+
+        return $this;
+    }
+
+    public function getImagePositionX(): int
+    {
+        return $this->imagePositionX;
+    }
+
+    public function setImagePositionX(int $imagePositionX): static
+    {
+        $this->imagePositionX = max(0, min(100, $imagePositionX));
+
+        return $this;
+    }
+
+    public function getImagePositionY(): int
+    {
+        return $this->imagePositionY;
+    }
+
+    public function setImagePositionY(int $imagePositionY): static
+    {
+        $this->imagePositionY = max(0, min(100, $imagePositionY));
+
+        return $this;
+    }
+
+    public function getImageZoom(): float
+    {
+        return $this->imageZoom;
+    }
+
+    public function setImageZoom(float $imageZoom): static
+    {
+        $this->imageZoom = max(1.0, min(3.0, $imageZoom));
 
         return $this;
     }

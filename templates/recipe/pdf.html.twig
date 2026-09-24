@@ -1,6 +1,6 @@
-{% set gridColumns = 4 %}
-{% set gridPictoSize = 112 %}
-{% set stepPictoSize = 102 %}
+{% set gridColumns = 8 %}
+{% set gridPictoSize = 85 %}
+{% set stepPictoSize = 60 %}
 <!DOCTYPE html>
 <html lang="fr">
 	<head>
@@ -20,14 +20,39 @@
 				padding: 20px
 			}
 
-			h1 {
-				text-align: center;
+			.recipe-heading {
+				width: 100%;
+				border-collapse: collapse;
+				border-bottom: 3px solid #222;
+				margin-bottom: 20px
+			}
+			.recipe-heading td {
+				border: 0;
+				vertical-align: middle;
+				padding: 0 0 8px
+			}
+			.recipe-heading h1 {
+				text-align: left;
 				font-size: 22pt;
 				color: #222;
-				margin-bottom: 20px;
-				text-transform: uppercase;
-				border-bottom: 3px solid #222;
-				padding-bottom: 6px
+				text-transform: uppercase
+			}
+			.recipe-heading-image {
+				width: 145px;
+				text-align: right
+			}
+			.recipe-heading-image-frame {
+				width: 135px;
+				height: 100px;
+				overflow: hidden;
+				border-radius: 8px;
+				margin-left: auto
+			}
+			.recipe-heading-image img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				display: block
 			}
 			h2 {
 				background: #f3f4f6;
@@ -41,14 +66,19 @@
 			.grid {
 				width: 100%;
 				border-collapse: collapse;
+				table-layout: fixed;
 				margin-bottom: 15px
 			}
 			.grid td {
 				border: 1px solid #ddd;
 				text-align: center;
-				padding: 10px;
-				width: 25%;
-				vertical-align: top
+				padding: 4px 2px;
+				width: {{ 100 / gridColumns }}%;
+				overflow-wrap: anywhere
+			}
+			.grid-item-cell {
+				height: 135px;
+				vertical-align: bottom
 			}
 			.grid img,
 			.grid-placeholder {
@@ -56,13 +86,15 @@
 				px;
 				height: {{gridPictoSize}}
 				px;
+				max-width: 100%;
 				object-fit: contain;
 				display: block;
 				margin: 0 auto 5px
 			}
 			.grid span {
 				display: block;
-				font-size: 9pt;
+				font-size: 7.5pt;
+				line-height: 1.2;
 				font-weight: bold;
 				color: #333
 			}
@@ -97,6 +129,7 @@
 				border-right: 2px solid #2563eb;
 				padding: 8px;
 				width: 360px;
+				font-size: 0;
 				white-space: normal
 			}
 			.step-pictos img,
@@ -133,12 +166,29 @@
 				{{ "now"|date("d/m/Y") }}</p>
 		</div>
 
-		<h1>{{ recipe.title|upper }}</h1>
+		{% set recipeImagePath = recipe.imagePath|default(null) %}
+		{% set recipeImageSrc = recipeImagePath and recipeImagePath starts with 'http' ? recipeImagePath : (recipeImagePath ? 'http://127.0.0.1/' ~ recipeImagePath|trim('/') : '') %}
+		{% set imagePositionX = recipe.imagePositionX|default(50) %}
+		{% set imagePositionY = recipe.imagePositionY|default(50) %}
+		{% set imageZoom = recipe.imageZoom|default(1) %}
+		<table class="recipe-heading">
+			<tr>
+				<td><h1>{{ recipe.title|upper }}</h1></td>
+				{% if recipeImageSrc %}
+					<td class="recipe-heading-image">
+						<div class="recipe-heading-image-frame">
+							<img src="{{ recipeImageSrc }}" alt="{{ recipe.title }}" style="object-position: {{ imagePositionX }}% {{ imagePositionY }}%; transform-origin: {{ imagePositionX }}% {{ imagePositionY }}%; transform: scale({{ imageZoom }});">
+						</div>
+					</td>
+				{% endif %}
+			</tr>
+		</table>
 
 		{# -- Ingrédients -- #}
 		<h2>Ingrédients</h2>
 		<table
-			class="grid">
+			class="grid"
+		>
 			{# Regroup all ingredients by section, regardless of their original position. #}
 			{% set ingredientGroups = {} %}
 			{% for ingredient in recipe.ingredients %}
@@ -159,12 +209,12 @@
 				{% for ingredientRow in group.ingredients|batch(gridColumns) %}
 					<tr>
 						{% for ingredient in ingredientRow %}
-							<td>
+							<td class="grid-item-cell">
 								{# Browsershot needs HTTP URLs or data URIs #}
 								{% if ingredient.pictogram %}
 									<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 								{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
-									{% if ingredient.pictogramUrl starts with('http') %}
+									{% if ingredient.pictogramUrl starts with ('http') %}
 										<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
 									{% else %}
 										<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
@@ -179,56 +229,73 @@
 								{% endif %}
 							</td>
 						{% endfor %}
+						{% if ingredientRow|length < gridColumns %}
+							{% for unusedColumn in ingredientRow|length..(gridColumns - 1) %}
+								<td style="border:0;"></td>
+							{% endfor %}
+						{% endif %}
 					</tr>
 				{% endfor %}
 			{% endfor %}
-</html></table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
-<tr>
-	{% for utensil in recipe.utensils %}
-		<td>
-			{% if utensil.pictogram %}
-				<img src="http://127.0.0.1/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
-			{% elseif utensil.pictogramUrl %}
-				{% if utensil.pictogramUrl starts with('http') %}
-					<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
-				{% else %}
-					<img src="http://127.0.0.1/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
-				{% endif %}
-			{% else %}
-				<div class="grid-placeholder" style="background:#fef3c7;border-radius:6px;"></div>
-			{% endif %}
-			<span>{{ utensil.name }}</span>
-		</td>
-		{% if loop.index is divisible by(gridColumns) and not loop.last %}
-		</tr>
-		<tr>
-		{% endif %}
-	{% endfor %}
-</tr></table>{# -- Préparation -- #}<h2>Préparation</h2><table class="steps">
-{% for step in recipe.steps %}
-	<tr>
-		<td class="num">{{ loop.index }}</td>
-		<td class="step-pictos">
-			{% if step.pictogramUrls and step.pictogramUrls is not empty %}
-				{% for url in step.pictogramUrls %}
-					{% if url starts with('http') %}
-						<img src="{{ url }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
-					{% else %}
-						<img src="http://127.0.0.1/{{ url }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+		</table>
+
+		{# -- Ustensiles -- #}
+		<h2>Ustensiles</h2>
+		<table class="grid">
+			{% for utensilRow in recipe.utensils|batch(gridColumns) %}
+				<tr>
+					{% for utensil in utensilRow %}
+						<td class="grid-item-cell">
+							{% if utensil.pictogram %}
+								<img src="http://127.0.0.1/{{ utensil.pictogram.filePath }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
+							{% elseif utensil.pictogramUrl %}
+								{% if utensil.pictogramUrl starts with ('http') %}
+									<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
+								{% else %}
+									<img src="http://127.0.0.1/{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
+								{% endif %}
+							{% else %}
+								<div class="grid-placeholder" style="background:#fef3c7;border-radius:6px;"></div>
+							{% endif %}
+							<span>{{ utensil.name }}</span>
+						</td>
+					{% endfor %}
+					{% if utensilRow|length < gridColumns %}
+						{% for unusedColumn in utensilRow|length..(gridColumns - 1) %}
+							<td style="border:0;"></td>
+						{% endfor %}
 					{% endif %}
-				{% endfor %}
-			{% elseif step.pictogram %}
-				<img src="http://127.0.0.1/{{ step.pictogram.filePath }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
-			{% elseif step.pictogramUrl %}
-				{% if step.pictogramUrl starts with('http') %}
-					<img src="{{ step.pictogramUrl }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+				</tr>
+			{% endfor %}
+		</table>
+
+		{# -- Préparation -- #}
+		<h2>Préparation</h2>
+		<table class="steps">
+	{% for step in recipe.steps %}
+		<tr>
+			<td class="num">{{ loop.index }}</td>
+			<td class="step-pictos">
+				{% if step.pictogramUrls and step.pictogramUrls is not empty %}
+					{% for url in step.pictogramUrls %}
+						{% if url starts with ('http') %}
+							<img src="{{ url }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+						{% else %}
+							<img src="http://127.0.0.1/{{ url }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+						{% endif %}
+					{% endfor %}
+				{% elseif step.pictogram %}
+					<img src="http://127.0.0.1/{{ step.pictogram.filePath }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+				{% elseif step.pictogramUrl %}
+					{% if step.pictogramUrl starts with ('http') %}
+						<img src="{{ step.pictogramUrl }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+					{% else %}
+						<img src="http://127.0.0.1/{{ step.pictogramUrl }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+					{% endif %}
 				{% else %}
-					<img src="http://127.0.0.1/{{ step.pictogramUrl }}" alt="picto" width="{{ stepPictoSize }}" height="{{ stepPictoSize }}"/>
+					<div class="step-placeholder" style="background:#e5e7eb;border-radius:8px;margin:auto;"></div>
 				{% endif %}
-			{% else %}
-				<div class="step-placeholder" style="background:#e5e7eb;border-radius:8px;margin:auto;"></div>
-			{% endif %}
-		</td>
-		<td class="step-text">{{ step.content }}</td>
-	</tr>
-{% endfor %}</table></body></html>
+			</td>
+			<td class="step-text">{{ step.content }}</td>
+		</tr>
+	{% endfor %}</table></body></html>

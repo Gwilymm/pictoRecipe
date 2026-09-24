@@ -224,7 +224,7 @@ export default class extends Controller {
 		const form = this.element;
 
 		// Titre
-		const titleEl = document.querySelector('.recipe-preview h2');
+		const titleEl = document.querySelector('.recipe-preview [data-recipe-title]');
 		const titleInput = form.querySelector('[name*="[title]"]');
 		if (titleEl && titleInput) {
 			titleEl.textContent = titleInput.value || 'Titre de la recette';

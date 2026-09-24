@@ -211,6 +211,7 @@ class CuisineazScraperService
 					return [
 						'ok' => true,
 						'title' => $title,
+						'image' => $this->extractRecipeImage($recipeObj, $crawler),
 						'primary' => $primary,
 						'description' => $description ?? null,
 						'author' => $author,
@@ -336,6 +337,7 @@ class CuisineazScraperService
 		return [
 			'ok' => true,
 			'title' => $title,
+			'image' => $this->extractRecipeImage(null, $crawler),
 			'primary' => $primary,
 			'description' => $description ?? null,
 			'times' => $times,
@@ -347,6 +349,43 @@ class CuisineazScraperService
 			'kcal' => $kcal,
 			'budget' => $budget,
 		];
+	}
+
+	private function extractRecipeImage(?array $recipe, Crawler $crawler): ?string
+	{
+		$image = $this->normalizeImageValue($recipe['image'] ?? null);
+		if ($image !== null) return $image;
+
+		foreach (['meta[property="og:image"]', 'meta[name="twitter:image"]', '[itemprop="image"]'] as $selector) {
+			$node = $crawler->filter($selector)->first();
+			if (!$node->count()) continue;
+			foreach (['content', 'src', 'data-src'] as $attribute) {
+				$value = trim((string) $node->attr($attribute));
+				if ($value !== '') return $value;
+			}
+		}
+
+		return null;
+	}
+
+	private function normalizeImageValue(mixed $value): ?string
+	{
+		if (is_string($value)) {
+			$value = trim($value);
+			return $value !== '' ? $value : null;
+		}
+		if (!is_array($value)) return null;
+
+		foreach (['url', 'contentUrl', 'thumbnailUrl'] as $key) {
+			$image = $this->normalizeImageValue($value[$key] ?? null);
+			if ($image !== null) return $image;
+		}
+		foreach ($value as $item) {
+			$image = $this->normalizeImageValue($item);
+			if ($image !== null) return $image;
+		}
+
+		return null;
 	}
 
 	/** @return array<string, mixed>|null */

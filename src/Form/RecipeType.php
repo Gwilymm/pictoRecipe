@@ -10,10 +10,13 @@ use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 
 class RecipeType extends AbstractType
 {
@@ -27,6 +30,25 @@ class RecipeType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'textarea textarea-bordered w-full', 'rows' => 4],
             ])
+            ->add('imageFile', FileType::class, [
+                'label' => 'Image principale de la recette',
+                'mapped' => false,
+                'required' => false,
+                'constraints' => [
+                    new File(
+                        maxSize: '5M',
+                        mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                        mimeTypesMessage: 'Veuillez choisir une image JPEG, PNG ou WebP.'
+                    ),
+                ],
+                'attr' => [
+                    'class' => 'file-input file-input-bordered w-full',
+                    'accept' => 'image/jpeg,image/png,image/webp',
+                ],
+            ])
+            ->add('imagePositionX', HiddenType::class)
+            ->add('imagePositionY', HiddenType::class)
+            ->add('imageZoom', HiddenType::class)
             ->add('servings', IntegerType::class, [
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-24'],

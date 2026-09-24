@@ -181,6 +181,7 @@ class MarmitonScraperServiceTest extends TestCase
 		  "@context": "http://schema.org",
 		  "@type": "Recipe",
 		  "name": "Test",
+		  "image": {"url": "https://images.example/cake.jpg"},
 		  "recipeYield": "4 personnes"
 		}
 		</script>
@@ -203,6 +204,7 @@ class MarmitonScraperServiceTest extends TestCase
 
 		$this->assertArrayHasKey('servings', $result);
 		$this->assertSame(4, $result['servings']);
+		$this->assertSame('https://images.example/cake.jpg', $result['image']);
 	}
 
 	public function testExtractsTimesFromJsonLd(): void

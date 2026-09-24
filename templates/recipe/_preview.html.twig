@@ -5,24 +5,26 @@
 #}
 
 {% set ingredient_sortable = ingredient_sortable|default(false) %}
+{% set recipeImagePath = recipe.imagePath|default(null) %}
+{% set recipeImageSrc = recipeImagePath and recipeImagePath starts with 'http' ? recipeImagePath : (recipeImagePath ? asset(recipeImagePath) : '') %}
+{% set imagePositionX = recipe.imagePositionX|default(50) %}
+{% set imagePositionY = recipe.imagePositionY|default(50) %}
+{% set imageZoom = recipe.imageZoom|default(1) %}
 
 {# En-tête de la recette #}
 <div class="card bg-linear-to-br from-primary/10 to-accent/10 shadow-lg mb-4 md:mb-6">
 	<div class="card-body p-4 md:p-6">
-		<h2 class="card-title text-xl md:text-2xl lg:text-3xl font-bold text-primary">
-			{{ recipe.title|default('Titre de la recette') }}
-		</h2>
+		<div class="flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-5 md:gap-8">
+			<div class="min-w-0 flex-1">
+				<h2 class="card-title text-left text-xl md:text-2xl lg:text-3xl font-bold text-primary" data-recipe-title>
+					{{ recipe.title|default('Titre de la recette') }}
+				</h2>
 
-		<div class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-4 mt-2">
-			<div class="md:flex-1">
 				{% if recipe.description %}
-					<p class="text-sm md:text-base text-base-content/80 mt-2">{{ recipe.description }}</p>
+					<p class="text-sm md:text-base text-base-content/80 mt-3 max-w-3xl">{{ recipe.description }}</p>
 				{% endif %}
-			</div>
 
-			{# Compact info box on the right #}
-			<div class="mt-3 md:mt-0 ml-0 md:ml-6">
-				<div class="shadow rounded-lg p-2 md:p-3 bg-base-100 text-xs md:text-sm text-base-content/80">
+				<div class="shadow rounded-lg p-2 md:p-3 bg-base-100 text-xs md:text-sm text-base-content/80 mt-4 w-fit max-w-full">
 					<div class="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
 						{% if recipe.servings %}
 							<div class="flex items-center gap-1 md:gap-2">
@@ -59,6 +61,20 @@
 					</div>
 				</div>
 			</div>
+
+			<div
+				class="relative w-full sm:w-47.25 shrink-0 overflow-hidden rounded-xl shadow-md bg-base-300{{ recipeImageSrc ? '' : ' hidden' }}"
+				style="aspect-ratio: 27 / 20;"
+				data-recipe-main-image-frame
+			>
+				<img
+					src="{{ recipeImageSrc }}"
+					alt="{{ recipe.title|default('Image de la recette') }}"
+					class="absolute inset-0 w-full h-full object-cover"
+					style="object-position: {{ imagePositionX }}% {{ imagePositionY }}%; transform-origin: {{ imagePositionX }}% {{ imagePositionY }}%; transform: scale({{ imageZoom }});"
+					data-recipe-main-image
+				>
+			</div>
 		</div>
 	</div>
 </div>
@@ -77,51 +93,51 @@
 		{% set ingredientsBySection = ingredientsBySection|merge({(section): ingredientsBySection[section]|merge([{'idx': loop.index0, 'ingredient': ingredient}])}) %}
 	{% endfor %}
 
-		<div id="preview-ingredients-container" class="space-y-4 mb-4 md:mb-6 px-4" data-preview-ingredient-sort>
-			{% if ingredient_sortable %}
-				<p class="text-sm text-base-content/70">Glissez une carte pour modifier l’ordre des ingrédients ou changer leur groupe.</p>
-			{% endif %}
+	<div id="preview-ingredients-container" class="space-y-4 mb-4 md:mb-6 px-4" data-preview-ingredient-sort>
+		{% if ingredient_sortable %}
+			<p class="text-sm text-base-content/70">Glissez une carte pour modifier l’ordre des ingrédients ou changer leur groupe.</p>
+		{% endif %}
 
-			{% for section, items in ingredientsBySection %}
-				<section class="rounded-2xl border border-base-300 bg-base-100/60 p-3 md:p-4" data-preview-ingredient-group>
-					<div class="flex items-center justify-between gap-3 mb-3">
-						<h3 class="text-base md:text-lg font-bold text-primary">{{ section ?: 'Sans groupe' }}</h3>
-						<span class="badge badge-outline" data-preview-ingredient-count>{{ items|length }}</span>
-					</div>
+		{% for section, items in ingredientsBySection %}
+			<section class="rounded-2xl border border-base-300 bg-base-100/60 p-3 md:p-4" data-preview-ingredient-group>
+				<div class="flex items-center justify-between gap-3 mb-3">
+					<h3 class="text-base md:text-lg font-bold text-primary">{{ section ?: 'Sans groupe' }}</h3>
+					<span class="badge badge-outline" data-preview-ingredient-count>{{ items|length }}</span>
+				</div>
 
-					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 min-h-20" data-preview-ingredient-drop-zone data-section-label="{{ section|e('html_attr') }}">
-						{% for item in items %}
-							{% set ingredient = item.ingredient %}
-							{% set idx = item.idx %}
-							<div class="card bg-base-200 dark:bg-base-300 shadow hover:shadow-lg transition-shadow{{ ingredient_sortable ? ' cursor-move select-none' : '' }}" data-ingredient-index="{{ idx }}"{% if ingredient_sortable %} draggable="true" title="Déplacer {{ ingredient.name }}" style="cursor: move;"{% endif %}>
-								<div class="card-body p-3 md:p-4 text-center">
-									{% if ingredient.pictogram %}
-										<div class="flex justify-center mb-2">
-											<img src="{{ asset(ingredient.pictogram.filePath) }}" alt="{{ ingredient.name }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg">
-										</div>
-									{% elseif ingredient.pictogramUrl %}
-										<div class="flex justify-center mb-2">
-											<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg">
-										</div>
-									{% else %}
-										<div class="flex justify-center mb-2">
-											<div class="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-base-300 flex items-center justify-center text-2xl md:text-3xl">🍴</div>
-										</div>
-									{% endif %}
-
-									<h4 class="font-semibold text-xs md:text-sm" data-ingredient-name>{{ ingredient.name }}</h4>
-									<p class="text-primary font-bold text-sm md:text-base">{{ ingredient.amount }} {{ ingredient.unit|default('') }}</p>
-
-									<div class="mt-2 flex items-center justify-center gap-2">
-										<button type="button" class="btn btn-xs btn-ghost hidden" data-action="click->pictogram-autofill#proposeIngredient" title="Proposer un autre pictogramme">Proposer autre</button>
+				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 min-h-20" data-preview-ingredient-drop-zone data-section-label="{{ section|e('html_attr') }}">
+					{% for item in items %}
+						{% set ingredient = item.ingredient %}
+						{% set idx = item.idx %}
+						<div class="card bg-base-200 dark:bg-base-300 shadow hover:shadow-lg transition-shadow{{ ingredient_sortable ? ' cursor-move select-none' : '' }}" data-ingredient-index="{{ idx }}"{% if ingredient_sortable %} draggable="true" title="Déplacer {{ ingredient.name }}" style="cursor: move;"{% endif %}>
+							<div class="card-body p-3 md:p-4 text-center">
+								{% if ingredient.pictogram %}
+									<div class="flex justify-center mb-2">
+										<img src="{{ asset(ingredient.pictogram.filePath) }}" alt="{{ ingredient.name }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg">
 									</div>
+								{% elseif ingredient.pictogramUrl %}
+									<div class="flex justify-center mb-2">
+										<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg">
+									</div>
+								{% else %}
+									<div class="flex justify-center mb-2">
+										<div class="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-base-300 flex items-center justify-center text-2xl md:text-3xl">🍴</div>
+									</div>
+								{% endif %}
+
+								<h4 class="font-semibold text-xs md:text-sm" data-ingredient-name>{{ ingredient.name }}</h4>
+								<p class="text-primary font-bold text-sm md:text-base">{{ ingredient.amount }} {{ ingredient.unit|default('') }}</p>
+
+								<div class="mt-2 flex items-center justify-center gap-2">
+									<button type="button" class="btn btn-xs btn-ghost hidden" data-action="click->pictogram-autofill#proposeIngredient" title="Proposer un autre pictogramme">Proposer autre</button>
 								</div>
 							</div>
-						{% endfor %}
-					</div>
-				</section>
-			{% endfor %}
-		</div>
+						</div>
+					{% endfor %}
+				</div>
+			</section>
+		{% endfor %}
+	</div>
 {% else %}
 	<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-ingredients-container"><span>Aucun ingrédient défini pour cette recette.</span></div>
 {% endif %}

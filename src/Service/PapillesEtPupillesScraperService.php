@@ -79,7 +79,27 @@ final class PapillesEtPupillesScraperService
 		$servings = $recipe['recipeYield'] ?? null;
 		if (is_array($servings)) $servings = $servings[0] ?? null;
 
-		return ['ok' => true, 'title' => $title, 'description' => $recipe['description'] ?? null, 'image' => $recipe['image'] ?? null, 'primary' => [], 'times' => ['total' => $recipe['totalTime'] ?? null, 'details' => $this->timeDetails($recipe)], 'servings' => $servings, 'ingredients' => $ingredients, 'utensils' => [], 'steps' => $steps];
+		return ['ok' => true, 'title' => $title, 'description' => $recipe['description'] ?? null, 'image' => $this->normalizeImageValue($recipe['image'] ?? null), 'primary' => [], 'times' => ['total' => $recipe['totalTime'] ?? null, 'details' => $this->timeDetails($recipe)], 'servings' => $servings, 'ingredients' => $ingredients, 'utensils' => [], 'steps' => $steps];
+	}
+
+	private function normalizeImageValue(mixed $value): ?string
+	{
+		if (is_string($value)) {
+			$value = trim($value);
+			return $value !== '' ? $value : null;
+		}
+		if (!is_array($value)) return null;
+
+		foreach (['url', 'contentUrl', 'thumbnailUrl'] as $key) {
+			$image = $this->normalizeImageValue($value[$key] ?? null);
+			if ($image !== null) return $image;
+		}
+		foreach ($value as $item) {
+			$image = $this->normalizeImageValue($item);
+			if ($image !== null) return $image;
+		}
+
+		return null;
 	}
 
 	/** @return array{ingredients: array<int, array<string, ?string>>, steps: array<int, array<string, string>>} */
