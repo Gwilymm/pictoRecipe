@@ -317,6 +317,7 @@ export default class extends Controller {
 
 			ingredientsContainer.className = 'space-y-4 mb-6';
 			ingredientsContainer.innerHTML = `
+				<p class="text-sm text-base-content/70">Glissez une carte pour modifier l’ordre des ingrédients ou changer leur groupe.</p>
 				${[ ...groups.values() ].map(group => `
 					<section class="rounded-2xl border border-base-300 bg-base-100/60 p-3 md:p-4" data-preview-ingredient-group>
 						<div class="flex items-center justify-between gap-3 mb-3">
@@ -325,9 +326,8 @@ export default class extends Controller {
 						</div>
 						<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 min-h-20" data-preview-ingredient-drop-zone data-section-label="${group.label}">
 							${group.ingredients.map(ing => `
-								<div class="card bg-base-200/50 shadow-sm transition-all cursor-grab active:cursor-grabbing select-none" data-ingredient-index="${ing.index}" draggable="true" title="Déplacer ${ing.name}">
+								<div class="card bg-base-200/50 shadow-sm transition-all cursor-move select-none" data-ingredient-index="${ing.index}" draggable="true" title="Déplacer ${ing.name}" style="cursor: move;">
 									<div class="card-body p-3">
-										
 										<div class="flex gap-3 items-center">
 											${ing.pictogramUrl ? `<img src="${ing.pictogramUrl}" alt="${ing.name}" class="w-12 h-12 object-contain">` : '<div class="w-12 h-12 bg-base-300 rounded flex items-center justify-center text-2xl">🥕</div>'}
 											<div class="flex-1 min-w-0">
@@ -356,14 +356,15 @@ export default class extends Controller {
 		if (!card) return;
 
 		this.draggedPreviewIngredient = card;
-		this.previewIngredientOriginalParent = card.parentElement;
-		this.previewIngredientOriginalNext = card.nextElementSibling;
-		this.previewIngredientDropped = false;
+		this.previewIngredientPreviousRootCursor = document.documentElement.style.cursor;
+		this.previewIngredientPreviousBodyCursor = document.body.style.cursor;
+		card.style.cursor = 'grabbing';
+		document.documentElement.style.cursor = 'grabbing';
+		document.body.style.cursor = 'grabbing';
 		card.classList.add('opacity-50', 'ring-2', 'ring-primary');
-		if (event.dataTransfer) {
-			event.dataTransfer.effectAllowed = 'move';
-			event.dataTransfer.setData('text/plain', 'ingredient');
-		}
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', 'ingredient');
+		event.dataTransfer.setDragImage(card, 24, 24);
 	}
 
 	previewIngredientDragOver(event) {
@@ -372,8 +373,7 @@ export default class extends Controller {
 		if (!zone) return;
 
 		event.preventDefault();
-		if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-
+		event.dataTransfer.dropEffect = 'move';
 		const overCard = event.target.closest('[data-ingredient-index]');
 		if (!overCard || overCard === this.draggedPreviewIngredient) {
 			if (event.target === zone) zone.appendChild(this.draggedPreviewIngredient);
@@ -394,26 +394,21 @@ export default class extends Controller {
 		if (!zone) return;
 
 		event.preventDefault();
-		this.previewIngredientDropped = true;
 		this.syncIngredientOrderFromPreview();
 		this.refreshPreviewIngredientGroups();
 	}
 
 	previewIngredientDragEnd() {
 		if (!this.draggedPreviewIngredient) return;
-
-		if (!this.previewIngredientDropped && this.previewIngredientOriginalParent) {
-			this.previewIngredientOriginalParent.insertBefore(
-				this.draggedPreviewIngredient,
-				this.previewIngredientOriginalNext
-			);
-		}
-
+		this.syncIngredientOrderFromPreview();
+		this.refreshPreviewIngredientGroups();
 		this.draggedPreviewIngredient.classList.remove('opacity-50', 'ring-2', 'ring-primary');
+		this.draggedPreviewIngredient.style.cursor = 'move';
+		document.documentElement.style.cursor = this.previewIngredientPreviousRootCursor || '';
+		document.body.style.cursor = this.previewIngredientPreviousBodyCursor || '';
+		this.previewIngredientPreviousRootCursor = null;
+		this.previewIngredientPreviousBodyCursor = null;
 		this.draggedPreviewIngredient = null;
-		this.previewIngredientOriginalParent = null;
-		this.previewIngredientOriginalNext = null;
-		this.previewIngredientDropped = false;
 	}
 
 	syncIngredientOrderFromPreview() {
