@@ -27,7 +27,11 @@ export default class extends Controller {
 		if (this.hasFetchBtnTarget) this.fetchBtnTarget.disabled = true;
 
 		try {
-			const endpoint = url.includes('cuisineaz') ? '/api/cuisineaz/recipe' : '/api/marmiton/recipe';
+			const endpoint = url.includes('cuisineaz')
+				? '/api/cuisineaz/recipe'
+				: url.includes('papillesetpupilles.fr')
+					? '/api/papillesetpupilles/recipe'
+					: '/api/marmiton/recipe';
 			const res = await fetch(endpoint, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -67,7 +71,7 @@ export default class extends Controller {
 				try {
 					const url = new URL(recipe.image || recipe.picture || '');
 					const host = url.host;
-					const allowedSuffixes = [ 'afcdn.com', 'marmiton.org' ];
+					const allowedSuffixes = [ 'afcdn.com', 'marmiton.org', 'papillesetpupilles.fr' ];
 					if (allowedSuffixes.some(s => host.endsWith(s))) return `/api/image-proxy?url=${encodeURIComponent(url.toString())}`;
 				} catch (e) {
 					// ignore URL parse errors
@@ -102,11 +106,9 @@ export default class extends Controller {
 
 	_createImageElement(src, alt, cssClass) {
 		const img = document.createElement('img');
-		img.src = src || '';
 		img.alt = alt || '';
 		img.className = cssClass || '';
 		img.referrerPolicy = 'no-referrer';
-		img.loading = 'lazy';
 		return img;
 	}
 
@@ -119,16 +121,20 @@ export default class extends Controller {
 			const cssClass = 'w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg mr-2 hidden sm:block';
 			const alt = (skel.getAttribute('data-image-alt') || '');
 			const img = this._createImageElement(src, alt, cssClass);
+			img.style.display = 'none';
 			img.onload = () => {
-				try { skel.parentNode.replaceChild(img, skel); } catch (e) { console.warn('Replacing skeleton failed', e); }
+				img.style.display = '';
+				try { skel.remove(); } catch (e) { console.warn('Removing skeleton failed', e); }
 			};
 			img.onerror = () => {
 				console.warn('Recipe image failed to load:', src);
 				const fallback = document.createElement('div');
 				fallback.className = 'w-24 h-24 md:w-32 md:h-32 bg-base-300 rounded-lg mr-2 hidden sm:block flex items-center justify-center text-2xl';
 				fallback.textContent = '❌';
-				try { skel.parentNode.replaceChild(fallback, skel); } catch (e) { console.warn('Replacing skeleton with fallback failed', e); }
+				try { img.remove(); skel.parentNode.replaceChild(fallback, skel); } catch (e) { console.warn('Replacing skeleton with fallback failed', e); }
 			};
+			skel.insertAdjacentElement('afterend', img);
+			img.src = src;
 		});
 	}
 

@@ -102,8 +102,13 @@ export default class extends Controller {
 				// Convert hyphenated searchQuery back to spaces for CuisineAZ
 				body: JSON.stringify({ q: searchQuery.replace(/-/g, ' '), limit: 40 })
 			});
+			const papillesReq = fetch('/api/papillesetpupilles/search', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ q: searchQuery.replace(/-/g, ' '), limit: 40 })
+			});
 
-			const results = await Promise.allSettled([ marmitonReq, cuisineReq ]);
+			const results = await Promise.allSettled([ marmitonReq, cuisineReq, papillesReq ]);
 			let combined = [];
 
 			// Process Marmiton result
@@ -136,6 +141,21 @@ export default class extends Controller {
 				}
 			} else {
 				console.debug('CuisineAZ search failed', results[ 1 ]?.reason);
+			}
+
+			if (results[ 2 ]?.status === 'fulfilled') {
+				try {
+					const response3 = results[ 2 ].value;
+					const data3 = await response3.json();
+					const papillesResults = Array.isArray(data3) ? data3 : (Array.isArray(data3.results) ? data3.results : []);
+					if (response3.ok && (data3.success !== false) && papillesResults.length > 0) {
+						combined = combined.concat(papillesResults.map(r => ({ ...r, source: r.source || 'papillesetpupilles' })));
+					}
+				} catch (e) {
+					console.error('Papilles & Pupilles response handling error', e);
+				}
+			} else {
+				console.debug('Papilles & Pupilles search failed', results[ 2 ]?.reason);
 			}
 
 			if (combined.length > 0) {
@@ -320,7 +340,7 @@ export default class extends Controller {
 			try {
 				const parsed = new URL(recipe.image || '');
 				const host = parsed.host;
-				const suffixes = [ 'afcdn.com', 'marmiton.org' ];
+				const suffixes = [ 'afcdn.com', 'marmiton.org', 'papillesetpupilles.fr' ];
 				if (suffixes.some(s => host.endsWith(s))) {
 					return `/api/image-proxy?url=${encodeURIComponent(parsed.toString())}`;
 				}
@@ -335,19 +355,23 @@ export default class extends Controller {
 			const src = sk.getAttribute('data-image-src');
 			if (!src) return;
 			const imgEl = document.createElement('img');
-			imgEl.src = src;
 			imgEl.alt = recipe.title || '';
 			imgEl.className = cssClass;
 			imgEl.referrerPolicy = 'no-referrer';
-			imgEl.loading = 'lazy';
-			imgEl.onload = () => { try { sk.parentNode.replaceChild(imgEl, sk); } catch (e) { console.warn('Replace skeleton failed', e); } };
+			imgEl.style.display = 'none';
+			imgEl.onload = () => {
+				imgEl.style.display = '';
+				try { sk.remove(); } catch (e) { console.warn('Remove skeleton failed', e); }
+			};
 			imgEl.onerror = () => {
 				console.warn('Recipe card image failed to load:', src);
 				const fallback = document.createElement('div');
 				fallback.className = 'w-24 h-24 md:w-32 md:h-32 bg-base-300 rounded-lg mb-2 md:mb-3 mx-auto flex items-center justify-center text-2xl';
 				fallback.textContent = '❌';
-				try { sk.parentNode.replaceChild(fallback, sk); } catch (e) { console.warn('Replace with fallback failed', e); }
+				try { imgEl.remove(); sk.parentNode.replaceChild(fallback, sk); } catch (e) { console.warn('Replace with fallback failed', e); }
 			};
+			sk.insertAdjacentElement('afterend', imgEl);
+			imgEl.src = src;
 		};
 
 		const title = document.createElement("h3");
@@ -362,9 +386,11 @@ export default class extends Controller {
 
 		const badge = document.createElement("div");
 		badge.className = "badge badge-sm badge-outline gap-1 mb-2";
-		const src = (recipe.source || (recipe.url && recipe.url.includes('cuisineaz') ? 'cuisineaz' : 'marmiton'));
+		const src = recipe.source || (recipe.url && recipe.url.includes('cuisineaz') ? 'cuisineaz' : recipe.url && recipe.url.includes('papillesetpupilles') ? 'papillesetpupilles' : 'marmiton');
 		if (src === 'cuisineaz') {
 			badge.innerHTML = "🍋 Cuisine AZ";
+		} else if (src === 'papillesetpupilles') {
+			badge.innerHTML = "🍴 Papilles & Pupilles";
 		} else {
 			badge.innerHTML = "🥘 Marmiton";
 		}
@@ -405,7 +431,11 @@ export default class extends Controller {
 		const container = document.getElementById("recipe-modal-content");
 		container.innerHTML = `<div class="flex justify-center py-8"><span class="loading loading-spinner loading-lg"></span></div>`;
 
-		const endpoint = (source === 'cuisineaz' || (url && url.includes('cuisineaz'))) ? '/api/cuisineaz/recipe' : '/api/marmiton/recipe';
+		const endpoint = source === 'cuisineaz' || (url && url.includes('cuisineaz'))
+			? '/api/cuisineaz/recipe'
+			: source === 'papillesetpupilles' || (url && url.includes('papillesetpupilles'))
+				? '/api/papillesetpupilles/recipe'
+				: '/api/marmiton/recipe';
 		const res = await fetch(endpoint, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },

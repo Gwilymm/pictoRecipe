@@ -19,6 +19,7 @@ class ImageProxyController extends AbstractController
 	private const ALLOWED_DOMAINS = [
 		'afcdn.com',
 		'marmiton.org',
+		'papillesetpupilles.fr',
 	];
 
 	public function __construct(private HttpClientInterface $http, private LoggerInterface $logger) {}
