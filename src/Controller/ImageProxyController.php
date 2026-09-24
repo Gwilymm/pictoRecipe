@@ -20,6 +20,9 @@ class ImageProxyController extends AbstractController
 		'afcdn.com',
 		'marmiton.org',
 		'papillesetpupilles.fr',
+		'thumb.wikimedia.org',
+		'upload.wikimedia.org',
+		'images.openfoodfacts.org',
 	];
 
 	public function __construct(private HttpClientInterface $http, private LoggerInterface $logger) {}

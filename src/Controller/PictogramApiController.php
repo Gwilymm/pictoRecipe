@@ -23,7 +23,10 @@ class PictogramApiController extends AbstractController
 {
 	private const MAX_IMPORT_BYTES = 5242880;
 	private const USER_AGENT = 'PictoRecette/1.0';
-	private const WIKIMEDIA_IMAGE_HOST = 'upload.wikimedia.org';
+	private const WIKIMEDIA_IMAGE_HOSTS = [
+		'upload.wikimedia.org',
+		'thumb.wikimedia.org',
+	];
 
 	public function __construct(
 		private readonly ArasaacApiService $arasaacService,
@@ -482,6 +485,7 @@ class PictogramApiController extends AbstractController
 		$scheme = parse_url($url, PHP_URL_SCHEME);
 		$host = parse_url($url, PHP_URL_HOST);
 
-		return $scheme === 'https' && strtolower((string) $host) === self::WIKIMEDIA_IMAGE_HOST;
+		return $scheme === 'https'
+			&& in_array(strtolower((string) $host), self::WIKIMEDIA_IMAGE_HOSTS, true);
 	}
 }

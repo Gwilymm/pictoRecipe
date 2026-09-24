@@ -14,13 +14,9 @@ final class WikimediaCommonsApiServiceTest extends TestCase
 {
 	public function testSearchNormalizesWikimediaImageMetadata(): void
 	{
-		$client = new MockHttpClient(function (string $method, string $url, array $options): MockResponse {
-			self::assertSame('GET', $method);
-			self::assertStringStartsWith('https://commons.wikimedia.org/w/api.php', $url);
-			self::assertSame('strawberry', $options['query']['gsrsearch']);
-			self::assertSame('20', $options['query']['gsrlimit']);
-			self::assertSame('6', $options['query']['gsrnamespace']);
-			self::assertSame('PictoRecette/1.0', $options['headers']['User-Agent']);
+		$capturedRequest = [];
+		$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$capturedRequest): MockResponse {
+			$capturedRequest = compact('method', 'url', 'options');
 
 			return new MockResponse(json_encode([
 				'query' => [
@@ -60,6 +56,13 @@ final class WikimediaCommonsApiServiceTest extends TestCase
 
 		$results = $service->search('fraise', 50);
 
+		self::assertSame('GET', $capturedRequest['method']);
+		self::assertStringStartsWith('https://commons.wikimedia.org/w/api.php', $capturedRequest['url']);
+		parse_str((string) parse_url($capturedRequest['url'], PHP_URL_QUERY), $query);
+		self::assertSame('strawberry', $query['gsrsearch']);
+		self::assertSame('20', $query['gsrlimit']);
+		self::assertSame('6', $query['gsrnamespace']);
+		self::assertContains('User-Agent: PictoRecette/1.0', $capturedRequest['options']['normalized_headers']['user-agent']);
 		self::assertCount(1, $results);
 		$result = $results[0]->toArray();
 		self::assertSame('File:Strawberry.jpg', $result['title']);

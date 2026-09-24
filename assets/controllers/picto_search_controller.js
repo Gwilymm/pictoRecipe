@@ -169,12 +169,17 @@ export default class extends Controller {
 			wrapper.appendChild(badge);
 
 			const img = document.createElement('img');
-			img.src = item.image || '';
+			const originalImageUrl = item.image || '';
+			img.src = this.displayImageUrl(originalImageUrl, item.source);
 			img.alt = item.name || '';
 			img.className = "w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition-all duration-300 hover:shadow-lg group-hover:scale-150 group-hover:z-50 group-hover:relative";
 			img.referrerPolicy = 'no-referrer';
-			img.loading = 'lazy';
 			img.onerror = function () {
+				if (!this.dataset.directRetry && originalImageUrl && this.src !== originalImageUrl) {
+					this.dataset.directRetry = '1';
+					this.src = originalImageUrl;
+					return;
+				}
 				console.warn('Picto image failed to load:', this.src);
 				const back = document.createElement('div');
 				back.className = "w-full h-32 bg-base-300 flex items-center justify-center text-2xl p-1 rounded-lg";
@@ -301,6 +306,21 @@ export default class extends Controller {
 	buildArasaacUrl(query) {
 		const normalized = this.normalize(query);
 		return `/api/pictograms/search?q=${encodeURIComponent(normalized)}`;
+	}
+
+	displayImageUrl(url, source) {
+		if (!url || source !== 'openfoodfacts') return url || '';
+
+		try {
+			const parsed = new URL(url);
+			if (parsed.protocol === 'https:' && parsed.hostname === 'images.openfoodfacts.org') {
+				return `/api/image-proxy?url=${encodeURIComponent(parsed.toString())}`;
+			}
+		} catch (e) {
+			console.warn('Invalid OpenFoodFacts image URL', url);
+		}
+
+		return url;
 	}
 
 	async parseOffResults(result) {

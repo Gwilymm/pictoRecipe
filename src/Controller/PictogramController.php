@@ -496,6 +496,7 @@ final class PictogramController extends AbstractController
 
 		$allowedHosts = [
 			'upload.wikimedia.org',
+			'thumb.wikimedia.org',
 			'commons.wikimedia.org',
 			'images.openfoodfacts.org',
 			'static.arasaac.org',
