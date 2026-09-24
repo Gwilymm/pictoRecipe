@@ -2,25 +2,34 @@ import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
 	static targets = [ 'searchInput', 'card', 'grid', 'counter', 'visibleCount', 'noResults', 'pagination', 'pageInfo' ];
+	static values = { itemsPerPage: { type: Number, default: 8 } };
 
 	connect() {
 		this.totalCount = this.cardTargets.length;
-		this.itemsPerPage = 8;
+		this.itemsPerPage = Math.max(1, this.itemsPerPageValue);
 		this.currentPage = 1;
 		this.filteredCards = [ ...this.cardTargets ];
 		this.updateDisplay();
 	}
 
 	filter() {
-		const query = this.searchInputTarget.value.toLowerCase().trim();
+		const query = this.normalize(this.searchInputTarget.value);
 
 		this.filteredCards = this.cardTargets.filter(card => {
-			const name = card.dataset.name;
+			const name = this.normalize(card.dataset.name);
 			return name.includes(query);
 		});
 
 		this.currentPage = 1; // Reset to first page on new search
 		this.updateDisplay();
+	}
+
+	normalize(value) {
+		return String(value || '')
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/\p{Diacritic}/gu, '')
+			.trim();
 	}
 
 	clear() {

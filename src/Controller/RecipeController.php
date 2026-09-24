@@ -100,10 +100,7 @@ final class RecipeController extends AbstractController
             ));
 
             // Assigner les positions aux ingrédients et étapes
-            $position = 0;
-            foreach ($recipe->getIngredients() as $ingredient) {
-                $ingredient->setPosition($position++);
-            }
+            $this->normalizeIngredientPositions($recipe);
 
             $position = 0;
             foreach ($recipe->getSteps() as $step) {
@@ -197,10 +194,7 @@ final class RecipeController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             // ensure positions are set
-            $position = 0;
-            foreach ($recipe->getIngredients() as $ingredient) {
-                $ingredient->setPosition($position++);
-            }
+            $this->normalizeIngredientPositions($recipe);
             $position = 0;
             foreach ($recipe->getSteps() as $step) {
                 $step->setPosition($position++);
@@ -490,10 +484,7 @@ final class RecipeController extends AbstractController
             ));
 
             // Assigner les positions aux ingrédients et étapes
-            $position = 0;
-            foreach ($recipe->getIngredients() as $ingredient) {
-                $ingredient->setPosition($position++);
-            }
+            $this->normalizeIngredientPositions($recipe);
 
             $position = 0;
             foreach ($recipe->getSteps() as $step) {
@@ -821,6 +812,29 @@ final class RecipeController extends AbstractController
                     $utensil->setPictogram(null);
                 }
             }
+        }
+    }
+
+    private function normalizeIngredientPositions(Recipe $recipe): void
+    {
+        $ingredients = [];
+        foreach ($recipe->getIngredients() as $originalIndex => $ingredient) {
+            $ingredients[] = [
+                'ingredient' => $ingredient,
+                'originalIndex' => $originalIndex,
+            ];
+        }
+
+        usort($ingredients, static function (array $left, array $right): int {
+            $leftPosition = $left['ingredient']->getPosition() ?? PHP_INT_MAX;
+            $rightPosition = $right['ingredient']->getPosition() ?? PHP_INT_MAX;
+
+            return ($leftPosition <=> $rightPosition)
+                ?: ($left['originalIndex'] <=> $right['originalIndex']);
+        });
+
+        foreach ($ingredients as $position => $entry) {
+            $entry['ingredient']->setPosition($position);
         }
     }
 

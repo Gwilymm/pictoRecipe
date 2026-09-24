@@ -439,13 +439,35 @@
 			</div>
 
 			{# Utensils selection grid #}
-			<div class="mb-6">
+			<div class="mb-6" data-controller="utensil-filter" data-utensil-filter-items-per-page-value="9">
 				{% if form.utensils|length > 0 %}
-					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+					<div class="mb-5">
+						<div class="join w-full">
+							<input
+								type="search"
+								placeholder="Rechercher un ustensile par nom…"
+								class="input input-bordered join-item flex-1"
+								aria-label="Rechercher un ustensile par nom"
+								data-utensil-filter-target="searchInput"
+								data-action="input->utensil-filter#filter"
+							>
+							<button type="button" class="btn btn-square join-item" aria-label="Effacer la recherche" data-action="utensil-filter#clear">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+								</svg>
+							</button>
+						</div>
+						<p class="text-sm text-base-content/70 mt-2" data-utensil-filter-target="counter">
+							<span data-utensil-filter-target="visibleCount">{{ form.utensils|length }}</span>
+							ustensile(s) trouvé(s)
+						</p>
+					</div>
+
+					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4" data-utensil-filter-target="grid">
 						{% for child in form.utensils %}
 							{% set pictogram = child.vars.attr['data-pictogram']|default(null) %}
 
-							<label class="utensil-card group cursor-pointer">
+							<label class="utensil-card group cursor-pointer" data-utensil-filter-target="card" data-name="{{ child.vars.label }}">
 								{{ form_widget(child, {'attr': {'class': 'peer hidden'}}) }}
 
 								<div
@@ -473,6 +495,18 @@
 								</div>
 							</label>
 						{% endfor %}
+					</div>
+
+					<div class="alert alert-warning mt-5 hidden" data-utensil-filter-target="noResults">
+						<span>Aucun ustensile ne correspond à votre recherche.</span>
+					</div>
+
+					<div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-5" data-utensil-filter-target="pagination">
+						<div class="text-sm text-base-content/70" data-utensil-filter-target="pageInfo"></div>
+						<div class="join">
+							<button type="button" class="join-item btn btn-sm" aria-label="Page précédente" data-action="utensil-filter#prevPage">«</button>
+							<button type="button" class="join-item btn btn-sm" aria-label="Page suivante" data-action="utensil-filter#nextPage">»</button>
+						</div>
 					</div>
 				{% else %}
 					<div class="text-center py-12 bg-base-200/30 rounded-xl border-2 border-dashed border-base-300">
@@ -639,7 +673,7 @@ updateState( input.checked );
 			{# Recipe preview #}
 			<div class="bg-base-200/30 rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
 				<div class="recipe-preview">
-					{{ include('recipe/_preview.html.twig', { recipe: form.vars.data }) }}
+					{{ include('recipe/_preview.html.twig', { recipe: form.vars.data, ingredient_sortable: true }) }}
 				</div>
 			</div>
 

@@ -139,56 +139,49 @@
 		<h2>Ingrédients</h2>
 		<table
 			class="grid">
-			{# Group by section while keeping a gridColumns-column grid #}
-			{% set lastSection = null %}
-			{% set col = 0 %}
+			{# Regroup all ingredients by section, regardless of their original position. #}
+			{% set ingredientGroups = {} %}
 			{% for ingredient in recipe.ingredients %}
-				{% set section = ingredient.section|default('') %}
-				{% if section != lastSection %}
-					{# close current row if open #}
-					{% if col > 0 %}
-					</tr>
-					{% set col = 0 %}
-				{% endif %}
-				{% if section %}
-					<tr>
-						<td colspan="{{ gridColumns }}" class="grid-section" style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;padding:6px 8px;font-weight:bold;color:#1f2937">{{ section }}</td>
-					</tr>
-				{% endif %}
-				{% set lastSection = section %}
-			{% endif %}
+				{% set sectionLabel = ingredient.section|default('')|trim %}
+				{% set sectionKey = sectionLabel ?: '__without_section__' %}
+				{% set group = ingredientGroups[sectionKey]|default({label: sectionLabel, ingredients: []}) %}
+				{% set group = group|merge({ingredients: group.ingredients|merge([ingredient])}) %}
+				{% set ingredientGroups = ingredientGroups|merge({(sectionKey): group}) %}
+			{% endfor %}
 
-			{% if col == 0 %}
-				<tr>
+			{% for group in ingredientGroups %}
+				{% if group.label %}
+					<tr>
+						<td colspan="{{ gridColumns }}" class="grid-section" style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;padding:6px 8px;font-weight:bold;color:#1f2937">{{ group.label }}</td>
+					</tr>
 				{% endif %}
-				<td>
-					{# Browsershot needs HTTP URLs or data URIs #}
-					{% if ingredient.pictogram %}
-						<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
-					{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
-						{% if ingredient.pictogramUrl starts with('http') %}
-							<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
-						{% else %}
-							<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
-						{% endif %}
-					{% else %}
-						<div class="grid-placeholder" style="background:#e5e7eb;border-radius:6px;margin-bottom:6px;"></div>
-					{% endif %}
-					<span>{{ ingredient.name }}</span>
-					{% if ingredient.amount %}
-						<div style="font-size:8.5pt;color:#2563eb;">{{ ingredient.amount }}
-							{{ ingredient.unit|default('') }}</div>
-					{% endif %}
-				</td>
-				{% set col = col + 1 %}
-				{% if col == gridColumns %}
-				</tr>
-				{% set col = 0 %}
-			{% endif %}
-		{% endfor %}
-		{% if col > 0 %}
-		</tr>
-	{% endif %}
+
+				{% for ingredientRow in group.ingredients|batch(gridColumns) %}
+					<tr>
+						{% for ingredient in ingredientRow %}
+							<td>
+								{# Browsershot needs HTTP URLs or data URIs #}
+								{% if ingredient.pictogram %}
+									<img src="http://127.0.0.1/{{ ingredient.pictogram.filePath }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
+								{% elseif ingredient.pictogramUrl is defined and ingredient.pictogramUrl %}
+									{% if ingredient.pictogramUrl starts with('http') %}
+										<img src="{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
+									{% else %}
+										<img src="http://127.0.0.1/{{ ingredient.pictogramUrl }}" alt="{{ ingredient.name }}" width="{{ gridPictoSize }}" height="{{ gridPictoSize }}">
+									{% endif %}
+								{% else %}
+									<div class="grid-placeholder" style="background:#e5e7eb;border-radius:6px;margin-bottom:6px;"></div>
+								{% endif %}
+								<span>{{ ingredient.name }}</span>
+								{% if ingredient.amount %}
+									<div style="font-size:8.5pt;color:#2563eb;">{{ ingredient.amount }}
+										{{ ingredient.unit|default('') }}</div>
+								{% endif %}
+							</td>
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			{% endfor %}
 </html></table>{# -- Ustensiles -- #}<h2>Ustensiles</h2><table class="grid">
 <tr>
 	{% for utensil in recipe.utensils %}

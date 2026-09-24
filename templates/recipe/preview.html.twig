@@ -7,7 +7,10 @@
 
 {% block body %}
 	<div
-		class="container mx-auto px-4 py-4 md:py-6" data-controller="pictogram-autofill" data-pictogram-autofill-recipe-id-value="{{ recipe.id }}">
+		class="container mx-auto px-4 py-4 md:py-6"
+		data-controller="pictogram-autofill"
+		data-pictogram-autofill-recipe-id-value="{{ recipe.id }}"
+	>
 		{# Barre d'actions en haut: ajout d'un bouton Enregistrer et réorganisation #}
 		<div class="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3 mb-4 md:mb-6 items-stretch sm:items-center justify-between">
 			<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
@@ -25,17 +28,17 @@
 					<span class="hidden sm:inline">📄 Télécharger en PDF</span>
 					<span class="sm:hidden">📄 PDF</span>
 				</a>
-				<button class="btn btn-ghost btn-sm md:btn-sm" data-action="click->pictogram-autofill#assign" data-pictogram-autofill-target="assignBtn">🖼️ Assigner les pictogrammes</button>
+				
 				<button class="btn btn-success btn-sm md:btn-sm" data-action="click->pictogram-autofill#validateAll" data-pictogram-autofill-target="validateAllBtn" disabled>✅ Valider tout</button>
 			</div>
 		</div>
 
 		{# Inclusion du template de prévisualisation #}
-		{{ include('recipe/_preview.html.twig', { recipe: recipe }) }}
+		{{ include('recipe/_preview.html.twig', {recipe: recipe}) }}
 
 		{# Hidden form so the preview can submit updates (pictogramUrl fields) via JS. It's hidden in preview to avoid duplicating UI. #}
 		<div style="display:none;">
-			<form id="preview-save-form" action="{{ path('app_recipe_edit', { id: recipe.id }) }}" method="POST">
+			<form id="preview-save-form" action="{{ path('app_recipe_edit', {id: recipe.id}) }}" method="POST">
 				{{ form_widget(form) }}
 				<button id="preview-save-btn" type="submit">Save</button>
 			</form>
@@ -85,104 +88,37 @@
 	</div>
 
 	<script>
-		document.addEventListener( 'DOMContentLoaded', function ()
-{
-
-
-
-
-
-const pdfButtons = document.querySelectorAll( '.pdf-download-btn' );
-const loadingToast = document.getElementById( 'pdf-loading-toast' );
-
-pdfButtons.forEach( function ( btn )
-{
-
-
-
-
-
-btn.addEventListener( 'click', function ( e )
-{
-
-
-
-
-
-e.preventDefault();
-const url = this.getAttribute( 'data-pdf-url' );
-
-if ( url )
-{ // Afficher le toast de chargement
-loadingToast.style.display = 'block';
-
-// Désactiver tous les boutons PDF pendant le chargement
-pdfButtons.forEach( function ( b )
-{
-
-
-
-
-
-b.classList.add( 'btn-disabled', 'loading' );
-
-
-
-
-
-} );
-
-// Lancer le téléchargement
-window.location.href = url;
-
-// Masquer le toast après 3 secondes (le PDF devrait être prêt)
-setTimeout( function ()
-{
-
-
-
-
-
-loadingToast.style.display = 'none';
-pdfButtons.forEach( function ( b )
-{
-
-
-
-
-
-b.classList.remove( 'btn-disabled', 'loading' );
-
-
-
-
-
-} );
-
-
-
-
-
-}, 3000 );
-
-
-
-
-
-}
-
-} );
-
-
-
-
-
-} );
-
-
-
-
-
-} );
+		document.addEventListener("DOMContentLoaded", function () {
+			const pdfButtons = document.querySelectorAll(".pdf-download-btn");
+			const loadingToast = document.getElementById("pdf-loading-toast");
+
+			pdfButtons.forEach(function (btn) {
+				btn.addEventListener("click", function (e) {
+					e.preventDefault();
+					const url = this.getAttribute("data-pdf-url");
+
+					if (url) {
+						// Afficher le toast de chargement
+						loadingToast.style.display = "block";
+
+						// Désactiver tous les boutons PDF pendant le chargement
+						pdfButtons.forEach(function (b) {
+							b.classList.add("btn-disabled", "loading");
+						});
+
+						// Lancer le téléchargement
+						window.location.href = url;
+
+						// Masquer le toast après 3 secondes (le PDF devrait être prêt)
+						setTimeout(function () {
+							loadingToast.style.display = "none";
+							pdfButtons.forEach(function (b) {
+								b.classList.remove("btn-disabled", "loading");
+							});
+						}, 3000);
+					}
+				});
+			});
+		});
 	</script>
 {% endblock %}

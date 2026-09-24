@@ -4,6 +4,8 @@
   Utilisé dans le stepper (étape 5) et dans la page de prévisualisation complète
 #}
 
+{% set ingredient_sortable = ingredient_sortable|default(false) %}
+
 {# En-tête de la recette #}
 <div class="card bg-linear-to-br from-primary/10 to-accent/10 shadow-lg mb-4 md:mb-6">
 	<div class="card-body p-4 md:p-6">
@@ -11,82 +13,84 @@
 			{{ recipe.title|default('Titre de la recette') }}
 		</h2>
 
-			<div class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-4 mt-2">
-				<div class="md:flex-1">
-					{% if recipe.description %}
-						<p class="text-sm md:text-base text-base-content/80 mt-2">{{ recipe.description }}</p>
-					{% endif %}
-				</div>
+		<div class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-4 mt-2">
+			<div class="md:flex-1">
+				{% if recipe.description %}
+					<p class="text-sm md:text-base text-base-content/80 mt-2">{{ recipe.description }}</p>
+				{% endif %}
+			</div>
 
-				{# Compact info box on the right #}
-				<div class="mt-3 md:mt-0 ml-0 md:ml-6">
-					<div class="shadow rounded-lg p-2 md:p-3 bg-base-100 text-xs md:text-sm text-base-content/80">
-						<div class="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
-							{% if recipe.servings %}
-								<div class="flex items-center gap-1 md:gap-2">
-									<span class="text-base md:text-xl">👥</span>
-									<span>{{ recipe.servings }}
-										part{{ recipe.servings>1 ? 's' : '' }}</span>
-								</div>
-							{% endif %}
-							{% if recipe.prepTimeMinutes %}
-								<div class="flex items-center gap-1 md:gap-2">
-									<span class="text-base md:text-xl">⏱️</span>
-									<span>{{ recipe.prepTimeMinutes }}
-										min</span>
-								</div>
-							{% endif %}
-							{% if recipe.cookTimeMinutes %}
-								<div class="flex items-center gap-1 md:gap-2">
-									<span class="text-base md:text-xl">🔥</span>
-									<span>{{ recipe.cookTimeMinutes }}
-										min</span>
-								</div>
-							{% endif %}
-						</div>
+			{# Compact info box on the right #}
+			<div class="mt-3 md:mt-0 ml-0 md:ml-6">
+				<div class="shadow rounded-lg p-2 md:p-3 bg-base-100 text-xs md:text-sm text-base-content/80">
+					<div class="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+						{% if recipe.servings %}
+							<div class="flex items-center gap-1 md:gap-2">
+								<span class="text-base md:text-xl">👥</span>
+								<span>{{ recipe.servings }}
+									part{{ recipe.servings > 1 ? 's' : '' }}</span>
+							</div>
+						{% endif %}
+						{% if recipe.prepTimeMinutes %}
+							<div class="flex items-center gap-1 md:gap-2">
+								<span class="text-base md:text-xl">⏱️</span>
+								<span>{{ recipe.prepTimeMinutes }}
+									min</span>
+							</div>
+						{% endif %}
+						{% if recipe.cookTimeMinutes %}
+							<div class="flex items-center gap-1 md:gap-2">
+								<span class="text-base md:text-xl">🔥</span>
+								<span>{{ recipe.cookTimeMinutes }}
+									min</span>
+							</div>
+						{% endif %}
+					</div>
 
-						<div class="text-xs text-base-content/60 mt-1 md:mt-2">
-							{% if recipe.createdAt %}
-								<div>Créé le :
-									{{ recipe.createdAt|date('Y-m-d') }}</div>
-							{% endif %}
-							{% if recipe.updatedAt %}
-								<div>MàJ :
-									{{ recipe.updatedAt|date('Y-m-d') }}</div>
-							{% endif %}
-						</div>
+					<div class="text-xs text-base-content/60 mt-1 md:mt-2">
+						{% if recipe.createdAt %}
+							<div>Créé le :
+								{{ recipe.createdAt|date('Y-m-d') }}</div>
+						{% endif %}
+						{% if recipe.updatedAt %}
+							<div>MàJ :
+								{{ recipe.updatedAt|date('Y-m-d') }}</div>
+						{% endif %}
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+</div>
 
-	<div class="divider text-base md:text-lg font-semibold px-4">🧂 Ingrédients</div>
+<div class="divider text-base md:text-lg font-semibold px-4">🧂 Ingrédients</div>
 
-	{# Section Ingrédients #}
-	{% if recipe.ingredients is not empty %}
-		{# Build grouping map with original indices to preserve JS mapping #}
-		{% set ingredientsBySection = {} %}
-		{% for ingredient in recipe.ingredients %}
-			{% set section = ingredient.section|default('') %}
-			{% if ingredientsBySection[section] is not defined %}
-				{% set ingredientsBySection = ingredientsBySection|merge({ (section): [] }) %}
-			{% endif %}
-			{% set ingredientsBySection = ingredientsBySection|merge({ (section): ingredientsBySection[section]|merge([{ 'idx': loop.index0, 'ingredient': ingredient }]) }) %}
-		{% endfor %}
+{# Section Ingrédients #}
+{% if recipe.ingredients is not empty %}
+	{# Build grouping map with original indices to preserve JS mapping #}
+	{% set ingredientsBySection = {} %}
+	{% for ingredient in recipe.ingredients %}
+		{% set section = ingredient.section|default('') %}
+		{% if ingredientsBySection[section] is not defined %}
+			{% set ingredientsBySection = ingredientsBySection|merge({(section): []}) %}
+		{% endif %}
+		{% set ingredientsBySection = ingredientsBySection|merge({(section): ingredientsBySection[section]|merge([{'idx': loop.index0, 'ingredient': ingredient}])}) %}
+	{% endfor %}
 
-		<div id="preview-ingredients-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 mb-4 md:mb-6 px-4">
-			{% for section, items in ingredientsBySection %}
-				{% if section %}
-					<div class="col-span-2 md:col-span-3 lg:col-span-4">
-						<h3 class="text-lg md:text-xl font-semibold text-primary mt-4 mb-2">{{ section }}</h3>
-					</div>
-				{% endif %}
-				{% for item in items %}
-					{% set ingredient = item.ingredient %}
-					{% set idx = item.idx %}
-					<div class="card bg-base-200 dark:bg-base-300 shadow hover:shadow-lg transition-shadow" data-ingredient-index="{{ idx }}">
-						<div class="card-body p-3 md:p-4 text-center">
+	<div id="preview-ingredients-container" class="space-y-4 mb-4 md:mb-6 px-4" data-preview-ingredient-sort>
+
+		{% for section, items in ingredientsBySection %}
+			<section class="rounded-2xl border border-base-300 bg-base-100/60 p-3 md:p-4" data-preview-ingredient-group>
+				<div class="flex items-center justify-between gap-3 mb-3">
+					<h3 class="text-base md:text-lg font-bold text-primary">{{ section ?: 'Sans groupe' }}</h3>
+					<span class="badge badge-outline" data-preview-ingredient-count>{{ items|length }}</span>
+				</div>
+				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 min-h-20" data-preview-ingredient-drop-zone data-section-label="{{ section|e('html_attr') }}">
+					{% for item in items %}
+						{% set ingredient = item.ingredient %}
+						{% set idx = item.idx %}
+						<div class="card bg-base-200 dark:bg-base-300 shadow hover:shadow-lg transition-shadow{{ ingredient_sortable ? ' cursor-grab active:cursor-grabbing select-none' : '' }}" data-ingredient-index="{{ idx }}"{% if ingredient_sortable %} draggable="true" title="Déplacer {{ ingredient.name }}"{% endif %}>
+								
 							{# Pictogramme de l'ingrédient #}
 							{% if ingredient.pictogram %}
 								<div class="flex justify-center mb-2">
@@ -113,103 +117,103 @@
 						</div>
 					</div>
 				{% endfor %}
-			{% endfor %}
 		</div>
-	{% else %}
-		<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-ingredients-container"><span>Aucun ingrédient défini pour cette recette.</span></div>
-	{% endif %}
+		</section>
+	{% endfor %}
+	</div>
+{% else %}
+	<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-ingredients-container"><span>Aucun ingrédient défini pour cette recette.</span></div>
+{% endif %}
 
-	<div class="divider text-base md:text-lg font-semibold px-4">🍴 Ustensiles</div>
+<div class="divider text-base md:text-lg font-semibold px-4">🍴 Ustensiles</div>
 
-	{# Section Ustensiles #}
-	{% if recipe.utensils is not empty %}
-		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mb-4 md:mb-6 px-4" id="preview-utensils-container">
-			{% for utensil in recipe.utensils %}
-				<div class="card bg-base-200 shadow hover:shadow-lg transition-shadow" data-utensil-index="{{ loop.index0 }}">
-					<div
-						class="card-body p-2 md:p-3 text-center">
-						{# Pictogramme de l'ustensile #}
-						{% if utensil.pictogram %}
-							<div class="flex justify-center mb-1">
-								<img src="{{ asset(utensil.pictogram.filePath) }}" alt="{{ utensil.name }}" class="w-10 h-10 md:w-12 md:h-12 object-contain rounded-md">
+{# Section Ustensiles #}
+{% if recipe.utensils is not empty %}
+	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mb-4 md:mb-6 px-4" id="preview-utensils-container">
+		{% for utensil in recipe.utensils %}
+			<div class="card bg-base-200 shadow hover:shadow-lg transition-shadow" data-utensil-index="{{ loop.index0 }}">
+				<div
+					class="card-body p-2 md:p-3 text-center"
+				>
+					{# Pictogramme de l'ustensile #}
+					{% if utensil.pictogram %}
+						<div class="flex justify-center mb-1">
+							<img src="{{ asset(utensil.pictogram.filePath) }}" alt="{{ utensil.name }}" class="w-10 h-10 md:w-12 md:h-12 object-contain rounded-md">
+						</div>
+					{% elseif utensil.pictogramUrl %}
+						<div class="flex justify-center mb-1">
+							<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" class="w-10 h-10 md:w-12 md:h-12 object-contain rounded-md">
+						</div>
+					{% else %}
+						<div class="flex justify-center mb-1">
+							<div class="w-10 h-10 md:w-12 md:h-12 rounded-md bg-base-300 dark:bg-base-200 flex items-center justify-center text-xl md:text-2xl">
+								🔪
 							</div>
-						{% elseif utensil.pictogramUrl %}
-							<div class="flex justify-center mb-1">
-								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" class="w-10 h-10 md:w-12 md:h-12 object-contain rounded-md">
-							</div>
-						{% else %}
-							<div class="flex justify-center mb-1">
-								<div class="w-10 h-10 md:w-12 md:h-12 rounded-md bg-base-300 dark:bg-base-200 flex items-center justify-center text-xl md:text-2xl">
-									🔪
-								</div>
-							</div>
-						{% endif %}
+						</div>
+					{% endif %}
 
-						<p class="text-xs font-medium text-base-content" data-utensil-name>{{ utensil.name }}</p>
-					</div>
+					<p class="text-xs font-medium text-base-content" data-utensil-name>{{ utensil.name }}</p>
 				</div>
-			{% endfor %}
-		</div>
-	{% else %}
-		<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-utensils-container">
-			<span>Aucun ustensile spécifié.</span>
-		</div>
-	{% endif %}
+			</div>
+		{% endfor %}
+	</div>
+{% else %}
+	<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-utensils-container">
+		<span>Aucun ustensile spécifié.</span>
+	</div>
+{% endif %}
 
-	<div class="divider text-base md:text-lg font-semibold px-4">👨‍🍳 Préparation</div>
+<div class="divider text-base md:text-lg font-semibold px-4">👨‍🍳 Préparation</div>
 
-	{# Section Étapes de préparation #}
-	{% if recipe.steps is not empty %}
-		<div class="space-y-3 md:space-y-4 mb-4 md:mb-6 px-4" id="preview-steps-container">
-			{% for step in recipe.steps %}
-				<div class="card bg-base-100 shadow-md border-l-4 border-primary hover:shadow-lg transition-shadow" data-step-index="{{ loop.index0 }}">
-					<div class="card-body p-3 md:p-4">
-						<div class="flex flex-col sm:flex-row gap-3 md:gap-4 items-start">
-							{# Colonne gauche : numéro d'étape + pictogrammes en dessous #}
-							<div class="flex flex-row sm:flex-col items-center gap-2 md:gap-3 shrink-0 w-full sm:w-20 md:w-28">
-								<span class="badge badge-primary badge-sm md:badge-md lg:badge-lg">Étape {{ loop.index }}</span>
-								{% if step.pictogram or step.pictogramUrls or step.pictogramUrl %}
-									<div class="mt-0 sm:mt-2">
-										{% if step.pictogram %}
-											<img src="{{ asset(step.pictogram.filePath) }}" alt="Étape {{ loop.index }}" class="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 object-contain rounded-lg bg-base-200 p-1 md:p-2 mx-auto">
-										{% elseif step.pictogramUrls and step.pictogramUrls is not empty %}
-											{# Affiche les pictogrammes en 2 colonnes #}
-											<div class="grid grid-cols-2 gap-1 md:gap-2">
-												{% for pictoUrl in step.pictogramUrls %}
-													<img src="{{ pictoUrl }}" alt="Picto" class="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 object-contain rounded-lg bg-base-200 p-1 mx-auto">
-												{% endfor %}
-											</div>
-										{% elseif step.pictogramUrl %}
-											<img src="{{ step.pictogramUrl }}" alt="Étape {{ loop.index }}" class="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 object-contain rounded-lg bg-base-200 p-1 md:p-2 mx-auto">
-										{% endif %}
-									</div>
+{# Section Étapes de préparation #}
+{% if recipe.steps is not empty %}
+	<div class="space-y-3 md:space-y-4 mb-4 md:mb-6 px-4" id="preview-steps-container">
+		{% for step in recipe.steps %}
+			<div class="card bg-base-100 shadow-md border-l-4 border-primary hover:shadow-lg transition-shadow" data-step-index="{{ loop.index0 }}">
+				<div class="card-body p-3 md:p-4">
+					<div class="flex items-start gap-3 md:gap-4">
+						{# Colonne gauche : numéro d'étape #}
+						<div class="shrink-0">
+							<span class="badge badge-primary badge-sm md:badge-md lg:badge-lg">Étape {{ loop.index }}</span>
+						</div>
+
+						{# Colonne droite : texte puis pictogrammes alignés avec retour à la ligne #}
+						<div class="flex-1 min-w-0">
+							<div class="flex items-center gap-2 mb-2">
+								{% if step.durationMinutes %}
+									<span class="badge badge-ghost badge-xs md:badge-sm gap-1">⏱️ {{ step.durationMinutes }} min</span>
 								{% endif %}
 							</div>
-
-							{# Colonne droite : durée + contenu texte #}
-							<div class="flex-1 min-w-0">
-								<div class="flex items-center gap-2 mb-2">
-									{% if step.durationMinutes %}
-										<span class="badge badge-ghost badge-xs md:badge-sm gap-1">⏱️ {{ step.durationMinutes }} min</span>
+							<p class="text-sm md:text-base leading-relaxed" data-step-content>{{ step.content }}</p>
+							{% if step.pictogram or step.pictogramUrls or step.pictogramUrl %}
+								<div class="flex flex-wrap items-center gap-2 md:gap-3 mt-3" data-step-pictograms>
+									{% if step.pictogram %}
+										<img src="{{ asset(step.pictogram.filePath) }}" alt="Étape {{ loop.index }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">
+									{% elseif step.pictogramUrls and step.pictogramUrls is not empty %}
+										{% for pictoUrl in step.pictogramUrls %}
+											<img src="{{ pictoUrl }}" alt="Picto" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">
+										{% endfor %}
+									{% elseif step.pictogramUrl %}
+										<img src="{{ step.pictogramUrl }}" alt="Étape {{ loop.index }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">
 									{% endif %}
 								</div>
-								<p class="text-sm md:text-base leading-relaxed" data-step-content>{{ step.content }}</p>
-							</div>
+							{% endif %}
 						</div>
 					</div>
 				</div>
-			{% endfor %}
-		</div>
-	{% else %}
-		<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-steps-container">
-			<span>Aucune étape de préparation définie.</span>
-		</div>
-	{% endif %}
-
-	{# Message de succès en bas #}
-	<div class="card bg-success/10 border-2 border-success mt-6 md:mt-8 mx-4">
-		<div class="card-body p-4 md:p-6 text-center">
-			<h3 class="card-title justify-center text-success text-xl md:text-2xl">🎉 Bonne dégustation !</h3>
-			<p class="text-sm md:text-base text-base-content/70">Votre recette illustrée est prête.</p>
-		</div>
+			</div>
+		{% endfor %}
 	</div>
+{% else %}
+	<div class="alert alert-info mb-4 md:mb-6 mx-4 text-sm md:text-base" id="preview-steps-container">
+		<span>Aucune étape de préparation définie.</span>
+	</div>
+{% endif %}
+
+{# Message de succès en bas #}
+<div class="card bg-success/10 border-2 border-success mt-6 md:mt-8 mx-4">
+	<div class="card-body p-4 md:p-6 text-center">
+		<h3 class="card-title justify-center text-success text-xl md:text-2xl">🎉 Bonne dégustation !</h3>
+		<p class="text-sm md:text-base text-base-content/70">Votre recette illustrée est prête.</p>
+	</div>
+</div>

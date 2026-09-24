@@ -9,12 +9,24 @@ export default class extends Controller {
 		this.index = 0;
 		this.totalSteps = this.stepTargets.length;
 		this.cleanEmptyStepItemsBeforeSubmit = () => this.removeEmptyStepItems();
+		this._onPreviewIngredientDragStart = event => this.previewIngredientDragStart(event);
+		this._onPreviewIngredientDragOver = event => this.previewIngredientDragOver(event);
+		this._onPreviewIngredientDrop = event => this.previewIngredientDrop(event);
+		this._onPreviewIngredientDragEnd = () => this.previewIngredientDragEnd();
 		this.element.addEventListener('submit', this.cleanEmptyStepItemsBeforeSubmit);
+		this.element.addEventListener('dragstart', this._onPreviewIngredientDragStart);
+		this.element.addEventListener('dragover', this._onPreviewIngredientDragOver);
+		this.element.addEventListener('drop', this._onPreviewIngredientDrop);
+		this.element.addEventListener('dragend', this._onPreviewIngredientDragEnd);
 		this.showCurrent();
 	}
 
 	disconnect() {
 		this.element.removeEventListener('submit', this.cleanEmptyStepItemsBeforeSubmit);
+		this.element.removeEventListener('dragstart', this._onPreviewIngredientDragStart);
+		this.element.removeEventListener('dragover', this._onPreviewIngredientDragOver);
+		this.element.removeEventListener('drop', this._onPreviewIngredientDrop);
+		this.element.removeEventListener('dragend', this._onPreviewIngredientDragEnd);
 	}
 
 	next(event) {
@@ -267,20 +279,23 @@ export default class extends Controller {
 		if (!ingredientsContainer) return;
 
 		// Collecter tous les éléments d'ingrédient (wrapper .collection-item)
-		const ingredientItems = form.querySelectorAll('.collection-item');
+		const ingredientItems = this.ingredientFormItems();
 		const ingredients = [];
 
-		ingredientItems.forEach((item) => {
+		ingredientItems.forEach((item, index) => {
 			const nameInput = item.querySelector('[name*="[name]"]');
 			const amountInput = item.querySelector('[name*="[amount]"]');
 			const unitInput = item.querySelector('[name*="[unit]"]');
+			const sectionInput = item.querySelector('[name*="[section]"]');
 			const pictogramInput = item.querySelector('[name*="[pictogramUrl]"]');
 
 			if (nameInput && nameInput.value && nameInput.value.trim()) {
 				ingredients.push({
+					index,
 					name: this.escapeHtml(nameInput.value),
 					amount: this.escapeHtml(amountInput?.value || ''),
 					unit: this.escapeHtml(unitInput?.value || ''),
+					section: this.escapeHtml(sectionInput?.value.trim() || ''),
 					pictogramUrl: this.escapeHtml(pictogramInput?.value || '')
 				});
 			}
@@ -291,19 +306,154 @@ export default class extends Controller {
 			ingredientsContainer.className = 'alert alert-info mb-6';
 			ingredientsContainer.innerHTML = '<span>Aucun ingrédient défini pour cette recette.</span>';
 		} else {
-			ingredientsContainer.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6';
-			ingredientsContainer.innerHTML = ingredients.map(ing => `
-				<div class="card bg-base-200/50 shadow-sm">
-					<div class="card-body p-3 flex flex-row gap-3 items-center">
-						${ing.pictogramUrl ? `<img src="${ing.pictogramUrl}" alt="${ing.name}" class="w-12 h-12 object-contain">` : '<div class="w-12 h-12 bg-base-300 rounded flex items-center justify-center text-2xl">🥕</div>'}
-						<div class="flex-1">
-							<div class="font-medium">${ing.name}</div>
-							<div class="text-sm text-base-content/70">${ing.amount} ${ing.unit}</div>
+			const groups = new Map();
+			ingredients.forEach(ingredient => {
+				const key = ingredient.section.toLocaleLowerCase() || '__without_section__';
+				if (!groups.has(key)) {
+					groups.set(key, { label: ingredient.section, ingredients: [] });
+				}
+				groups.get(key).ingredients.push(ingredient);
+			});
+
+			ingredientsContainer.className = 'space-y-4 mb-6';
+			ingredientsContainer.innerHTML = `
+				${[ ...groups.values() ].map(group => `
+					<section class="rounded-2xl border border-base-300 bg-base-100/60 p-3 md:p-4" data-preview-ingredient-group>
+						<div class="flex items-center justify-between gap-3 mb-3">
+							<h3 class="text-base md:text-lg font-bold text-primary">${group.label || 'Sans groupe'}</h3>
+							<span class="badge badge-outline" data-preview-ingredient-count>${group.ingredients.length}</span>
 						</div>
-					</div>
-				</div>
-			`).join('');
+						<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 min-h-20" data-preview-ingredient-drop-zone data-section-label="${group.label}">
+							${group.ingredients.map(ing => `
+								<div class="card bg-base-200/50 shadow-sm transition-all cursor-grab active:cursor-grabbing select-none" data-ingredient-index="${ing.index}" draggable="true" title="Déplacer ${ing.name}">
+									<div class="card-body p-3">
+										
+										<div class="flex gap-3 items-center">
+											${ing.pictogramUrl ? `<img src="${ing.pictogramUrl}" alt="${ing.name}" class="w-12 h-12 object-contain">` : '<div class="w-12 h-12 bg-base-300 rounded flex items-center justify-center text-2xl">🥕</div>'}
+											<div class="flex-1 min-w-0">
+												<div class="font-medium">${ing.name}</div>
+												<div class="text-sm text-base-content/70">${ing.amount} ${ing.unit}</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							`).join('')}
+						</div>
+					</section>
+				`).join('')}
+			`;
 		}
+	}
+
+	ingredientFormItems() {
+		return [ ...this.element.querySelectorAll('.collection-item') ].filter(item =>
+			item.querySelector('[name*="[ingredients]"][name$="[name]"]')
+		);
+	}
+
+	previewIngredientDragStart(event) {
+		const card = event.target.closest('#preview-ingredients-container [data-ingredient-index][draggable="true"]');
+		if (!card) return;
+
+		this.draggedPreviewIngredient = card;
+		this.previewIngredientOriginalParent = card.parentElement;
+		this.previewIngredientOriginalNext = card.nextElementSibling;
+		this.previewIngredientDropped = false;
+		card.classList.add('opacity-50', 'ring-2', 'ring-primary');
+		if (event.dataTransfer) {
+			event.dataTransfer.effectAllowed = 'move';
+			event.dataTransfer.setData('text/plain', 'ingredient');
+		}
+	}
+
+	previewIngredientDragOver(event) {
+		if (!this.draggedPreviewIngredient) return;
+		const zone = event.target.closest('[data-preview-ingredient-drop-zone]');
+		if (!zone) return;
+
+		event.preventDefault();
+		if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+
+		const overCard = event.target.closest('[data-ingredient-index]');
+		if (!overCard || overCard === this.draggedPreviewIngredient) {
+			if (event.target === zone) zone.appendChild(this.draggedPreviewIngredient);
+			return;
+		}
+
+		const box = overCard.getBoundingClientRect();
+		const sameRow = event.clientY >= box.top && event.clientY <= box.bottom;
+		const insertAfter = sameRow
+			? event.clientX > box.left + box.width / 2
+			: event.clientY > box.top + box.height / 2;
+		zone.insertBefore(this.draggedPreviewIngredient, insertAfter ? overCard.nextElementSibling : overCard);
+	}
+
+	previewIngredientDrop(event) {
+		if (!this.draggedPreviewIngredient) return;
+		const zone = event.target.closest('[data-preview-ingredient-drop-zone]');
+		if (!zone) return;
+
+		event.preventDefault();
+		this.previewIngredientDropped = true;
+		this.syncIngredientOrderFromPreview();
+		this.refreshPreviewIngredientGroups();
+	}
+
+	previewIngredientDragEnd() {
+		if (!this.draggedPreviewIngredient) return;
+
+		if (!this.previewIngredientDropped && this.previewIngredientOriginalParent) {
+			this.previewIngredientOriginalParent.insertBefore(
+				this.draggedPreviewIngredient,
+				this.previewIngredientOriginalNext
+			);
+		}
+
+		this.draggedPreviewIngredient.classList.remove('opacity-50', 'ring-2', 'ring-primary');
+		this.draggedPreviewIngredient = null;
+		this.previewIngredientOriginalParent = null;
+		this.previewIngredientOriginalNext = null;
+		this.previewIngredientDropped = false;
+	}
+
+	syncIngredientOrderFromPreview() {
+		const sourceItems = this.ingredientFormItems();
+		const cards = [ ...this.element.querySelectorAll('#preview-ingredients-container [data-ingredient-index]') ];
+		if (sourceItems.length === 0 || sourceItems.length !== cards.length) return;
+
+		const sourceByIndex = new Map(sourceItems.map((item, index) => [ String(index), item ]));
+		const orderedItems = cards.map(card => sourceByIndex.get(card.dataset.ingredientIndex));
+		if (orderedItems.some(item => !item)) return;
+
+		const sourceList = sourceItems[ 0 ].parentElement;
+		orderedItems.forEach((item, index) => {
+			const card = cards[ index ];
+			const section = card.closest('[data-preview-ingredient-drop-zone]')?.dataset.sectionLabel || '';
+			const sectionInput = item.querySelector('[name*="[section]"]');
+			const positionInput = item.querySelector('input.position-field, input[id$="_position"]');
+			const ingredientBadge = item.querySelector('.badge.badge-accent');
+
+			if (sectionInput && sectionInput.value !== section) {
+				sectionInput.value = section;
+				sectionInput.dispatchEvent(new Event('input', { bubbles: true }));
+			}
+			if (positionInput) positionInput.value = index;
+			if (ingredientBadge) ingredientBadge.textContent = `Ingrédient ${index + 1}`;
+			sourceList.appendChild(item);
+			card.dataset.ingredientIndex = String(index);
+		});
+	}
+
+	refreshPreviewIngredientGroups() {
+		this.element.querySelectorAll('#preview-ingredients-container [data-preview-ingredient-group]').forEach(group => {
+			const count = group.querySelectorAll('[data-ingredient-index]').length;
+			if (count === 0) {
+				group.remove();
+				return;
+			}
+			const badge = group.querySelector('[data-preview-ingredient-count]');
+			if (badge) badge.textContent = String(count);
+		});
 	}
 
 	updateStepsPreview(form) {
@@ -346,20 +496,20 @@ export default class extends Controller {
 			stepsContainer.innerHTML = steps.map(step => `
 				<div class="card bg-base-200/30 shadow-sm">
 					<div class="card-body p-3 md:p-4">
-						<div class="flex flex-col sm:flex-row gap-3 md:gap-4 items-start">
-							<div class="flex flex-row sm:flex-col items-center gap-2 md:gap-3 shrink-0 sm:w-20 md:w-28">
+						<div class="flex items-start gap-3 md:gap-4">
+							<div class="shrink-0">
 								<div class="badge badge-md md:badge-lg badge-primary font-bold">${step.position}</div>
-								${step.pictogramUrls.length > 0 ? `
-									<div class="grid grid-cols-2 gap-1 md:gap-2 mt-0 sm:mt-2">
-										${step.pictogramUrls.map(url => `<img src="${url}" alt="Picto" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">`).join('')}
-									</div>
-								` : ''}
 							</div>
-							<div class="flex-1">
+							<div class="flex-1 min-w-0">
 								<div class="flex items-center gap-2 mb-2">
 									${step.duration ? `<span class="badge badge-ghost badge-sm md:badge-md gap-1">⏱️ ${step.duration} minutes</span>` : ''}
 								</div>
 								<p class="text-sm md:text-base leading-relaxed">${step.content}</p>
+								${step.pictogramUrls.length > 0 ? `
+									<div class="flex flex-wrap items-center gap-2 md:gap-3 mt-3" data-step-pictograms>
+										${step.pictogramUrls.map(url => `<img src="${url}" alt="Picto" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">`).join('')}
+									</div>
+								` : ''}
 							</div>
 						</div>
 					</div>
