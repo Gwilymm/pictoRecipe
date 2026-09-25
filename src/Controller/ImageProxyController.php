@@ -23,6 +23,7 @@ class ImageProxyController extends AbstractController
 		'thumb.wikimedia.org',
 		'upload.wikimedia.org',
 		'images.openfoodfacts.org',
+		'static.openfoodfacts.org',
 	];
 
 	public function __construct(private HttpClientInterface $http, private LoggerInterface $logger) {}

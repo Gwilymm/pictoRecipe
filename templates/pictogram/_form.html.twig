@@ -42,6 +42,13 @@
 		<input
 		type="text" data-picto-search-target="input" placeholder="Rechercher un ingrédient : farine, beurre, œufs…" class="input input-bordered w-full"/>
 
+		<div class="flex flex-wrap gap-2" data-picto-search-target="filters" aria-label="Filtrer les sources">
+			<button type="button" class="btn btn-xs btn-primary" data-source="openfoodfacts" data-action="click->picto-search#toggleSource">OpenFoodFacts</button>
+			<button type="button" class="btn btn-xs btn-primary" data-source="arasaac" data-action="click->picto-search#toggleSource">ARASAAC</button>
+			<button type="button" class="btn btn-xs btn-primary" data-source="wikimedia" data-action="click->picto-search#toggleSource">Wikimedia</button>
+			<button type="button" class="btn btn-xs btn-primary" data-source="local" data-action="click->picto-search#toggleSource">Local</button>
+		</div>
+
 		{# Champ optionnel pour filtrer par marque #}
 		<div class="w-full">
 			<label class="label pt-0">

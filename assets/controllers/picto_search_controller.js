@@ -313,7 +313,7 @@ export default class extends Controller {
 
 		try {
 			const parsed = new URL(url);
-			if (parsed.protocol === 'https:' && parsed.hostname === 'images.openfoodfacts.org') {
+			if (parsed.protocol === 'https:' && (parsed.hostname === 'images.openfoodfacts.org' || parsed.hostname === 'static.openfoodfacts.org')) {
 				return `/api/image-proxy?url=${encodeURIComponent(parsed.toString())}`;
 			}
 		} catch (e) {

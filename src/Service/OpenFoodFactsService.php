@@ -14,7 +14,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final class OpenFoodFactsService
 {
 	// URL pour la France
-	private const BASE_URL = 'https://fr.openfoodfacts.org/cgi/search.pl';
+	private const BASE_URL = 'https://world.openfoodfacts.org/cgi/search.pl';
 
 	public function __construct(
 		private readonly HttpClientInterface $httpClient,
@@ -61,10 +61,13 @@ final class OpenFoodFactsService
 
 					if (!$arr) continue;
 
+					$image = $arr['image_front_url'] ?? $arr['image_front_small_url'] ?? $arr['image_url'] ?? $arr['image_small_url'] ?? null;
+					if (!$image) continue;
+
 					$results[] = [
 						'id'       => $arr['code'] ?? null,
 						'name'     => $arr['product_name'] ?? $arr['generic_name'] ?? null,
-						'image'    => $arr['image_front_url'] ?? $arr['image_url'] ?? null,
+						'image'    => $image,
 						'brand'    => $arr['brands'] ?? null,
 						'category' => $arr['categories'] ?? null,
 					];
@@ -85,10 +88,12 @@ final class OpenFoodFactsService
 		}
 
 		// --- 2) Fallback HTTP ---
+		// L’ancienne combinaison action=process/search_simple=1 renvoie 503
+		// sur l’infrastructure Open Food Facts. La requête CGI minimale est stable.
 		$params = [
-			'action'        => 'process',
-			'json'          => '1',
-			'page_size'     => $limit,
+			'json'      => '1',
+			'page_size' => $limit,
+			'lc'        => 'fr',
 		];
 
 		// Si une marque est spécifiée, utiliser la recherche avancée avec deux critères
@@ -100,16 +105,17 @@ final class OpenFoodFactsService
 
 			// Recherche simple pour le nom de produit (filtre les résultats de la marque)
 			$params['search_terms'] = $query;
-			$params['search_simple'] = '1';
 		} else {
 			// Recherche simple uniquement par nom
 			$params['search_terms'] = $query;
-			$params['search_simple'] = '1';
 		}
 
 		try {
 			$response = $this->httpClient->request('GET', self::BASE_URL, [
 				'query'   => $params,
+				'headers' => [
+					'User-Agent' => 'Mozilla/5.0 (compatible; PictoRecette/1.0; +https://pictorecette.doc2sail.com)',
+				],
 				'timeout' => 5,
 			]);
 			$statusCode = $response->getStatusCode();
@@ -135,46 +141,13 @@ final class OpenFoodFactsService
 				$productName = $p['product_name'] ?? $p['generic_name'] ?? '';
 				$productBrand = $p['brands'] ?? '';
 				$categories = $p['categories'] ?? '';
-
-				// Filtrage intelligent : PRIORITÉ au nom du produit
-				$searchLower = mb_strtolower($query);
-				$nameLower = mb_strtolower($productName);
-				$categoriesLower = mb_strtolower($categories);
-
-				// Vérifier si le terme est dans le nom du produit
-				$isInName = strpos($nameLower, $searchLower) !== false;
-
-				// Pour les catégories, on est plus strict : on vérifie que c'est une catégorie principale
-				// en cherchant le terme suivi d'une virgule ou en fin de chaîne (évite les sous-catégories)
-				$isMainCategory = false;
-				if (!$isInName) {
-					// Chercher "beurre," ou "beurre" en fin de catégories, ou ",beurre," ou ",beurre"
-					$patterns = [
-						',' . $searchLower . ',',  // au milieu
-						',' . $searchLower,        // à la fin
-						$searchLower . ',',        // au début
-					];
-					foreach ($patterns as $pattern) {
-						if (strpos($categoriesLower, $pattern) !== false) {
-							$isMainCategory = true;
-							break;
-						}
-					}
-					// Si c'est le seul terme (catégorie unique)
-					if (!$isMainCategory && $categoriesLower === $searchLower) {
-						$isMainCategory = true;
-					}
-				}
-
-				// On accepte uniquement si le terme est dans le nom OU si c'est une catégorie principale
-				if (!$isInName && !$isMainCategory) {
-					continue;
-				}
+				$image = $p['image_front_url'] ?? $p['image_front_small_url'] ?? $p['image_url'] ?? $p['image_small_url'] ?? null;
+				if (!$image) continue;
 
 				$results[] = [
 					'id'       => $p['code'] ?? null,
 					'name'     => $productName,
-					'image'    => $p['image_front_url'] ?? $p['image_url'] ?? null,
+					'image'    => $image,
 					'brand'    => $productBrand,
 					'category' => $categories,
 				];
