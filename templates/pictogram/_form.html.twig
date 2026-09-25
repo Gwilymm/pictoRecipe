@@ -80,12 +80,14 @@
 					<p class="text-sm font-semibold">Aperçu PDF</p>
 					<span class="badge badge-ghost badge-sm">glisser pour déplacer</span>
 				</div>
-				<div data-picto-search-target="previewViewport" data-action="pointerdown->picto-search#startPreviewDrag pointermove->picto-search#previewDrag pointerup->picto-search#endPreviewDrag pointercancel->picto-search#endPreviewDrag" class="mx-auto flex items-center justify-center overflow-hidden border-2 border-dashed border-base-300 bg-white rounded-lg touch-none select-none" style="width:220px;height:220px" title="Cadre de taille du pictogramme dans le PDF">
+				<div data-picto-search-target="previewViewport" data-action="pointerdown->picto-search#startPreviewDrag pointermove->picto-search#previewDrag pointerup->picto-search#endPreviewDrag pointercancel->picto-search#endPreviewDrag" class="mx-auto flex items-center justify-center overflow-hidden border-2 border-dashed border-base-300 rounded-lg touch-none select-none" style="width:220px;height:220px;background:#f3f4f6" title="Cadre de taille du pictogramme dans le PDF">
 					<span data-picto-search-target="previewPlaceholder" class="text-xs text-slate-400 text-center px-5">Sélectionne un pictogramme</span>
 					<img data-picto-search-target="previewImage" class="hidden object-contain transition-transform duration-150" style="height:208px;width:100%;object-fit:contain" alt="Pictogramme sélectionné">
 				</div>
 				<label class="label px-0 mt-3"><span class="label-text">Taille <span data-picto-search-target="zoomValue">100 %</span></span></label>
 				<input type="range" min="0.5" max="2" step="0.05" value="1" data-picto-search-target="zoom" data-action="input->picto-search#changePreviewSize" class="range range-primary range-sm">
+				<label class="label px-0 mt-2"><span class="label-text">Fond gris <span data-picto-search-target="backgroundValue">8 %</span></span></label>
+				<input type="range" min="0" max="35" step="1" value="8" data-picto-search-target="background" data-action="input->picto-search#changePreviewBackground" class="range range-primary range-sm">
 				<button type="button" class="btn btn-ghost btn-xs mt-2" data-action="click->picto-search#resetPreview">Réinitialiser la position et la taille</button>
 			</aside>
 		</div>

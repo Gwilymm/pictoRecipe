@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-	static targets = [ "input", "results", "brandInput", "pagination", "status", "urlInput", "filters", "preview", "previewImage", "previewPlaceholder", "previewViewport", "zoom", "zoomValue", "detailsTab", "wikimediaTab" ];
+	static targets = [ "input", "results", "brandInput", "pagination", "status", "urlInput", "filters", "preview", "previewImage", "previewPlaceholder", "previewViewport", "zoom", "zoomValue", "background", "backgroundValue", "detailsTab", "wikimediaTab" ];
 
 	connect() {
 		this.currentPage = 1;
@@ -562,6 +562,12 @@ export default class extends Controller {
 		if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = `${Math.round(zoom * 100)} %`;
 	}
 
+	changePreviewBackground(event) {
+		const value = Number(event.target.value || 0);
+		if (this.hasPreviewViewportTarget) this.previewViewportTarget.style.backgroundColor = `rgb(${255 - Math.round(value * 1.5)}, ${255 - Math.round(value * 1.5)}, ${255 - Math.round(value * 1.5)})`;
+		if (this.hasBackgroundValueTarget) this.backgroundValueTarget.textContent = `${value} %`;
+	}
+
 	startPreviewDrag(event) {
 		if (!this.hasPreviewImageTarget || this.previewImageTarget.classList.contains('hidden')) return;
 		event.preventDefault();
@@ -597,6 +603,8 @@ export default class extends Controller {
 		this.previewY = 0;
 		if (this.hasZoomTarget) this.zoomTarget.value = '1';
 		if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = '100 %';
+		if (this.hasBackgroundTarget) this.backgroundTarget.value = '8';
+		this.changePreviewBackground({ target: { value: 8 } });
 		this.applyPreviewTransform();
 	}
 }
