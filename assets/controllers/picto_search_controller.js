@@ -28,6 +28,7 @@ export default class extends Controller {
 			});
 		}
 		if (this.hasResultsTarget) this.resultsTarget.addEventListener('scroll', () => this.loadMoreOnScroll());
+		this.element.closest('form')?.addEventListener('submit', (event) => this.prepareComposite(event));
 
 		this.showTab({ params: { tab: 'details' } });
 	}
@@ -606,5 +607,28 @@ export default class extends Controller {
 		if (this.hasBackgroundTarget) this.backgroundTarget.value = '8';
 		this.changePreviewBackground({ target: { value: 8 } });
 		this.applyPreviewTransform();
+	}
+
+	async prepareComposite(event) {
+		if (this.compositeReady || !this.hasPreviewImageTarget || this.previewImageTarget.classList.contains('hidden')) return;
+		event.preventDefault();
+		const canvas = document.createElement('canvas');
+		canvas.width = 440;
+		canvas.height = 440;
+		const ctx = canvas.getContext('2d');
+		const value = Number(this.hasBackgroundTarget ? this.backgroundTarget.value : 8);
+		const grey = Math.round(255 - value * 1.5);
+		ctx.fillStyle = `rgb(${grey}, ${grey}, ${grey})`;
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		const image = this.previewImageTarget;
+		const scale = Number(this.hasZoomTarget ? this.zoomTarget.value : 1);
+		const ratio = Math.min(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+		const width = image.naturalWidth * ratio * scale;
+		const height = image.naturalHeight * ratio * scale;
+		ctx.drawImage(image, (canvas.width - width) / 2 + (this.previewX || 0) * 2, (canvas.height - height) / 2 + (this.previewY || 0) * 2, width, height);
+		const hidden = document.getElementById('externalImageTemp');
+		if (hidden) hidden.value = canvas.toDataURL('image/png');
+		this.compositeReady = true;
+		event.target.requestSubmit();
 	}
 }

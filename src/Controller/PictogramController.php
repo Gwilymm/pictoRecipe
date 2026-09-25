@@ -486,6 +486,18 @@ final class PictogramController extends AbstractController
 
 	private function downloadExternalImage(string $url, HttpClientInterface $http): File
 	{
+		if (str_starts_with($url, 'data:image/')) {
+			if (!preg_match('#^data:image/png;base64,(.+)$#s', $url, $matches)) {
+				throw new \RuntimeException('Image composite invalide.');
+			}
+			$path = tempnam(sys_get_temp_dir(), 'picto_') . '.png';
+			$data = base64_decode($matches[1], true);
+			if ($data === false || file_put_contents($path, $data) === false) {
+				throw new \RuntimeException('Impossible de préparer l’image composite.');
+			}
+			return new File($path);
+		}
+
 		$parts = parse_url($url);
 
 		if (($parts['scheme'] ?? null) !== 'https') {
