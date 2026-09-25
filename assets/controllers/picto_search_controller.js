@@ -1,11 +1,12 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-	static targets = [ "input", "results", "brandInput", "pagination", "status", "urlInput", "filters", "detailsTab", "wikimediaTab" ];
+	static targets = [ "input", "results", "brandInput", "pagination", "status", "urlInput", "filters", "preview", "previewImage", "previewPlaceholder", "previewViewport", "zoom", "zoomValue", "detailsTab", "wikimediaTab" ];
 
 	connect() {
 		this.currentPage = 1;
 		this.itemsPerPage = 12;
+		this.visibleCount = 18;
 		this.allResults = [];
 		this.filteredResults = [];
 		this.activeSources = new Set([ 'openfoodfacts', 'arasaac', 'wikimedia', 'local' ]);
@@ -13,7 +14,7 @@ export default class extends Controller {
 		if (this.hasInputTarget) {
 			this.inputTarget.addEventListener("input", () => {
 				clearTimeout(this.timer);
-				this.timer = setTimeout(() => this.search(), 350);
+				this.timer = setTimeout(() => this.search(), 600);
 			});
 		} else {
 			console.warn('PictoSearchController: no input target found - skipping input listener');
@@ -23,9 +24,10 @@ export default class extends Controller {
 		if (this.hasBrandInputTarget) {
 			this.brandInputTarget.addEventListener("input", () => {
 				clearTimeout(this.timer);
-				this.timer = setTimeout(() => this.search(), 350);
+				this.timer = setTimeout(() => this.search(), 600);
 			});
 		}
+		if (this.hasResultsTarget) this.resultsTarget.addEventListener('scroll', () => this.loadMoreOnScroll());
 
 		this.showTab({ params: { tab: 'details' } });
 	}
@@ -110,6 +112,7 @@ export default class extends Controller {
 
 			this.allResults = this.rankResults(combined, q);
 			this.currentPage = 1;
+			this.visibleCount = 18;
 			this.applyFilters();
 			this.renderCurrentPage();
 
@@ -154,14 +157,11 @@ export default class extends Controller {
 			return;
 		}
 
-		// Calculer la plage d'items à afficher
-		const start = (this.currentPage - 1) * this.itemsPerPage;
-		const end = start + this.itemsPerPage;
-		const pageItems = this.filteredResults.slice(start, end);
+		const pageItems = this.filteredResults.slice(0, this.visibleCount);
 
 		pageItems.forEach(item => {
 			const wrapper = document.createElement("div");
-			wrapper.className = "relative group";
+			wrapper.className = "relative group rounded-xl bg-white p-1.5 min-w-0 cursor-pointer";
 
 			const badge = document.createElement('span');
 			badge.className = `badge badge-sm ${this.badgeClass(item.source)} absolute top-2 left-2 z-10 shadow`;
@@ -172,7 +172,7 @@ export default class extends Controller {
 			const originalImageUrl = item.image || '';
 			img.src = this.displayImageUrl(originalImageUrl, item.source);
 			img.alt = item.name || '';
-			img.className = "w-full h-32 object-contain bg-white p-1 rounded-lg border cursor-pointer transition-all duration-300 hover:shadow-lg group-hover:scale-150 group-hover:z-50 group-hover:relative";
+			img.className = "w-full h-24 object-contain rounded-lg transition-all duration-200 group-hover:scale-105";
 			img.referrerPolicy = 'no-referrer';
 			img.onerror = function () {
 				if (!this.dataset.directRetry && originalImageUrl && this.src !== originalImageUrl) {
@@ -191,11 +191,19 @@ export default class extends Controller {
 			this.resultsTarget.appendChild(wrapper);
 		});
 
-		// Afficher la pagination
-		this.renderPagination();
+		if (this.visibleCount < this.filteredResults.length) {
+			const more = document.createElement('div');
+			more.className = 'col-span-full text-center text-xs opacity-60 py-2';
+			more.textContent = 'Faites défiler pour afficher davantage';
+			this.resultsTarget.appendChild(more);
+		}
+	}
 
-		// reset scroll au cas où
-		this.resultsTarget.scrollTop = 0;
+	loadMoreOnScroll() {
+		if (this.resultsTarget.scrollTop + this.resultsTarget.clientHeight >= this.resultsTarget.scrollHeight - 80 && this.visibleCount < this.filteredResults.length) {
+			this.visibleCount += 18;
+			this.renderCurrentPage();
+		}
 	}
 
 	renderPagination() {
@@ -506,6 +514,8 @@ export default class extends Controller {
 
 		// Ajouter le surlignage
 		element.classList.add("ring", "ring-primary", "ring-2");
+		this.selectedImage = item.image;
+		this.updatePreview(item);
 
 		// 🔥 MAJ du champ hidden
 		if (this.hasUrlInputTarget) {
@@ -528,5 +538,65 @@ export default class extends Controller {
 		);
 
 		this.setStatus('Image sélectionnée. Revenez à l’onglet Détails pour vérifier et enregistrer.', 'success');
+	}
+
+	updatePreview(item) {
+		if (!this.hasPreviewImageTarget) return;
+		this.previewImageTarget.style.height = '208px';
+		this.previewImageTarget.style.width = '100%';
+		this.previewImageTarget.style.objectFit = 'contain';
+		this.previewImageTarget.src = this.displayImageUrl(item.image, item.source);
+		this.previewImageTarget.alt = item.name || 'Pictogramme sélectionné';
+		this.previewImageTarget.classList.remove('hidden');
+		if (this.hasPreviewPlaceholderTarget) this.previewPlaceholderTarget.classList.add('hidden');
+		if (this.hasZoomTarget) this.zoomTarget.value = '1';
+		if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = '100 %';
+		this.previewX = 0;
+		this.previewY = 0;
+		this.applyPreviewTransform();
+	}
+
+	changePreviewSize(event) {
+		const zoom = Number(event.target.value);
+		this.applyPreviewTransform();
+		if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = `${Math.round(zoom * 100)} %`;
+	}
+
+	startPreviewDrag(event) {
+		if (!this.hasPreviewImageTarget || this.previewImageTarget.classList.contains('hidden')) return;
+		event.preventDefault();
+		this.previewDragging = true;
+		this.previewStartX = event.clientX;
+		this.previewStartY = event.clientY;
+		this.previewOriginX = this.previewX || 0;
+		this.previewOriginY = this.previewY || 0;
+		this.previewViewportTarget.setPointerCapture?.(event.pointerId);
+	}
+
+	previewDrag(event) {
+		if (!this.previewDragging) return;
+		this.previewX = Math.max(-90, Math.min(90, this.previewOriginX + event.clientX - this.previewStartX));
+		this.previewY = Math.max(-90, Math.min(90, this.previewOriginY + event.clientY - this.previewStartY));
+		this.applyPreviewTransform();
+	}
+
+	endPreviewDrag(event) {
+		this.previewDragging = false;
+		this.previewViewportTarget?.releasePointerCapture?.(event.pointerId);
+	}
+
+	applyPreviewTransform() {
+		if (!this.hasPreviewImageTarget) return;
+		const zoom = this.hasZoomTarget ? Number(this.zoomTarget.value || 1) : 1;
+		this.previewImageTarget.style.transform = `translate(${this.previewX || 0}px, ${this.previewY || 0}px) scale(${zoom})`;
+	}
+
+	resetPreview(event) {
+		event?.preventDefault();
+		this.previewX = 0;
+		this.previewY = 0;
+		if (this.hasZoomTarget) this.zoomTarget.value = '1';
+		if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = '100 %';
+		this.applyPreviewTransform();
 	}
 }

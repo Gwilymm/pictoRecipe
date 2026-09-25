@@ -32,15 +32,26 @@
 			<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
 			</svg>
-			Rechercher une image (optionnel)
+			Rechercher une image
 		</span>
 	</label>
 
 	<div
-		class="space-y-3">
+		class="space-y-3"
+	>
 		{# Champ de recherche d'ingrédient #}
 		<input
-		type="text" data-picto-search-target="input" placeholder="Rechercher un ingrédient : farine, beurre, œufs…" class="input input-bordered w-full"/>
+			type="text"
+			data-picto-search-target="input"
+			placeholder="Rechercher un ingrédient : farine, beurre, œufs…"
+			class="input input-bordered w-full"
+		/>
+		<div class="form-control">
+			{{ form_row(form.imageFile, {
+		'label_attr': {'class': 'label'},
+		'row_attr': {'class': 'w-full'}
+	}) }}
+		</div>
 
 		<div class="flex flex-wrap gap-2" data-picto-search-target="filters" aria-label="Filtrer les sources">
 			<button type="button" class="btn btn-xs btn-primary" data-source="openfoodfacts" data-action="click->picto-search#toggleSource">OpenFoodFacts</button>
@@ -62,22 +73,32 @@
 			<input type="text" data-picto-search-target="brandInput" placeholder="Ex : Carrefour, Tipiak, Barilla…" class="input input-bordered w-full"/>
 		</div>
 
-		<div data-picto-search-target="results" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-visible"></div>
-		<div data-picto-search-target="pagination"></div>
+		<div class="flex flex-col sm:flex-row gap-4 items-start">
+			<div data-picto-search-target="results" class="grid grid-cols-3 gap-2 pr-1 content-start w-full sm:w-2/3" style="height:28rem; overflow-y:auto; overflow-x:hidden"></div>
+			<aside data-picto-search-target="preview" class="rounded-2xl bg-base-200 p-4 text-base-content shadow-sm w-full sm:w-1/3 sm:sticky sm:top-4">
+				<div class="flex items-center justify-between mb-3">
+					<p class="text-sm font-semibold">Aperçu PDF</p>
+					<span class="badge badge-ghost badge-sm">glisser pour déplacer</span>
+				</div>
+				<div data-picto-search-target="previewViewport" data-action="pointerdown->picto-search#startPreviewDrag pointermove->picto-search#previewDrag pointerup->picto-search#endPreviewDrag pointercancel->picto-search#endPreviewDrag" class="mx-auto flex items-center justify-center overflow-hidden border-2 border-dashed border-base-300 bg-white rounded-lg touch-none select-none" style="width:220px;height:220px" title="Cadre de taille du pictogramme dans le PDF">
+					<span data-picto-search-target="previewPlaceholder" class="text-xs text-slate-400 text-center px-5">Sélectionne un pictogramme</span>
+					<img data-picto-search-target="previewImage" class="hidden object-contain transition-transform duration-150" style="height:208px;width:100%;object-fit:contain" alt="Pictogramme sélectionné">
+				</div>
+				<label class="label px-0 mt-3"><span class="label-text">Taille <span data-picto-search-target="zoomValue">100 %</span></span></label>
+				<input type="range" min="0.5" max="2" step="0.05" value="1" data-picto-search-target="zoom" data-action="input->picto-search#changePreviewSize" class="range range-primary range-sm">
+				<button type="button" class="btn btn-ghost btn-xs mt-2" data-action="click->picto-search#resetPreview">Réinitialiser la position et la taille</button>
+			</aside>
+		</div>
+		<div data-picto-search-target="pagination" class="hidden"></div>
 	</div>
 </div>
 
-<div class="form-control">
-	{{ form_row(form.imageFile, {
-		'label_attr': {'class': 'label'},
-		'row_attr': {'class': 'w-full'}
-	}) }}
-</div>
+
 
 {# 🔥 LE SEUL CHAMP ACCEPTABLE #}
 <input type="hidden" id="externalImageTemp" name="externalImageTemp"/>
 
-<div id="picto-external-preview" class="mt-4"></div>
+
 
 <button class="btn btn-primary mt-6 w-full sm:w-auto">
 	<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
@@ -93,53 +114,25 @@
 {# Script minimal : écoute la sélection picto:selected (via Stimulus) #}
 {# =============================================================== #}
 
-	<script>
-document.addEventListener( "picto:selected", ( e ) => {
+<script>
+	document.addEventListener("picto:selected", (e) => {
+		const item = e.detail;
+		const hidden =
+			document.getElementById(
+				"{{ form.vars.full_name }}_externalImageUrl",
+			) || document.getElementById("externalImageTemp");
+		const preview = document.getElementById("picto-external-preview");
 
+		if (hidden) {
+			hidden.value = item.image;
+		}
 
-
-
-
-const item = e.detail;
-const hidden = document.getElementById( "{{ form.vars.full_name }}_externalImageUrl" ) || document.getElementById( 'externalImageTemp' );
-const preview = document.getElementById( "picto-external-preview" );
-
-if ( hidden )
-{
-
-
-
-
-
-hidden.value = item.image;
-
-
-
-
-
-}
-
-if ( preview )
-{
-
-
-
-
-
-preview.innerHTML = `
-            <img src="${
-item.image
-}"
+		if (preview) {
+			preview.innerHTML = `
+            <img src="${item.image}"
                  class="w-24 h-24 object-contain rounded-lg shadow">
-            <div class="mt-1 text-sm opacity-75">${
-item.name || ''
-}</div>
+            <div class="mt-1 text-sm opacity-75">${item.name || ""}</div>
         `;
-
-
-
-
-
-}
-
-} );</script>
+		}
+	});
+</script>

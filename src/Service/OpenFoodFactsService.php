@@ -61,8 +61,8 @@ final class OpenFoodFactsService
 
 					if (!$arr) continue;
 
-					$image = $arr['image_front_url'] ?? $arr['image_front_small_url'] ?? $arr['image_url'] ?? $arr['image_small_url'] ?? null;
-					if (!$image) continue;
+					$image = $arr['image_front_url'] ?? null;
+					if (!$image || !str_contains($image, 'front_fr')) continue;
 
 					$results[] = [
 						'id'       => $arr['code'] ?? null,
@@ -141,8 +141,8 @@ final class OpenFoodFactsService
 				$productName = $p['product_name'] ?? $p['generic_name'] ?? '';
 				$productBrand = $p['brands'] ?? '';
 				$categories = $p['categories'] ?? '';
-				$image = $p['image_front_url'] ?? $p['image_front_small_url'] ?? $p['image_url'] ?? $p['image_small_url'] ?? null;
-				if (!$image) continue;
+				$image = $p['image_front_url'] ?? null;
+				if (!$image || !str_contains($image, 'front_fr')) continue;
 
 				$results[] = [
 					'id'       => $p['code'] ?? null,
