@@ -138,7 +138,7 @@
 					}) }}
 				</div>
 
-				{# Image principale et cadrage au ratio exact du PDF (135 x 100). #}
+				{# Image principale et cadrage au ratio exact du PDF (162 x 120). #}
 				{% set currentRecipeImage = form.vars.data.imagePath|default(null) %}
 				{% set currentRecipeImageSrc = currentRecipeImage and currentRecipeImage starts with 'http' ? currentRecipeImage : (currentRecipeImage ? asset(currentRecipeImage) : '') %}
 				{% set imagePositionX = form.vars.data.imagePositionX|default(50) %}
@@ -188,7 +188,7 @@
 									<span class="badge badge-primary badge-sm" aria-hidden="true">2</span>
 									<h4 id="recipe-image-crop-title" class="font-semibold">Ajuster le cadrage</h4>
 								</div>
-								<span class="badge badge-ghost badge-sm">PDF 135 × 100</span>
+								<span class="badge badge-ghost badge-sm">PDF 162 × 120</span>
 							</div>
 
 							<div class="mb-4 border-b border-base-300 pb-4">
@@ -206,7 +206,7 @@
 							<div class="flex flex-wrap items-center gap-4">
 								<div
 									class="relative shrink-0 overflow-hidden rounded-xl border-2 border-primary/50 bg-base-300 shadow-inner cursor-move touch-none select-none"
-									style="width: 135px; max-width: 100%; aspect-ratio: 27 / 20;"
+									style="width: 162px; max-width: 100%; aspect-ratio: 27 / 20;"
 									role="img"
 									aria-label="Aperçu du cadrage utilisé dans le PDF"
 									aria-describedby="recipe-image-crop-help"

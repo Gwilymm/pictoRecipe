@@ -1,6 +1,6 @@
 {% set gridColumns = 8 %}
-{% set gridPictoSize = 85 %}
-{% set stepPictoSize = 60 %}
+{% set gridPictoSize = 68 %}
+{% set stepPictoSize = 75 %}
 <!DOCTYPE html>
 <html lang="fr">
 	<head>
@@ -14,36 +14,45 @@
 			}
 			body {
 				font-family: 'DejaVu Sans', Arial, sans-serif;
-				font-size: 10pt;
-				line-height: 1.4;
+				font-size: 9.5pt;
+				line-height: 1.3;
 				color: #000;
-				padding: 20px
+				padding: 0
 			}
 
 			.recipe-heading {
 				width: 100%;
 				border-collapse: collapse;
-				border-bottom: 3px solid #222;
-				margin-bottom: 20px
+				margin-bottom: 4px
 			}
 			.recipe-heading td {
 				border: 0;
 				vertical-align: middle;
-				padding: 0 0 8px
+				padding: 0
 			}
 			.recipe-heading h1 {
 				text-align: left;
-				font-size: 22pt;
-				color: #222;
+				font-size: 24pt;
+				color: #000;
 				text-transform: uppercase
 			}
+			.recipe-heading-copy {
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				height: 120px;
+				padding-top: 28px
+			}
+			.recipe-heading .ingredients-heading {
+				margin: 0
+			}
 			.recipe-heading-image {
-				width: 145px;
+				width: 166px;
 				text-align: right
 			}
 			.recipe-heading-image-frame {
-				width: 135px;
-				height: 100px;
+				width: 162px;
+				height: 120px;
 				overflow: hidden;
 				border-radius: 8px;
 				margin-left: auto
@@ -55,11 +64,13 @@
 				display: block
 			}
 			h2 {
+				display: block;
 				background: #f3f4f6;
-				border-left: 6px solid #2563eb;
-				padding: 6px 10px;
-				font-size: 13pt;
-				margin: 18px 0 8px
+				border-left: 5px solid #2563eb;
+				padding: 4px 8px;
+				font-size: 12pt;
+				font-weight: bold;
+				margin: 8px 0 5px
 			}
 
 			/* --- GRILLES INGREDIENTS & USTENSILES --- */
@@ -67,34 +78,32 @@
 				width: 100%;
 				border-collapse: collapse;
 				table-layout: fixed;
-				margin-bottom: 15px
+				margin-bottom: 6px
 			}
 			.grid td {
-				border: 1px solid #ddd;
+				border: 1px solid #111;
 				text-align: center;
-				padding: 4px 2px;
+				padding: 3px 2px;
 				width: {{ 100 / gridColumns }}%;
 				overflow-wrap: anywhere
 			}
 			.grid-item-cell {
-				height: 135px;
+				height: 106px;
 				vertical-align: bottom
 			}
 			.grid img,
 			.grid-placeholder {
-				width: {{gridPictoSize}}
-				px;
-				height: {{gridPictoSize}}
-				px;
+				width: {{ gridPictoSize }}px;
+				height: {{ gridPictoSize }}px;
 				max-width: 100%;
 				object-fit: contain;
 				display: block;
-				margin: 0 auto 5px
+				margin: 0 auto 3px
 			}
 			.grid span {
 				display: block;
-				font-size: 7.5pt;
-				line-height: 1.2;
+				font-size: 7pt;
+				line-height: 1.15;
 				font-weight: bold;
 				color: #333
 			}
@@ -103,68 +112,52 @@
 			.steps {
 				width: 100%;
 				border-collapse: collapse;
-				margin-top: 10px;
+				margin-top: 4px;
 				table-layout: auto
 			}
 			/* keep borders on cells only to avoid double/dashed lines on page breaks */
 			.steps td {
 				border: 1px solid #000;
 				vertical-align: middle;
-				padding: 10px;
+				padding: 4px;
 				page-break-inside: avoid;
 				break-inside: avoid;
 				-webkit-column-break-inside: avoid;
 				-webkit-page-break-inside: avoid
 			}
 			.num {
-				width: 48px;
+				width: 42px;
 				text-align: center;
-				font-size: 12pt;
+				font-size: 24pt;
 				font-weight: bold;
-				background: #dbeafe
+				background: #fff
 			}
 			.step-pictos {
 				text-align: center;
-				background: #f9fafb;
-				border-right: 2px solid #2563eb;
-				padding: 8px;
-				width: 360px;
+				background: #fff;
+				padding: 1px;
+				width: 55%;
 				font-size: 0;
 				white-space: normal
 			}
 			.step-pictos img,
 			.step-placeholder {
-				width: {{stepPictoSize}}
-				px;
-				height: {{stepPictoSize}}
-				px;
+				width: {{ stepPictoSize }}px;
+				height: {{ stepPictoSize }}px;
 				object-fit: contain;
 				display: inline-block;
-				margin: 3px;
+				margin: 1px;
 				vertical-align: middle
 			}
 			.step-text {
-				font-size: 10pt;
-				line-height: 1.5;
+				font-size: 14px;
+				line-height: 1.2;
 				word-wrap: break-word;
-				padding-left: 15px
-			}
-			.header {
-				text-align: right;
-				font-size: 7pt;
-				color: #999;
-				margin-bottom: 10px
+				padding: 3px 4px
 			}
 		</style>
 	</head>
 	<body>
-
-		<div class="header">
-			<p>Bonne dégustation ! • Recette créée avec
-				<strong>PictoRecette</strong>
-				•
-				{{ "now"|date("d/m/Y") }}</p>
-		</div>
 
 		{% set recipeImagePath = recipe.imagePath|default(null) %}
 		{% set recipeImageSrc = recipeImagePath and recipeImagePath starts with 'http' ? recipeImagePath : (recipeImagePath ? 'http://127.0.0.1/' ~ recipeImagePath|trim('/') : '') %}
@@ -173,7 +166,12 @@
 		{% set imageZoom = recipe.imageZoom|default(1) %}
 		<table class="recipe-heading">
 			<tr>
-				<td><h1>{{ recipe.title|upper }}</h1></td>
+				<td>
+					<div class="recipe-heading-copy">
+						<h1>{{ recipe.title|upper }}</h1>
+						<h2 class="ingredients-heading">Ingrédients</h2>
+					</div>
+				</td>
 				{% if recipeImageSrc %}
 					<td class="recipe-heading-image">
 						<div class="recipe-heading-image-frame">
@@ -185,7 +183,6 @@
 		</table>
 
 		{# -- Ingrédients -- #}
-		<h2>Ingrédients</h2>
 		<table
 			class="grid"
 		>

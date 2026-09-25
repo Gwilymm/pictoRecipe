@@ -47,7 +47,7 @@ class PdfGenerator
 			->setOption('landscape', false)
 			->format('A4')
 			->timeout($timeoutSeconds)
-			->margins(10, 10, 10, 10)
+			->margins(5, 5, 5, 5)
 			->showBackground()
 			->waitUntilNetworkIdle()
 			->setOption(
