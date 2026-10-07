@@ -9,7 +9,9 @@
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🖼️</text></svg>">
 		<link
-		href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+			href="https://fonts.googleapis.com/icon?family=Material+Icons"
+			rel="stylesheet"
+		>
 		{# templates/base.html.twig #}
 
 		{% block stylesheets %}
@@ -18,21 +20,7 @@
 		{% block importmap %}
 			{{ importmap('app') }}
 		{% endblock %}
-		{% block javascripts %}
-			{% if app.environment == 'prod' %}
-				{# Privacy-friendly analytics by Plausible #}
-				<script async src="https://analytics.doc2sail.com/js/pa-sryYXEKPoMesf_-yBFfSG.js"></script>
-				<script>
-					window.plausible = window.plausible || function () {
-(plausible.q = plausible.q || []).push(arguments);
-};
-plausible.init = plausible.init || function (i) {
-plausible.o = i || {};
-};
-plausible.init();
-				</script>
-			{% endif %}
-		{% endblock %}
+		{% include '_analytics.html.twig' %}
 
 	</head>
 	<body class="min-h-screen">
@@ -67,41 +55,25 @@ plausible.init();
 		</div>
 
 		<main class="container mx-auto px-2 sm:px-4 py-6"> {% block body %}{% endblock %}
-			</main>
+		</main>
 
-			{{ include('partials/_footer.html.twig') }}
+		{{ include('partials/_footer.html.twig') }}
 
-			{# Script pour auto-fermer les toasts après 5 secondes #}
-			<script>
-				document.addEventListener('DOMContentLoaded', function () {
-
-
-const toasts = document.querySelectorAll('.toast .alert');
-toasts.forEach(function (toast) {
-
-
-setTimeout(function () {
-
-
-toast.style.transition = 'opacity 0.5s, transform 0.5s';
-toast.style.opacity = '0';
-toast.style.transform = 'translateX(100%)';
-setTimeout(function () {
-
-
-toast.remove();
-
-
-}, 500);
-
-
-}, 5000);
-
-
-});
-
-
-});
-			</script>
-		</body>
-	</html>
+		{# Script pour auto-fermer les toasts après 5 secondes #}
+		<script>
+			document.addEventListener("DOMContentLoaded", function () {
+				const toasts = document.querySelectorAll(".toast .alert");
+				toasts.forEach(function (toast) {
+					setTimeout(function () {
+						toast.style.transition = "opacity 0.5s, transform 0.5s";
+						toast.style.opacity = "0";
+						toast.style.transform = "translateX(100%)";
+						setTimeout(function () {
+							toast.remove();
+						}, 500);
+					}, 5000);
+				});
+			});
+		</script>
+	</body>
+</html>
