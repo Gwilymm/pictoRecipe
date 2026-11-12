@@ -1,4 +1,2 @@
-<form method="post" action="{{ path('app_ingredient_delete', {'id': ingredient.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer cet ingrédient ?');" class="inline">
-	<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ ingredient.id) }}">
-	<button class="btn btn-error">Supprimer</button>
-</form>
+{% import '_ds/_ui.html.twig' as ui %}
+{{ ui.delete_button(path('app_ingredient_delete', {'id': ingredient.id}), csrf_token('delete' ~ ingredient.id), ingredient.name, 'l’ingrédient') }}

@@ -4,6 +4,7 @@
 {% endblock %}
 
 {% block body %}
+	{% import '_ds/_ui.html.twig' as ui %}
 	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6" data-controller="pictogram-filter">
 		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
 			<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">
@@ -22,12 +23,7 @@
 
 
 		{% if pictograms is empty %}
-			<div class="alert alert-info text-sm md:text-base">
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-5 h-5 md:w-6 md:h-6">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-				</svg>
-				<span>Aucun pictogramme trouvé. Commencez par en ajouter un !</span>
-			</div>
+			{{ ui.empty_state('Aucun pictogramme pour l’instant.') }}
 		{% else %}
 			{# Barre de recherche #}
 			<div class="mb-4 md:mb-6">
@@ -72,37 +68,19 @@
 								{% if not pictogram.validated %}
 									<form method="post" action="{{ path('app_pictogram_validate', {'id': pictogram.id}) }}" class="flex-1">
 										<input type="hidden" name="_token" value="{{ csrf_token('validate' ~ pictogram.id) }}">
-										<button type="submit" class="btn btn-xs md:btn-sm btn-success w-full">
+										<button type="submit" class="btn btn-xs md:btn-sm btn-outline btn-primary w-full">
 											Valider
 										</button>
 									</form>
 								{% endif %}
-								<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-xs md:btn-sm btn-warning flex-1">
+								<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-xs md:btn-sm btn-outline flex-1">
 									{{ ux_icon('heroicons:pencil-square', {class: 'w-3 h-3 md:w-4 md:h-4'}) }}
 									Modifier
 								</a>
-								<button onclick="document.getElementById('delete-modal-{{ pictogram.id }}').showModal()" class="btn btn-xs md:btn-sm btn-error flex-1">
-									{{ ux_icon('heroicons:trash', {class: 'w-3 h-3 md:w-4 md:h-4'}) }}
-									Supprimer
-								</button>
+								{{ ui.delete_button(path('app_pictogram_delete', {'id': pictogram.id}), csrf_token('delete' ~ pictogram.id), pictogram.name, 'le pictogramme', 'btn-xs md:btn-sm flex-1') }}
 							</div>
 						</div>
 					</div>
-
-					<!-- Delete Modal -->
-					<dialog id="delete-modal-{{ pictogram.id }}" class="modal">
-						<div class="modal-box">
-							<h3 class="font-bold text-base md:text-lg">Confirmer la suppression</h3>
-							<p class="py-3 md:py-4 text-sm md:text-base">Êtes-vous sûr de vouloir supprimer le pictogramme "{{ pictogram.name }}" ?</p>
-							<div class="modal-action">
-								<form method="post" action="{{ path('app_pictogram_delete', {'id': pictogram.id}) }}" style="display: inline;">
-									<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ pictogram.id) }}">
-									<button type="submit" class="btn btn-sm md:btn-md btn-error">Supprimer</button>
-								</form>
-								<button onclick="document.getElementById('delete-modal-{{ pictogram.id }}').close()" class="btn btn-sm md:btn-md">Annuler</button>
-							</div>
-						</div>
-					</dialog>
 				{% endfor %}
 			</div>
 

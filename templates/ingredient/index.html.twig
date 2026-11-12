@@ -27,8 +27,8 @@
 						<td>{{ ingredient.unit }}</td>
 						<td>{{ ingredient.position }}</td>
 						<td class="space-x-2">
-							<a href="{{ path('app_ingredient_show', {'id': ingredient.id}) }}" class="btn btn-sm btn-info">Voir</a>
-							<a href="{{ path('app_ingredient_edit', {'id': ingredient.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+							<a href="{{ path('app_ingredient_show', {'id': ingredient.id}) }}" class="btn btn-sm btn-outline">Voir</a>
+							<a href="{{ path('app_ingredient_edit', {'id': ingredient.id}) }}" class="btn btn-sm btn-outline">Modifier</a>
 						</td>
 					</tr>
 				{% else %}
@@ -40,5 +40,5 @@
 		</table>
 	</div>
 
-	<a href="{{ path('app_ingredient_new') }}" class="btn btn-success mt-6">Ajouter un ingrédient</a>
+	<a href="{{ path('app_ingredient_new') }}" class="btn btn-primary mt-6">Ajouter un ingrédient</a>
 {% endblock %}

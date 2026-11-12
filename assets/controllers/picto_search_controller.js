@@ -283,13 +283,10 @@ export default class extends Controller {
 
 		if (this.activeSources.has(source)) {
 			this.activeSources.delete(source);
-			event.currentTarget.classList.remove('btn-primary');
-			event.currentTarget.classList.add('btn-outline');
 		} else {
 			this.activeSources.add(source);
-			event.currentTarget.classList.add('btn-primary');
-			event.currentTarget.classList.remove('btn-outline');
 		}
+		event.currentTarget.setAttribute('aria-pressed', String(this.activeSources.has(source)));
 
 		this.currentPage = 1;
 		this.applyFilters();

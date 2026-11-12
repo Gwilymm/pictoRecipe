@@ -60,10 +60,10 @@
 				{% if not pictogram.validated %}
 					<form method="post" action="{{ path('app_pictogram_validate', {'id': pictogram.id}) }}">
 						<input type="hidden" name="_token" value="{{ csrf_token('validate' ~ pictogram.id) }}">
-						<button type="submit" class="btn btn-success btn-sm">Valider</button>
+						<button type="submit" class="btn btn-outline btn-primary btn-sm">Valider</button>
 					</form>
 				{% endif %}
-				<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-warning btn-sm">Modifier</a>
+				<a href="{{ path('app_pictogram_edit', {'id': pictogram.id}) }}" class="btn btn-outline btn-sm">Modifier</a>
 				<a href="{{ path('app_pictogram_index') }}" class="btn btn-outline btn-sm">⬅ Retour</a>
 			</div>
 		</div>

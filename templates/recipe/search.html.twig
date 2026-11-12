@@ -19,57 +19,27 @@
 					<input type="text" name="query" placeholder="Ex: poulet, tarte, soupe..." class="input input-md input-bordered w-full" data-recipe-search-target="query">
 				</div>
 
-				{# Options alimentaires - Checkboxes #}
-				<div class="divider text-sm md:text-base">Options alimentaires</div>
+				<fieldset class="mb-4">
+					<legend class="mb-2 font-bold">Options alimentaires</legend>
+					<div class="flex flex-wrap gap-2">
+						<label class="chip"><input type="checkbox" name="vegan" class="sr-only" data-recipe-search-target="vegan">Vegan</label>
+						<label class="chip"><input type="checkbox" name="vegetarian" class="sr-only" data-recipe-search-target="vegetarian">Végétarien</label>
+						<label class="chip"><input type="checkbox" name="withoutGluten" class="sr-only" data-recipe-search-target="withoutGluten">Sans gluten</label>
+						<label class="chip"><input type="checkbox" name="withoutDairyProducts" class="sr-only" data-recipe-search-target="withoutDairyProducts">Sans produits laitiers</label>
+					</div>
+				</fieldset>
 
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer justify-start gap-2 md:gap-3 py-2">
-						<input type="checkbox" name="vegan" class="checkbox checkbox-sm checkbox-primary" data-recipe-search-target="vegan">
-						<span class="label-text text-sm md:text-base">🌱 Vegan</span>
-					</label>
-				</div>
-
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer justify-start gap-2 md:gap-3 py-2">
-						<input type="checkbox" name="vegetarian" class="checkbox checkbox-sm checkbox-primary" data-recipe-search-target="vegetarian">
-						<span class="label-text  text-sm md:text-base">🥗 Végétarien</span>
-					</label>
-				</div>
-
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer justify-start gap-2 md:gap-3 py-2">
-						<input type="checkbox" name="withoutGluten" class="checkbox checkbox-sm checkbox-primary" data-recipe-search-target="withoutGluten">
-						<span class="label-text  text-sm md:text-base">🌾 Sans gluten</span>
-					</label>
-				</div>
-
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer justify-start gap-2 md:gap-3 py-2">
-						<input type="checkbox" name="withoutDairyProducts" class="checkbox checkbox-sm checkbox-primary" data-recipe-search-target="withoutDairyProducts">
-						<span class="label-text  text-sm md:text-base">🥛 Sans produits laitiers</span>
-					</label>
-				</div>
-
-				{# Options de cuisson - Checkboxes #}
-				<div class="divider text-sm md:text-base">Options de cuisson</div>
-
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer justify-start gap-2 md:gap-3 py-2">
-						<input type="checkbox" name="withoutOven" class="checkbox checkbox-sm checkbox-primary" data-recipe-search-target="withoutOven">
-						<span class="label-text  text-sm md:text-base">🔥 Sans four</span>
-					</label>
-				</div>
-
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer justify-start gap-2 md:gap-3 py-2">
-						<input type="checkbox" name="raw" class="checkbox checkbox-sm checkbox-primary" data-recipe-search-target="raw">
-						<span class="label-text  text-sm md:text-base">🥗 Cru (sans cuisson)</span>
-					</label>
-				</div>
+				<fieldset class="mb-4">
+					<legend class="mb-2 font-bold">Options de cuisson</legend>
+					<div class="flex flex-wrap gap-2">
+						<label class="chip"><input type="checkbox" name="withoutOven" class="sr-only" data-recipe-search-target="withoutOven">Sans four</label>
+						<label class="chip"><input type="checkbox" name="raw" class="sr-only" data-recipe-search-target="raw">Cru (sans cuisson)</label>
+					</div>
+				</fieldset>
 
 				{# Bouton de recherche #}
-				<button type="submit" class="btn btn-outline btn-primary btn-md w-full mt-2 md:mt-0" data-recipe-search-target="submitBtn">
-					<span data-recipe-search-target="submitText">🔍 Rechercher</span>
+				<button type="submit" class="btn btn-primary w-full mt-2 md:mt-0" data-recipe-search-target="submitBtn">
+					<span data-recipe-search-target="submitText" class="inline-flex items-center gap-2">{{ ux_icon('lucide:search', { class: 'size-5', 'aria-hidden': 'true' }) }}Rechercher</span>
 					<span class="loading loading-spinner loading-sm hidden" data-recipe-search-target="spinner"></span>
 				</button>
 			</form>

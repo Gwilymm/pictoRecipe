@@ -4,17 +4,18 @@
 {% endblock %}
 
 {% block body %}
+	{% import '_ds/_ui.html.twig' as ui %}
 	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6" data-controller="modal">
 		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
 			<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">Recettes</h1>
 			<div class="flex w-full sm:w-auto gap-2">
 				<form method="get" action="{{ path('app_recipe_index') }}" class="flex items-center">
 					<input type="search" name="q" value="{{ q|default('') }}" placeholder="Rechercher une recette..." class="input input-sm"/>
-					<button type="submit" class="btn btn-primary btn-sm ml-2 gap-1">
+					<button type="submit" class="btn btn-outline btn-sm ml-2 gap-1" aria-label="Rechercher">
 						{{ ux_icon('heroicons:magnifying-glass', {class: 'w-4 h-4'}) }}
 					</button>
 				</form>
-				<a href="{{ path('app_recipe_new') }}" class="btn btn-success btn-sm md:btn-md ml-2 gap-1">
+				<a href="{{ path('app_recipe_new') }}" class="btn btn-primary btn-sm md:btn-md ml-2 gap-1">
 					{{ ux_icon('heroicons:plus', {class: 'w-4 h-4 md:w-5 md:h-5'}) }}
 					<span class="hidden sm:inline">Ajouter une recette</span>
 				</a>
@@ -33,12 +34,7 @@
 		} %}
 
 		{% if recipes is empty %}
-			<div class="alert alert-info">
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-				</svg>
-				<span>Aucune recette trouvée. Commencez par en créer une !</span>
-			</div>
+			{{ ui.empty_state('Aucune recette pour l’instant.') }}
 		{% else %}
 			{# Vue mobile : Cartes #}
 			<div class="grid grid-cols-1 md:hidden gap-3">
@@ -71,15 +67,15 @@
 							</div>
 
 							<div class="flex gap-2">
-								<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-info btn-xs flex-1 gap-1">
+								<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-outline btn-xs flex-1 gap-1">
 									{{ ux_icon('heroicons:eye', {class: 'w-4 h-4'}) }}
 									Voir
 								</a>
-								<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-warning btn-xs flex-1 gap-1">
+								<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-outline btn-xs flex-1 gap-1">
 									{{ ux_icon('heroicons:pencil-square', {class: 'w-4 h-4'}) }}
 									Modifier
 								</a>
-								<button type="button" class="btn btn-error btn-xs flex-1 gap-1" data-action="modal#open" data-modal-action="{{ path('app_recipe_delete', {'id': recipe.id}) }}" data-modal-token="{{ csrf_token('delete' ~ recipe.id) }}" data-modal-name="{{ recipe.title|e('html_attr') }}">
+								<button type="button" class="btn btn-outline btn-error btn-xs flex-1 gap-1" data-action="modal#open" data-modal-action="{{ path('app_recipe_delete', {'id': recipe.id}) }}" data-modal-token="{{ csrf_token('delete' ~ recipe.id) }}" data-modal-name="{{ recipe.title|e('html_attr') }}">
 									{{ ux_icon('heroicons:trash', {class: 'w-4 h-4'}) }}
 									Supprimer
 								</button>
@@ -118,15 +114,15 @@
 								<td class="text-sm">{{ recipe.updatedAt ? recipe.updatedAt|date('d/m/Y') : '' }}</td>
 								<td class="align-top">
 									<div class="flex flex-col items-end gap-2">
-										<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-xs btn-info w-28 rounded-md shadow gap-1">
+										<a href="{{ path('app_recipe_show', {'id': recipe.id}) }}" class="btn btn-xs btn-outline w-28 gap-1">
 											{{ ux_icon('heroicons:eye', {class: 'w-4 h-4'}) }}
 											Voir
 										</a>
-										<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-xs btn-warning w-28 rounded-md shadow gap-1">
+										<a href="{{ path('app_recipe_edit', {'id': recipe.id}) }}" class="btn btn-xs btn-outline w-28 gap-1">
 											{{ ux_icon('heroicons:pencil-square', {class: 'w-4 h-4'}) }}
 											Modifier
 										</a>
-										<button type="button" class="btn btn-xs btn-error w-28 rounded-md shadow gap-1" data-action="modal#open" data-modal-action="{{ path('app_recipe_delete', {'id': recipe.id}) }}" data-modal-token="{{ csrf_token('delete' ~ recipe.id) }}" data-modal-name="{{ recipe.title|e('html_attr') }}">
+										<button type="button" class="btn btn-xs btn-outline btn-error w-28 gap-1" data-action="modal#open" data-modal-action="{{ path('app_recipe_delete', {'id': recipe.id}) }}" data-modal-token="{{ csrf_token('delete' ~ recipe.id) }}" data-modal-name="{{ recipe.title|e('html_attr') }}">
 											{{ ux_icon('heroicons:trash', {class: 'w-4 h-4'}) }}
 											Supprimer
 										</button>

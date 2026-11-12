@@ -18,15 +18,16 @@
 					<span class="hidden sm:inline">← Retour à la liste</span>
 					<span class="sm:hidden">← Liste</span>
 				</a>
-				<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-outline btn-primary btn-xs md:btn-sm">
-					<span class="hidden sm:inline">✏️ Modifier</span>
-					<span class="sm:hidden">✏️ Éditer</span>
+				<a href="{{ path('app_recipe_edit', {id: recipe.id}) }}" class="btn btn-outline btn-xs md:btn-sm">
+					{{ ux_icon('lucide:pencil', { class: 'size-5', 'aria-hidden': 'true' }) }}
+					Modifier
 				</a>
 			</div>
 			<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 md:gap-3">
 				<a href="#" data-pdf-url="{{ path('app_recipe_pdf', {id: recipe.id, download: 1, v: (recipe.updatedAt ?? recipe.createdAt)|date('U')}) }}" class="btn btn-primary btn-xs md:btn-sm gap-2 pdf-download-btn" aria-label="Télécharger en PDF">
-					<span class="hidden sm:inline">📄 Télécharger en PDF</span>
-					<span class="sm:hidden">📄 PDF</span>
+					{{ ux_icon('lucide:download', { class: 'size-5', 'aria-hidden': 'true' }) }}
+					<span class="hidden sm:inline">Télécharger en PDF</span>
+					<span class="sm:hidden">PDF</span>
 				</a>
 				
 			</div>

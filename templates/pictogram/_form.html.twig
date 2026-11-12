@@ -1,3 +1,4 @@
+{% import '_ds/_ui.html.twig' as ui %}
 {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
 
 {# Champ nom du pictogramme - séparé de la recherche #}
@@ -53,12 +54,7 @@
 	}) }}
 		</div>
 
-		<div class="flex flex-wrap gap-2" data-picto-search-target="filters" aria-label="Filtrer les sources">
-			<button type="button" class="btn btn-xs btn-primary" data-source="openfoodfacts" data-action="click->picto-search#toggleSource">OpenFoodFacts</button>
-			<button type="button" class="btn btn-xs btn-primary" data-source="arasaac" data-action="click->picto-search#toggleSource">ARASAAC</button>
-			<button type="button" class="btn btn-xs btn-primary" data-source="wikimedia" data-action="click->picto-search#toggleSource">Wikimedia</button>
-			<button type="button" class="btn btn-xs btn-primary" data-source="local" data-action="click->picto-search#toggleSource">Local</button>
-		</div>
+		{{ ui.source_filters() }}
 
 		{# Champ optionnel pour filtrer par marque #}
 		<div class="w-full">

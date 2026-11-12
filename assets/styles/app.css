@@ -168,9 +168,16 @@
 	.chip {
 		@apply inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 border-base-300 bg-base-100 px-4 font-bold;
 	}
-	.chip[aria-pressed="true"] {
+	.chip[aria-pressed="true"],
+	.chip:has(input:checked) {
 		border-color: var(--color-primary);
 		background: var(--color-step-soft);
+	}
+	/* Variante case à cocher : <label class="chip"><input type="checkbox" class="sr-only"> … */
+	label.chip { cursor: pointer; }
+	.chip:has(input:focus-visible) {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: 2px;
 	}
 }
 

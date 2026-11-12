@@ -1,4 +1,2 @@
-<form method="post" action="{{ path('app_step_delete', {'id': step.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer cette étape ?');" class="inline">
-	<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ step.id) }}">
-	<button class="btn btn-error">Supprimer</button>
-</form>
+{% import '_ds/_ui.html.twig' as ui %}
+{{ ui.delete_button(path('app_step_delete', {'id': step.id}), csrf_token('delete' ~ step.id), 'l’étape ' ~ step.position, 'l’étape') }}

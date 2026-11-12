@@ -25,8 +25,8 @@
 						<td>{{ step.content }}</td>
 						<td>{{ step.durationMinutes }}</td>
 						<td class="space-x-2">
-							<a href="{{ path('app_step_show', {'id': step.id}) }}" class="btn btn-sm btn-info">Voir</a>
-							<a href="{{ path('app_step_edit', {'id': step.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+							<a href="{{ path('app_step_show', {'id': step.id}) }}" class="btn btn-sm btn-outline">Voir</a>
+							<a href="{{ path('app_step_edit', {'id': step.id}) }}" class="btn btn-sm btn-outline">Modifier</a>
 						</td>
 					</tr>
 				{% else %}
@@ -38,5 +38,5 @@
 		</table>
 	</div>
 
-	<a href="{{ path('app_step_new') }}" class="btn btn-success mt-6">Ajouter une étape</a>
+	<a href="{{ path('app_step_new') }}" class="btn btn-primary mt-6">Ajouter une étape</a>
 {% endblock %}

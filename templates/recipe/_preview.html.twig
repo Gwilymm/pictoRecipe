@@ -1,3 +1,4 @@
+{% import '_ds/_ui.html.twig' as ui %}
 {# 
   Template de prévisualisation de recette
   Affiche une fiche visuelle style "pictogramme" avec ingrédients, ustensiles et étapes
@@ -126,7 +127,7 @@
 								{% endif %}
 
 								<h4 class="font-semibold text-xs md:text-sm" data-ingredient-name>{{ ingredient.name }}</h4>
-								<p class="text-primary font-bold text-sm md:text-base">{{ ingredient.amount }} {{ ingredient.unit|default('') }}</p>
+								<p class="text-primary font-bold text-sm md:text-base">{{ ui.amount(ingredient.amount, ingredient.unit) }}</p>
 
 								<div class="mt-2 flex items-center justify-center gap-2">
 									<button type="button" class="btn btn-xs btn-ghost hidden" data-action="click->pictogram-autofill#proposeIngredient" title="Proposer un autre pictogramme">Proposer autre</button>
