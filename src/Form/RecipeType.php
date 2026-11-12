@@ -24,9 +24,11 @@ class RecipeType extends AbstractType
     {
         $builder
             ->add('title', TextType::class, [
+                'label' => 'Titre',
                 'attr' => ['class' => 'input input-bordered w-full'],
             ])
             ->add('description', TextareaType::class, [
+                'label' => 'Description',
                 'required' => false,
                 'attr' => ['class' => 'textarea textarea-bordered w-full', 'rows' => 4],
             ])
@@ -50,14 +52,17 @@ class RecipeType extends AbstractType
             ->add('imagePositionY', HiddenType::class)
             ->add('imageZoom', HiddenType::class)
             ->add('servings', IntegerType::class, [
+                'label' => 'Portions',
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-24'],
             ])
             ->add('prepTimeMinutes', IntegerType::class, [
+                'label' => 'Préparation (min)',
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-24'],
             ])
             ->add('cookTimeMinutes', IntegerType::class, [
+                'label' => 'Cuisson (min)',
                 'required' => false,
                 'attr' => ['class' => 'input input-bordered w-24'],
             ])
@@ -83,6 +88,7 @@ class RecipeType extends AbstractType
             ])
             // Utensils selection (ManyToMany) - render as expanded checkboxes so we can show pictograms
             ->add('utensils', EntityType::class, [
+                'label' => 'Ustensiles',
                 'class' => Utensil::class,
                 'choice_label' => 'name',
                 'multiple' => true,

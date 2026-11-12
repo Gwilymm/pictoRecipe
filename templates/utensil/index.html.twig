@@ -1,87 +1,46 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Mes Ustensiles
-{% endblock %}
+{% block title %}Ustensiles{% endblock %}
 
 {% block body %}
 	{% import '_ds/_ui.html.twig' as ui %}
-	<div class="container mx-auto px-3 md:px-4 py-4 md:py-6" data-controller="utensil-filter">
-		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 md:mb-6">
-			<h1 class="text-2xl md:text-3xl lg:text-4xl font-bold">🍴 Mes Ustensiles de Cuisine</h1>
-			<a href="{{ path('app_utensil_new') }}" class="btn btn-primary btn-sm md:btn-md w-full sm:w-auto">
-				➕ Ajouter un ustensile
+	<div class="space-y-6" data-controller="utensil-filter">
+		<div class="flex flex-wrap items-center justify-between gap-4">
+			<h1 class="text-2xl">Ustensiles</h1>
+			<a href="{{ path('app_utensil_new') }}" class="btn btn-primary">
+				{{ ux_icon('lucide:plus', { class: 'size-5', 'aria-hidden': 'true' }) }}
+				Ajouter un ustensile
 			</a>
 		</div>
 
 		{% if utensils is empty %}
 			{{ ui.empty_state('Aucun ustensile pour l’instant.') }}
 		{% else %}
-			{# Barre de recherche #}
-			<div class="mb-4 md:mb-6">
-				<div class="form-control">
-					<div class="join w-full">
-						<input type="text" placeholder="🔍 Rechercher un ustensile..." class="input input-bordered input-sm md:input-md join-item flex-1" data-utensil-filter-target="searchInput" data-action="input->utensil-filter#filter">
-						<button class="btn btn-square btn-sm md:btn-md join-item" data-action="click->utensil-filter#clear">
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-							</svg>
-						</button>
-					</div>
-				</div>
-				<div class="text-xs md:text-sm text-base-content/70 mt-2" data-utensil-filter-target="counter">
-					<span data-utensil-filter-target="visibleCount">{{ utensils|length }}</span>
-					/
-					{{ utensils|length }}
-					ustensiles
-				</div>
-			</div>
+			{{ ui.filter_search('utensil-filter', 'ustensiles', utensils|length) }}
 
-			<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4" data-utensil-filter-target="grid">
+			<ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8" data-utensil-filter-target="grid">
 				{% for utensil in utensils %}
-					<div class="card bg-base-100 shadow hover:shadow-lg transition-shadow utensil-card" data-utensil-filter-target="card" data-name="{{ utensil.name|lower }}">
-						<div
-							class="card-body p-2 md:p-4 flex flex-col items-center text-center gap-2 md:gap-3">
-							{# pictogram centré #}
-							{% if utensil.pictogramUrl %}
-								<img src="{{ utensil.pictogramUrl }}" alt="{{ utensil.name }}" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded">
+					<li class="flex flex-col gap-3 rounded-box border border-base-300 border-t-4 border-t-secondary bg-base-100 p-3 text-center"
+						data-utensil-filter-target="card"
+						data-name="{{ utensil.name|lower }}">
+						<div class="picto-tile w-full">
+							{% set src = ui.picto_src(utensil)|trim %}
+							{% if src %}
+								<img src="{{ src }}" alt="" loading="lazy">
 							{% else %}
-								<div class="w-12 h-12 md:w-16 md:h-16 rounded bg-base-200 flex items-center justify-center text-2xl md:text-3xl">
-									🔪
-								</div>
+								{{ ux_icon('lucide:image', { class: 'size-1/3 text-base-300', 'aria-hidden': 'true' }) }}
 							{% endif %}
-
-							<h3 class="font-semibold text-xs md:text-sm line-clamp-2">{{ utensil.name }}</h3>
-
-							<div class="card-actions w-full">
-								<a href="{{ path('app_utensil_edit', {id: utensil.id}) }}" class="btn btn-xs md:btn-sm btn-outline w-full">
-									{{ ux_icon('lucide:pencil', { class: 'size-5', 'aria-hidden': 'true' }) }}
-									Modifier
-								</a>
-							</div>
 						</div>
-					</div>
+						<h2 class="line-clamp-2 text-sm font-bold leading-tight">{{ utensil.name }}</h2>
+						<a href="{{ path('app_utensil_edit', {id: utensil.id}) }}" class="btn btn-sm btn-outline mt-auto" aria-label="Modifier {{ utensil.name }}">
+							{{ ux_icon('lucide:pencil', { class: 'size-5', 'aria-hidden': 'true' }) }}
+							Modifier
+						</a>
+					</li>
 				{% endfor %}
-			</div>
+			</ul>
 
-			{# Message quand aucun résultat #}
-			<div class="alert alert-warning mt-4 hidden" data-utensil-filter-target="noResults">
-				<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewbox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-				</svg>
-				<span>Aucun ustensile ne correspond à votre recherche.</span>
-			</div>
-
-			{# Pagination #}
-			<div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 md:mt-6" data-utensil-filter-target="pagination">
-				<div
-					class="text-xs md:text-sm text-base-content/70" data-utensil-filter-target="pageInfo"><!-- Dynamically updated -->
-				</div>
-				<div class="join">
-					<button class="join-item btn btn-xs md:btn-sm" data-action="click->utensil-filter#prevPage">«</button>
-					<!-- Page numbers will be inserted here dynamically -->
-					<button class="join-item btn btn-xs md:btn-sm" data-action="click->utensil-filter#nextPage">»</button>
-				</div>
-			</div>
+			{{ ui.filter_footer('utensil-filter', 'ustensile') }}
 		{% endif %}
 	</div>
 {% endblock %}

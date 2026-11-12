@@ -1,0 +1,12 @@
+{#
+	Macros de mise en forme sans dépendance (pas de ux_icon / asset) :
+	utilisables aussi dans le PDF, rendu par un Twig minimal dans les tests.
+#}
+
+{# Quantité lisible : masque 0 / vide, retire les zéros inutiles (« 2.00 » → « 2 », « 0.25 » → « 0,25 ») #}
+{% macro amount(value, unit = null) %}
+	{%- if value is not empty and value > 0 -%}
+		{{- value|number_format(2, ',', ' ')|trim('0', 'right')|trim(',', 'right') -}}
+		{{- unit ? ' ' ~ unit : '' -}}
+	{%- endif -%}
+{% endmacro %}

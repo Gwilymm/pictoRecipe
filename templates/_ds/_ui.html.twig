@@ -8,6 +8,19 @@
 	{{- item.pictogram and item.pictogram.filePath ? asset(item.pictogram.filePath) : item.pictogramUrl -}}
 {%- endmacro %}
 
+{# URL de la photo d'une recette (chemin local ou URL distante importée) #}
+{% macro recipe_image_src(recipe) -%}
+	{%- set path = recipe.imagePath|default(null) -%}
+	{{- path ? (path starts with 'http' ? path : asset(path)) : '' -}}
+{%- endmacro %}
+
+{# Style de cadrage choisi dans l'assistant (position + zoom) #}
+{% macro recipe_image_style(recipe) -%}
+	{%- set x = recipe.imagePositionX|default(50) -%}
+	{%- set y = recipe.imagePositionY|default(50) -%}
+	object-position: {{ x }}% {{ y }}%; transform-origin: {{ x }}% {{ y }}%; transform: scale({{ recipe.imageZoom|default(1) }});
+{%- endmacro %}
+
 {# Tuile pictogramme : image sur fond blanc + nom dessous #}
 {% macro picto_tile(src, name, size = 'md', selected = false) %}
 	{% set px = { sm: 'w-16', md: 'w-32', lg: 'w-40' }[size] %}
@@ -29,55 +42,78 @@
 	{% set soft = { ingredient: 'bg-ingredient-soft', utensil: 'bg-utensil-soft', step: 'bg-step-soft' }[role] %}
 	<div class="flex items-center gap-3.5">
 		<span class="section-mark {{ mark }}" aria-hidden="true"></span>
-		<h2 {% if id %}id="{{ id }}"{% endif %} class="text-3xl">{{ label }}</h2>
-		{% if count is not null %}<span class="rounded-full px-3 py-1 font-bold {{ soft }}">{{ count }}</span>{% endif %}
+		<h2 {% if id %}id="{{ id }}"{% endif %} class="text-xl">{{ label }}</h2>
+		{% if count is not null %}<span class="rounded-full px-2.5 py-0.5 text-sm font-bold {{ soft }}">{{ count }}</span>{% endif %}
 	</div>
 {% endmacro %}
 
-{# Quantité lisible : masque 0 / vide, retire les zéros inutiles (« 2.00 » → « 2 », « 0.25 » → « 0,25 ») #}
+{# Quantité lisible (voir _format.html.twig) #}
 {% macro amount(value, unit = null) %}
-	{%- if value is not empty and value > 0 -%}
-		{{- value|number_format(2, ',', ' ')|trim('0', 'right')|trim(',', 'right') -}}
-		{{- unit ? ' ' ~ unit : '' -}}
-	{%- endif -%}
+	{%- import '_ds/_format.html.twig' as format -%}
+	{{- format.amount(value, unit) -}}
 {% endmacro %}
 
-{# Carte ingrédient de la fiche #}
-{% macro ingredient_card(ingredient) %}
+{#
+	Carte ingrédient de la fiche.
+	Le même gabarit existe en JS dans stepper_controller.js (ingredientCardHtml) : garder les deux alignés.
+	index    : data-ingredient-index (lu par stepper / pictogram-autofill)
+	sortable : carte déplaçable (assistant)
+#}
+{% macro ingredient_card(ingredient, index = null, sortable = false) %}
 	{% import _self as ui %}
 	{% set src = ui.picto_src(ingredient)|trim %}
-	<li class="flex flex-col items-center gap-3 rounded-box border border-base-300 border-t-[6px] border-t-accent bg-base-100 p-4 text-center">
-		<div class="picto-tile w-32">
-			{% if src %}<img src="{{ src }}" alt="" loading="lazy">{% endif %}
+	<li class="flex flex-col items-center gap-2 rounded-box border border-base-300 border-t-4 border-t-accent bg-base-100 p-3 text-center{{ sortable ? ' cursor-move select-none' : '' }}"
+		{% if index is not null %}data-ingredient-index="{{ index }}"{% endif %}
+		{% if sortable %}draggable="true" title="Déplacer {{ ingredient.name }}"{% endif %}>
+		<div class="picto-tile w-16" data-picto-slot>
+			{% if src %}<img src="{{ src }}" alt="" loading="lazy">{% else %}{{ ux_icon('lucide:image', { class: 'size-1/3 text-base-300', 'aria-hidden': 'true' }) }}{% endif %}
 		</div>
 		{% set qty = ui.amount(ingredient.amount, ingredient.unit)|trim %}
-		{% if qty %}<span class="font-display text-2xl font-semibold">{{ qty }}</span>{% endif %}
-		<span class="text-lg font-bold leading-snug">{{ ingredient.name }}</span>
+		{% if qty %}<span class="font-bold">{{ qty }}</span>{% endif %}
+		<span class="text-sm leading-snug" data-ingredient-name>{{ ingredient.name }}</span>
+		{% if sortable %}
+			<button type="button" class="btn btn-sm btn-ghost hidden" data-action="click->pictogram-autofill#proposeIngredient">Proposer un autre pictogramme</button>
+		{% endif %}
 	</li>
 {% endmacro %}
 
-{# Étape numérotée + durée + pictos #}
+{#
+	Étape numérotée + durée + pictos.
+	Le même gabarit existe en JS dans stepper_controller.js (stepCardHtml) : garder les deux alignés.
+#}
 {% macro step_card(number, step) %}
 	{% set urls = step.pictogram and step.pictogram.filePath
 		? [asset(step.pictogram.filePath)]
 		: (step.pictogramUrls ?: (step.pictogramUrl ? [step.pictogramUrl] : [])) %}
-	<li class="flex items-start gap-5 rounded-box border border-base-300 bg-base-100 p-5">
+	<li class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3" data-step-index="{{ number - 1 }}">
 		<span class="step-badge" aria-hidden="true">{{ number }}</span>
 		<div class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-4">
-			<div class="flex-[1_1_22rem]">
-				<p class="text-[1.15rem] leading-relaxed"><span class="sr-only">Étape {{ number }} : </span>{{ step.content }}</p>
+			<div class="flex-[1_1_18rem]">
+				<p class="leading-relaxed"><span class="sr-only">Étape {{ number }} : </span><span data-step-content>{{ step.content }}</span></p>
 				{% if step.durationMinutes %}
-					<p class="mt-2 inline-flex items-center gap-1.5 text-muted">
-						{{ ux_icon('lucide:clock', { class: 'size-5', 'aria-hidden': 'true' }) }}{{ step.durationMinutes }} min
+					<p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
+						{{ ux_icon('lucide:clock', { class: 'size-4', 'aria-hidden': 'true' }) }}{{ step.durationMinutes }} min
 					</p>
 				{% endif %}
 			</div>
 			{% if urls|length %}
-				<div class="flex flex-wrap gap-2">
-					{% for url in urls %}<div class="picto-tile w-[72px]"><img src="{{ url }}" alt="" loading="lazy"></div>{% endfor %}
+				<div class="flex flex-wrap gap-2" data-step-pictograms>
+					{% for url in urls %}<div class="picto-tile w-12"><img src="{{ url }}" alt="" loading="lazy"></div>{% endfor %}
 				</div>
 			{% endif %}
 		</div>
+	</li>
+{% endmacro %}
+
+{# Tuile ustensile de la fiche (même gabarit en JS : stepper_controller.js, utensilTileHtml) #}
+{% macro utensil_tile(utensil, index) %}
+	{% import _self as ui %}
+	{% set src = ui.picto_src(utensil)|trim %}
+	<li class="flex flex-col items-center gap-2 text-center" data-utensil-index="{{ index }}">
+		<div class="picto-tile w-full max-w-16" data-picto-slot>
+			{% if src %}<img src="{{ src }}" alt="" loading="lazy">{% else %}{{ ux_icon('lucide:image', { class: 'size-1/3 text-base-300', 'aria-hidden': 'true' }) }}{% endif %}
+		</div>
+		<span class="text-sm leading-tight" data-utensil-name>{{ utensil.name }}</span>
 	</li>
 {% endmacro %}
 
@@ -90,12 +126,13 @@
 {% endmacro %}
 
 {# Bouton « Supprimer » (contour, jamais plein) + confirmation dans _dialog_modal #}
-{% macro delete_button(action, token, name, what = 'cet élément', extra_class = '') %}
+{% macro delete_button(action, token, name, what = 'cet élément', extra_class = '', icon_only = false) %}
 	<div data-controller="modal" class="contents">
-		<button type="button" class="btn btn-outline btn-error {{ extra_class }}"
+		<button type="button" class="btn btn-outline btn-error{{ icon_only ? ' btn-square' : '' }} {{ extra_class }}"
+		        {% if icon_only %}aria-label="Supprimer {{ name }}"{% endif %}
 		        data-action="modal#open" data-modal-action="{{ action }}" data-modal-token="{{ token }}" data-modal-name="{{ name }}">
 			{{ ux_icon('lucide:trash-2', { class: 'size-5', 'aria-hidden': 'true' }) }}
-			Supprimer
+			{% if not icon_only %}Supprimer{% endif %}
 		</button>
 		{{ include('partials/_dialog_modal.html.twig', {
 			id: 'delete-' ~ random(),
@@ -104,6 +141,43 @@
 			confirm_label: 'Supprimer',
 		}) }}
 	</div>
+{% endmacro %}
+
+{#
+	Barre de recherche + compteur + message « aucun résultat » + pagination des galeries
+	filtrées côté client (pictogram_filter_controller / utensil_filter_controller).
+	ctrl : identifiant du contrôleur Stimulus ; label : nom au pluriel (« pictogrammes »)
+#}
+{% macro filter_search(ctrl, label, total) %}
+	<div class="space-y-2">
+		<div class="join w-full max-w-xl">
+			<label for="{{ ctrl }}-q" class="sr-only">Rechercher des {{ label }}</label>
+			<input id="{{ ctrl }}-q" type="search" placeholder="Rechercher des {{ label }}…" class="input join-item flex-1" data-{{ ctrl }}-target="searchInput" data-action="input->{{ ctrl }}#filter">
+			<button type="button" class="btn btn-outline btn-square join-item" aria-label="Effacer la recherche" data-action="click->{{ ctrl }}#clear">
+				{{ ux_icon('lucide:x', { class: 'size-5', 'aria-hidden': 'true' }) }}
+			</button>
+		</div>
+		<p class="text-muted" data-{{ ctrl }}-target="counter" aria-live="polite">
+			<span data-{{ ctrl }}-target="visibleCount">{{ total }}</span> / {{ total }} {{ label }}
+		</p>
+	</div>
+{% endmacro %}
+
+{% macro filter_footer(ctrl, label) %}
+	<p class="hidden rounded-box border-2 border-dashed border-base-300 bg-base-100 p-6 text-center text-muted" data-{{ ctrl }}-target="noResults">
+		Aucun {{ label }} ne correspond à votre recherche.
+	</p>
+	<nav class="flex flex-col items-center justify-between gap-3 sm:flex-row" aria-label="Pagination" data-{{ ctrl }}-target="pagination">
+		<p class="text-muted" data-{{ ctrl }}-target="pageInfo"></p>
+		<div class="join">
+			<button type="button" class="btn join-item" aria-label="Page précédente" data-action="click->{{ ctrl }}#prevPage">
+				{{ ux_icon('lucide:chevron-left', { class: 'size-5', 'aria-hidden': 'true' }) }}
+			</button>
+			<button type="button" class="btn join-item" aria-label="Page suivante" data-action="click->{{ ctrl }}#nextPage">
+				{{ ux_icon('lucide:chevron-left', { class: 'size-5 rotate-180', 'aria-hidden': 'true' }) }}
+			</button>
+		</div>
+	</nav>
 {% endmacro %}
 
 {# Filtres de sources de la recherche de pictogrammes (picto_search_controller) #}

@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { esc, IMAGE_ICON } from '../lib/ui.js';
 
 export default class extends Controller {
 	static targets = [ 'url', 'fetchBtn', 'message', 'preview', 'importBtn' ];
@@ -63,75 +64,69 @@ export default class extends Controller {
 
 	renderPreview(recipe) {
 		if (!this.hasPreviewTarget) return;
-		// Minimal rendering similar to recipe_search_controller
-		const html = `
-      <div class="card bg-base-100 shadow-md p-3 md:p-6">
-        <div class="flex items-start gap-4">
-					<div class="skeleton w-24 h-24 md:w-32 md:h-32 rounded-lg mr-2 hidden sm:block" data-image-src="${(() => {
-				try {
-					const url = new URL(recipe.image || recipe.picture || '');
-					const host = url.host;
-					const allowedSuffixes = [ 'afcdn.com', 'marmiton.org', 'papillesetpupilles.fr' ];
-					if (allowedSuffixes.some(s => host.endsWith(s))) return `/api/image-proxy?url=${encodeURIComponent(url.toString())}`;
-				} catch (e) {
-					// ignore URL parse errors
-				}
-				return recipe.image || recipe.picture || '';
-			})()}"></div>
-          <div class="flex-1">
-            <h2 class="text-xl font-bold mb-2">${recipe.title || 'Titre'}</h2>
-            <div class="text-sm text-muted mb-2">${recipe.author ? `Par ${recipe.author}` : ''} ${recipe.published ? `— ${recipe.published}` : ''}</div>
-            ${recipe.description ? `<p class="mb-2">${recipe.description}</p>` : ''}
-            ${recipe.primary && recipe.primary.length ? `<div class="mb-2">${recipe.primary.map(p => `<span class="badge badge-sm badge-outline mr-1">${p}</span>`).join('')}</div>` : ''}
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-          <div>
-            <h3 class="font-bold">Ingrédients</h3>
-            <ul class="list-disc pl-4 text-sm">${(recipe.ingredients || []).map(i => `<li>${(i.quantity || '')} ${(i.unit || '')} ${i.name || ''}</li>`).join('')}</ul>
-          </div>
-          <div>
-            <h3 class="font-bold">Préparation</h3>
-            <ol class="list-decimal pl-4 text-sm">${(recipe.steps || []).map(s => `<li>${s.text || s.content || ''}</li>`).join('')}</ol>
-          </div>
-        </div>
-        <div class="mt-3 text-right">
-          ${recipe.url ? `<a class="btn btn-xs btn-outline" href="${recipe.url}" target="_blank" rel="noopener">Voir l'original</a>` : ''}
-        </div>
-      </div>`;
-		this.previewTarget.innerHTML = html;
-		// After rendering preview, load skeleton images into real <img> tags
-		this._replaceSkeletonsWithImages(this.previewTarget);
-	}
+		// Toutes les valeurs viennent du site importé : tout passe par esc()
+		const image = (() => {
+			try {
+				const url = new URL(recipe.image || recipe.picture || '');
+				const allowedSuffixes = [ 'afcdn.com', 'marmiton.org', 'papillesetpupilles.fr' ];
+				if (allowedSuffixes.some(s => url.host.endsWith(s))) return `/api/image-proxy?url=${encodeURIComponent(url.toString())}`;
+				return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
+			} catch (e) {
+				return '';
+			}
+		})();
+		const original = (() => {
+			try {
+				const url = new URL(recipe.url || '');
+				return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
+			} catch (e) {
+				return '';
+			}
+		})();
+		const byline = [ recipe.author ? `Par ${esc(recipe.author)}` : '', esc(recipe.published) ].filter(Boolean).join(' — ');
 
-	_createImageElement(src, alt, cssClass) {
-		const img = document.createElement('img');
-		img.alt = alt || '';
-		img.className = cssClass || '';
-		img.referrerPolicy = 'no-referrer';
-		return img;
+		this.previewTarget.innerHTML = `
+			<article class="space-y-6">
+				<header class="flex flex-col gap-5 sm:flex-row sm:items-start">
+					<div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-box bg-step-soft sm:w-44" data-image-frame>
+						${image ? `<div class="skeleton absolute inset-0 rounded-none" data-image-src="${esc(image)}"></div>` : `<div class="grid h-full place-items-center text-primary">${IMAGE_ICON}</div>`}
+					</div>
+					<div class="min-w-0 flex-1 space-y-2">
+						<h2 class="text-xl">${esc(recipe.title || 'Titre')}</h2>
+						${byline ? `<p class="text-sm text-muted">${byline}</p>` : ''}
+						${recipe.description ? `<p>${esc(recipe.description)}</p>` : ''}
+						${recipe.primary?.length ? `<ul class="flex flex-wrap gap-2">${recipe.primary.map(p => `<li class="rounded-full bg-base-200 px-3 py-1 text-sm font-bold">${esc(p)}</li>`).join('')}</ul>` : ''}
+						${original ? `<a class="link link-hover inline-flex items-center gap-1 text-secondary" href="${esc(original)}" target="_blank" rel="noopener">Voir la recette d’origine</a>` : ''}
+					</div>
+				</header>
+				<div class="grid gap-6 md:grid-cols-2">
+					<section class="space-y-3">
+						<div class="flex items-center gap-3"><span class="section-mark bg-accent" aria-hidden="true"></span><h3 class="text-base">Ingrédients</h3></div>
+						<ul class="space-y-1.5">${(recipe.ingredients || []).map(i => `<li class="border-l-4 border-accent pl-3">${esc([ i.quantity, i.unit, i.name ].filter(Boolean).join(' '))}</li>`).join('')}</ul>
+					</section>
+					<section class="space-y-3">
+						<div class="flex items-center gap-3"><span class="section-mark bg-primary" aria-hidden="true"></span><h3 class="text-base">Préparation</h3></div>
+						<ol class="list-decimal space-y-1.5 pl-6 marker:font-bold">${(recipe.steps || []).map(s => `<li>${esc(s.text || s.content || '')}</li>`).join('')}</ol>
+					</section>
+				</div>
+			</article>`;
+		this._replaceSkeletonsWithImages(this.previewTarget);
 	}
 
 	_replaceSkeletonsWithImages(root) {
 		if (!root) return;
-		const skeletons = root.querySelectorAll('[data-image-src]');
-		skeletons.forEach(skel => {
+		root.querySelectorAll('[data-image-src]').forEach(skel => {
 			const src = skel.getAttribute('data-image-src');
 			if (!src) return;
-			const cssClass = 'w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg mr-2 hidden sm:block';
-			const alt = (skel.getAttribute('data-image-alt') || '');
-			const img = this._createImageElement(src, alt, cssClass);
-			img.style.display = 'none';
-			img.onload = () => {
-				img.style.display = '';
-				try { skel.remove(); } catch (e) { console.warn('Removing skeleton failed', e); }
-			};
+			const img = document.createElement('img');
+			img.alt = '';
+			img.className = 'absolute inset-0 h-full w-full object-cover';
+			img.referrerPolicy = 'no-referrer';
+			img.onload = () => skel.remove();
 			img.onerror = () => {
 				console.warn('Recipe image failed to load:', src);
-				const fallback = document.createElement('div');
-				fallback.className = 'w-24 h-24 md:w-32 md:h-32 bg-base-300 rounded-lg mr-2 hidden sm:block flex items-center justify-center text-2xl';
-				fallback.textContent = '❌';
-				try { img.remove(); skel.parentNode.replaceChild(fallback, skel); } catch (e) { console.warn('Replacing skeleton with fallback failed', e); }
+				img.remove();
+				skel.outerHTML = `<div class="grid h-full place-items-center text-primary">${IMAGE_ICON}</div>`;
 			};
 			skel.insertAdjacentElement('afterend', img);
 			img.src = src;

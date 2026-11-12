@@ -184,13 +184,12 @@ export default class extends Controller {
 			card.setAttribute('data-pictogram-assigned', 'true');
 			return;
 		}
-		const placeholder = card.querySelector('div[class*="bg-base-300"]');
-		if (placeholder) {
+		const slot = card.querySelector('[data-picto-slot]');
+		if (slot) {
 			const newImg = document.createElement('img');
 			newImg.src = url;
 			newImg.alt = '';
-			newImg.className = 'w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg';
-			placeholder.parentNode.replaceChild(newImg, placeholder);
+			slot.replaceChildren(newImg);
 			card.setAttribute('data-pictogram-assigned', 'true');
 		}
 	}
@@ -203,8 +202,7 @@ export default class extends Controller {
 		badge.setAttribute('data-pictogram-saved', '');
 		badge.className = 'badge badge-success mt-2';
 		badge.textContent = 'Enregistré';
-		const body = card.querySelector('.card-body');
-		if (body) body.appendChild(badge); else card.appendChild(badge);
+		card.appendChild(badge);
 	}
 
 	_getIngredientDataList() {

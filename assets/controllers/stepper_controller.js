@@ -1,4 +1,56 @@
 import { Controller } from '@hotwired/stimulus';
+import { CLOCK_ICON, IMAGE_ICON } from '../lib/ui.js';
+
+// Gabarits de l'aperçu (étape 5) : copies JS des macros de templates/_ds/_ui.html.twig
+// (ingredient_card, step_card, utensil_tile) — garder les deux alignés.
+// Les valeurs reçues sont déjà échappées (escapeHtml).
+const PREVIEW_EMPTY_CLASS = 'rounded-box border-2 border-dashed border-base-300 bg-base-100 p-6 text-center text-muted';
+
+// Même règle que la macro ui.amount : masque 0 / vide, retire les zéros inutiles
+function formatAmount(value) {
+	const n = parseFloat(String(value).replace(',', '.'));
+	return Number.isFinite(n) && n > 0 ? n.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) : '';
+}
+
+function pictoSlot(url, sizeClass) {
+	return `<div class="picto-tile ${sizeClass}" data-picto-slot>${url ? `<img src="${url}" alt="" loading="lazy">` : IMAGE_ICON}</div>`;
+}
+
+function ingredientCardHtml(ing) {
+	const amount = formatAmount(ing.amount);
+	const qty = amount ? `${amount}${ing.unit ? ' ' + ing.unit : ''}` : '';
+	return `
+		<li class="flex flex-col items-center gap-2 rounded-box border border-base-300 border-t-4 border-t-accent bg-base-100 p-3 text-center cursor-move select-none" data-ingredient-index="${ing.index}" draggable="true" title="Déplacer ${ing.name}">
+			${pictoSlot(ing.pictogramUrl, 'w-16')}
+			${qty ? `<span class="font-bold">${qty}</span>` : ''}
+			<span class="text-sm leading-snug" data-ingredient-name>${ing.name}</span>
+		</li>`;
+}
+
+function stepCardHtml(step) {
+	return `
+		<li class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3" data-step-index="${step.position - 1}">
+			<span class="step-badge" aria-hidden="true">${step.position}</span>
+			<div class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-4">
+				<div class="flex-[1_1_18rem]">
+					<p class="leading-relaxed"><span class="sr-only">Étape ${step.position} : </span><span data-step-content>${step.content}</span></p>
+					${step.duration ? `<p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">${CLOCK_ICON}${step.duration} min</p>` : ''}
+				</div>
+				${step.pictogramUrls.length ? `
+					<div class="flex flex-wrap gap-2" data-step-pictograms>
+						${step.pictogramUrls.map(url => `<div class="picto-tile w-12"><img src="${url}" alt="" loading="lazy"></div>`).join('')}
+					</div>` : ''}
+			</div>
+		</li>`;
+}
+
+function utensilTileHtml(utensil, index) {
+	return `
+		<li class="flex flex-col items-center gap-2 text-center" data-utensil-index="${index}">
+			${pictoSlot(utensil.pictogramUrl, 'w-full max-w-16')}
+			<span class="text-sm leading-tight" data-utensil-name>${utensil.name}</span>
+		</li>`;
+}
 
 // Stepper controller pour gérer les 5 étapes du formulaire de recette
 // avec navigation et affichage dynamique de la prévisualisation
@@ -57,25 +109,17 @@ export default class extends Controller {
 			el.classList.toggle('hidden', i !== this.index);
 		});
 
-		// Mettre à jour l'état des indicateurs de step (DaisyUI)
+		// Barre de progression : segments faits + courant remplis, segment courant marqué aria-current
 		this.stepItemTargets.forEach((el, i) => {
-			if (i < this.index) {
-				// Étapes complétées
-				el.classList.add('step-primary');
-			} else if (i === this.index) {
-				// Étape courante
-				el.classList.add('step-primary');
-			} else {
-				// Étapes futures
-				el.classList.remove('step-primary');
-			}
+			el.classList.toggle('is-done', i <= this.index);
+			if (i === this.index) el.setAttribute('aria-current', 'step'); else el.removeAttribute('aria-current');
 		});
 
-		// Mettre à jour le badge du nom de l'étape (mobile)
+		// Libellé « Étape n sur 5 · Nom »
 		if (this.hasCurrentStepNameTarget && this.stepItemTargets[ this.index ]) {
 			const stepName = this.stepItemTargets[ this.index ].dataset.stepName;
 			if (stepName) {
-				this.currentStepNameTarget.textContent = stepName;
+				this.currentStepNameTarget.textContent = `Étape ${this.index + 1} sur ${this.stepItemTargets.length} · ${stepName}`;
 			}
 		}
 
@@ -303,8 +347,8 @@ export default class extends Controller {
 
 		// Reconstruire le HTML des ingrédients
 		if (ingredients.length === 0) {
-			ingredientsContainer.className = 'alert alert-info mb-6';
-			ingredientsContainer.innerHTML = '<span>Aucun ingrédient défini pour cette recette.</span>';
+			ingredientsContainer.className = PREVIEW_EMPTY_CLASS;
+			ingredientsContainer.innerHTML = 'Aucun ingrédient pour cette recette.';
 		} else {
 			const groups = new Map();
 			ingredients.forEach(ingredient => {
@@ -315,31 +359,19 @@ export default class extends Controller {
 				groups.get(key).ingredients.push(ingredient);
 			});
 
-			ingredientsContainer.className = 'space-y-4 mb-6';
+			ingredientsContainer.className = 'space-y-6';
 			ingredientsContainer.innerHTML = `
-				<p class="text-sm text-base-content/70">Glissez une carte pour modifier l’ordre des ingrédients ou changer leur groupe.</p>
+				<p class="text-muted">Glissez une carte pour changer l’ordre des ingrédients ou leur groupe.</p>
 				${[ ...groups.values() ].map(group => `
-					<section class="rounded-2xl border border-base-300 bg-base-100/60 p-3 md:p-4" data-preview-ingredient-group>
-						<div class="flex items-center justify-between gap-3 mb-3">
-							<h3 class="text-base md:text-lg font-bold text-primary">${group.label || 'Sans groupe'}</h3>
-							<span class="badge badge-outline" data-preview-ingredient-count>${group.ingredients.length}</span>
-						</div>
-						<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 min-h-20" data-preview-ingredient-drop-zone data-section-label="${group.label}">
-							${group.ingredients.map(ing => `
-								<div class="card bg-base-200/50 shadow-sm transition-all cursor-move select-none" data-ingredient-index="${ing.index}" draggable="true" title="Déplacer ${ing.name}" style="cursor: move;">
-									<div class="card-body p-3">
-										<div class="flex gap-3 items-center">
-											${ing.pictogramUrl ? `<img src="${ing.pictogramUrl}" alt="${ing.name}" class="w-12 h-12 object-contain">` : '<div class="w-12 h-12 bg-base-300 rounded flex items-center justify-center text-2xl">🥕</div>'}
-											<div class="flex-1 min-w-0">
-												<div class="font-medium">${ing.name}</div>
-												<div class="text-sm text-base-content/70">${ing.amount} ${ing.unit}</div>
-											</div>
-										</div>
-									</div>
-								</div>
-							`).join('')}
-						</div>
-					</section>
+					<div class="space-y-3" data-preview-ingredient-group>
+						<h3 class="flex items-center gap-2 text-base">
+							${group.label || 'Sans groupe'}
+							<span class="rounded-full bg-ingredient-soft px-2 text-sm font-bold" data-preview-ingredient-count>${group.ingredients.length}</span>
+						</h3>
+						<ul class="grid min-h-20 grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6" data-preview-ingredient-drop-zone data-section-label="${group.label}">
+							${group.ingredients.map(ing => ingredientCardHtml(ing)).join('')}
+						</ul>
+					</div>
 				`).join('')}
 			`;
 		}
@@ -476,7 +508,7 @@ export default class extends Controller {
 				steps.push({
 					position: index + 1,
 					content: this.escapeHtml(contentInput.value),
-					duration: durationInput?.value || '',
+					duration: this.escapeHtml(durationInput?.value || ''),
 					pictogramUrls: pictogramUrls.map(url => this.escapeHtml(url))
 				});
 			}
@@ -484,32 +516,11 @@ export default class extends Controller {
 
 		// Reconstruire le HTML des étapes
 		if (steps.length === 0) {
-			stepsContainer.className = 'alert alert-info mb-6';
-			stepsContainer.innerHTML = '<span>Aucune étape de préparation définie.</span>';
+			stepsContainer.className = PREVIEW_EMPTY_CLASS;
+			stepsContainer.innerHTML = 'Aucune étape de préparation.';
 		} else {
-			stepsContainer.className = 'space-y-4 mb-6';
-			stepsContainer.innerHTML = steps.map(step => `
-				<div class="card bg-base-200/30 shadow-sm">
-					<div class="card-body p-3 md:p-4">
-						<div class="flex items-start gap-3 md:gap-4">
-							<div class="shrink-0">
-								<div class="badge badge-md md:badge-lg badge-primary font-bold">${step.position}</div>
-							</div>
-							<div class="flex-1 min-w-0">
-								<div class="flex items-center gap-2 mb-2">
-									${step.duration ? `<span class="badge badge-ghost badge-sm md:badge-md gap-1">⏱️ ${step.duration} minutes</span>` : ''}
-								</div>
-								<p class="text-sm md:text-base leading-relaxed">${step.content}</p>
-								${step.pictogramUrls.length > 0 ? `
-									<div class="flex flex-wrap items-center gap-2 md:gap-3 mt-3" data-step-pictograms>
-										${step.pictogramUrls.map(url => `<img src="${url}" alt="Picto" class="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-base-200 p-1">`).join('')}
-									</div>
-								` : ''}
-							</div>
-						</div>
-					</div>
-				</div>
-			`).join('');
+			stepsContainer.className = '';
+			stepsContainer.innerHTML = `<ol class="space-y-2">${steps.map(step => stepCardHtml(step)).join('')}</ol>`;
 		}
 	}
 
@@ -540,18 +551,11 @@ export default class extends Controller {
 
 		// Reconstruire le HTML des ustensiles
 		if (utensils.length === 0) {
-			utensilsContainer.className = 'alert alert-info mb-6';
-			utensilsContainer.innerHTML = '<span>Aucun ustensile spécifié.</span>';
+			utensilsContainer.className = PREVIEW_EMPTY_CLASS;
+			utensilsContainer.innerHTML = 'Aucun ustensile pour cette recette.';
 		} else {
-			utensilsContainer.className = 'grid grid-cols-2 md:grid-cols-4 gap-3 mb-6';
-			utensilsContainer.innerHTML = utensils.map(utensil => `
-				<div class="card bg-base-200/30 shadow-sm">
-					<div class="card-body p-3 flex flex-col items-center gap-2">
-						${utensil.pictogramUrl ? `<img src="${utensil.pictogramUrl}" alt="${utensil.name}" class="w-12 h-12 object-contain">` : '<div class="w-12 h-12 bg-base-300 rounded flex items-center justify-center text-2xl">🍴</div>'}
-						<span class="text-sm text-center font-medium">${utensil.name}</span>
-					</div>
-				</div>
-			`).join('');
+			utensilsContainer.className = '';
+			utensilsContainer.innerHTML = `<ul class="grid grid-cols-4 gap-3 sm:grid-cols-6 lg:grid-cols-8">${utensils.map((utensil, i) => utensilTileHtml(utensil, i)).join('')}</ul>`;
 		}
 	}
 

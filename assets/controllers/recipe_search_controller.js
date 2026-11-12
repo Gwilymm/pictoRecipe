@@ -1,4 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
+import { esc, CLOCK_ICON, IMAGE_ICON } from '../lib/ui.js';
+
+const SOURCE_LABELS = { cuisineaz: 'Cuisine AZ', papillesetpupilles: 'Papilles & Pupilles', marmiton: 'Marmiton' };
 
 export default class extends Controller {
 	static targets = [
@@ -266,43 +269,37 @@ export default class extends Controller {
 		this.paginationTarget.innerHTML = '';
 		if (this.totalPages <= 1) return;
 
-		const container = document.createElement('div');
-		container.className = 'btn-group';
+		const container = document.createElement('nav');
+		container.className = 'join';
+		container.setAttribute('aria-label', 'Pagination');
 
-		// Prev
-		const prev = document.createElement('button');
-		prev.className = 'btn btn-sm';
-		prev.disabled = this.currentPage <= 1;
-		prev.innerText = '<';
-		prev.dataset.page = Math.max(1, this.currentPage - 1);
-		prev.dataset.action = 'click->recipe-search#gotoPage';
-		container.appendChild(prev);
+		const pageButton = (page, label, { ariaLabel = null, current = false, disabled = false } = {}) => {
+			const btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'btn join-item' + (current ? ' border-primary bg-step-soft' : '');
+			btn.textContent = label;
+			btn.disabled = disabled;
+			btn.dataset.page = page;
+			btn.dataset.action = 'click->recipe-search#gotoPage';
+			if (ariaLabel) btn.setAttribute('aria-label', ariaLabel);
+			if (current) btn.setAttribute('aria-current', 'page');
+			return btn;
+		};
 
-		// Page numbers (limit to 7 visible)
+		container.appendChild(pageButton(Math.max(1, this.currentPage - 1), '‹', { ariaLabel: 'Page précédente', disabled: this.currentPage <= 1 }));
+
+		// Numéros de page (7 visibles au plus)
 		const maxVisible = 7;
 		let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
 		let endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
 		if (endPage - startPage + 1 < maxVisible) {
 			startPage = Math.max(1, endPage - maxVisible + 1);
 		}
-
 		for (let p = startPage; p <= endPage; p++) {
-			const btn = document.createElement('button');
-			btn.className = 'btn btn-sm ' + (p === this.currentPage ? 'btn-active' : '');
-			btn.innerText = String(p);
-			btn.dataset.page = p;
-			btn.dataset.action = 'click->recipe-search#gotoPage';
-			container.appendChild(btn);
+			container.appendChild(pageButton(p, String(p), { current: p === this.currentPage }));
 		}
 
-		// Next
-		const next = document.createElement('button');
-		next.className = 'btn btn-sm';
-		next.disabled = this.currentPage >= this.totalPages;
-		next.innerText = '>';
-		next.dataset.page = Math.min(this.totalPages, this.currentPage + 1);
-		next.dataset.action = 'click->recipe-search#gotoPage';
-		container.appendChild(next);
+		container.appendChild(pageButton(Math.min(this.totalPages, this.currentPage + 1), '›', { ariaLabel: 'Page suivante', disabled: this.currentPage >= this.totalPages }));
 
 		this.paginationTarget.appendChild(container);
 	}
@@ -325,7 +322,7 @@ export default class extends Controller {
 
 	createRecipeCard(recipe) {
 		const card = document.createElement("div");
-		card.className = "card bg-base-100 shadow-md p-3 md:p-4 text-center";
+		card.className = "flex flex-col overflow-hidden rounded-box border border-base-300 bg-base-100";
 
 		// Provide dataset attributes so external controller (sorting/filtering) can read metadata
 		card.dataset.itemTitle = (recipe.title || '').toString();
@@ -333,81 +330,74 @@ export default class extends Controller {
 		card.dataset.itemSource = (recipe.source || '').toString();
 		card.dataset.itemUrl = (recipe.url || '').toString();
 
-		const cssClass = 'w-24 h-24 md:w-32 md:h-32 object-cover mx-auto rounded-lg mb-2 md:mb-3';
+		// Photo 4/3 : squelette, puis image (via le proxy pour les hôtes qui bloquent le hotlink)
+		const media = document.createElement('div');
+		media.className = 'relative aspect-[4/3] overflow-hidden bg-step-soft';
 		const skeleton = document.createElement('div');
-		skeleton.className = `skeleton ${cssClass}`;
-		skeleton.setAttribute('data-image-src', (() => {
+		skeleton.className = 'skeleton absolute inset-0 rounded-none';
+		media.appendChild(skeleton);
+
+		const imageSrc = (() => {
 			try {
 				const parsed = new URL(recipe.image || '');
-				const host = parsed.host;
 				const suffixes = [ 'afcdn.com', 'marmiton.org', 'papillesetpupilles.fr' ];
-				if (suffixes.some(s => host.endsWith(s))) {
+				if (suffixes.some(s => parsed.host.endsWith(s))) {
 					return `/api/image-proxy?url=${encodeURIComponent(parsed.toString())}`;
 				}
 			} catch (e) {
 				// ignore parse errors
 			}
 			return recipe.image || '';
-		})());
+		})();
 
-		// Load image into skeleton asynchronously
-		const loadImage = (sk) => {
-			const src = sk.getAttribute('data-image-src');
-			if (!src) return;
-			const imgEl = document.createElement('img');
-			imgEl.alt = recipe.title || '';
-			imgEl.className = cssClass;
-			imgEl.referrerPolicy = 'no-referrer';
-			imgEl.style.display = 'none';
-			imgEl.onload = () => {
-				imgEl.style.display = '';
-				try { sk.remove(); } catch (e) { console.warn('Remove skeleton failed', e); }
-			};
-			imgEl.onerror = () => {
-				console.warn('Recipe card image failed to load:', src);
-				const fallback = document.createElement('div');
-				fallback.className = 'w-24 h-24 md:w-32 md:h-32 bg-base-300 rounded-lg mb-2 md:mb-3 mx-auto flex items-center justify-center text-2xl';
-				fallback.textContent = '❌';
-				try { imgEl.remove(); sk.parentNode.replaceChild(fallback, sk); } catch (e) { console.warn('Replace with fallback failed', e); }
-			};
-			sk.insertAdjacentElement('afterend', imgEl);
-			imgEl.src = src;
+		const showPlaceholder = () => {
+			skeleton.remove();
+			media.insertAdjacentHTML('beforeend', `<div class="grid h-full place-items-center text-primary">${IMAGE_ICON}</div>`);
 		};
-
-		const title = document.createElement("h3");
-		title.className = "font-bold text-sm md:text-base mb-2";
-		title.textContent = recipe.title;
-
-		const meta = document.createElement('div');
-		meta.className = 'text-xs text-gray-500 mb-2 flex gap-2 items-center justify-center flex-wrap';
-		meta.innerHTML = `${recipe.rating ? `<span class="text-yellow-400">⭐</span> <span>${recipe.rating}</span>` : ''}`;
-
-		// score removed UI; no display of score in cards
-
-		const badge = document.createElement("div");
-		badge.className = "badge badge-sm badge-outline gap-1 mb-2";
-		const src = recipe.source || (recipe.url && recipe.url.includes('cuisineaz') ? 'cuisineaz' : recipe.url && recipe.url.includes('papillesetpupilles') ? 'papillesetpupilles' : 'marmiton');
-		if (src === 'cuisineaz') {
-			badge.innerHTML = "🍋 Cuisine AZ";
-		} else if (src === 'papillesetpupilles') {
-			badge.innerHTML = "🍴 Papilles & Pupilles";
+		if (imageSrc) {
+			const imgEl = document.createElement('img');
+			imgEl.alt = '';
+			imgEl.className = 'absolute inset-0 h-full w-full object-cover';
+			imgEl.referrerPolicy = 'no-referrer';
+			imgEl.loading = 'lazy';
+			imgEl.onload = () => skeleton.remove();
+			imgEl.onerror = () => {
+				console.warn('Recipe card image failed to load:', imageSrc);
+				imgEl.remove();
+				showPlaceholder();
+			};
+			imgEl.src = imageSrc;
+			media.appendChild(imgEl);
 		} else {
-			badge.innerHTML = "🥘 Marmiton";
+			showPlaceholder();
 		}
 
+		const body = document.createElement('div');
+		body.className = 'flex flex-1 flex-col gap-2 p-4';
+
+		const title = document.createElement("h3");
+		title.className = "text-base leading-snug";
+		title.textContent = recipe.title || '';
+
+		const src = recipe.source || (recipe.url && recipe.url.includes('cuisineaz') ? 'cuisineaz' : recipe.url && recipe.url.includes('papillesetpupilles') ? 'papillesetpupilles' : 'marmiton');
+		const meta = document.createElement('p');
+		meta.className = 'text-sm text-muted';
+		const rating = recipe.rating ? String(recipe.rating) : '';
+		meta.textContent = (SOURCE_LABELS[ src ] || SOURCE_LABELS.marmiton) + (rating ? ` · Note ${rating.includes('/') ? rating : rating + '/5'}` : '');
+
 		const btn = document.createElement("button");
-		btn.className = "btn btn-primary btn-xs md:btn-sm w-full mt-2";
+		btn.type = 'button';
+		btn.className = "btn btn-sm btn-outline mt-auto";
 		btn.textContent = "Voir la recette";
 		btn.addEventListener("click", () => this.openRecipeModal(recipe.url, src));
 
-		card.append(skeleton, title, meta, badge, btn);
-		// Trigger the loading of the skeleton image
-		loadImage(skeleton);
+		body.append(title, meta, btn);
+		card.append(media, body);
 		return card;
 	}
 
 	/* ============================================================
-	   🟧 3. MODALE
+	   3. MODALE
 	============================================================ */
 	async openRecipeModal(url, source = 'marmiton') {
 		let modal = document.getElementById("recipe-modal");
@@ -416,20 +406,20 @@ export default class extends Controller {
 			modal.id = "recipe-modal";
 			modal.className = "modal";
 			modal.innerHTML = `
-				<div class="modal-box w-11/12 max-w-5xl max-h-[90vh] overflow-y-auto">
+				<div class="modal-box w-11/12 max-w-5xl max-h-[90vh] overflow-y-auto p-5 sm:p-8">
 					<form method="dialog">
-						<button class="btn btn-xs md:btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+						<button class="btn btn-ghost btn-square absolute right-3 top-3" aria-label="Fermer">✕</button>
 					</form>
-					<div id="recipe-modal-content" class="py-2 md:py-4"></div>
+					<div id="recipe-modal-content"></div>
 				</div>
-				<form method="dialog" class="modal-backdrop"><button>close</button></form>`;
+				<form method="dialog" class="modal-backdrop"><button>Fermer</button></form>`;
 			document.body.appendChild(modal);
 		}
 
 		modal.showModal();
 
 		const container = document.getElementById("recipe-modal-content");
-		container.innerHTML = `<div class="flex justify-center py-8"><span class="loading loading-spinner loading-lg"></span></div>`;
+		container.innerHTML = `<div class="flex justify-center py-8"><span class="loading loading-spinner loading-lg" aria-label="Chargement"></span></div>`;
 
 		const endpoint = source === 'cuisineaz' || (url && url.includes('cuisineaz'))
 			? '/api/cuisineaz/recipe'
@@ -445,7 +435,7 @@ export default class extends Controller {
 		const data = await res.json();
 
 		if (!data.ok) {
-			container.innerHTML = `<div class="alert alert-error">Erreur : ${data.error}</div>`;
+			container.innerHTML = `<p class="rounded-box bg-danger-soft p-4 font-bold">Erreur : ${esc(data.error)}</p>`;
 			return;
 		}
 
@@ -453,25 +443,28 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🟩 4. JSON → HTML
+	   4. JSON → HTML (toutes les valeurs viennent d'un site tiers : tout passe par esc())
 	============================================================ */
 	displayRecipeJson(recipe, container) {
+		const byline = [ recipe.author ? `Par ${esc(recipe.author)}` : '', esc(recipe.published) ].filter(Boolean).join(' — ');
 		container.innerHTML = `
-			<div class="space-y-3 md:space-y-6">
-				${this.sectionTitle(recipe)}
-				<div class="flex justify-end">
-					<button class="btn btn-success btn-xs md:btn-sm" id="import-recipe-btn">📥 Importer cette recette</button>
-				</div>
-				${this.sectionPrimary(recipe)}
-				${recipe.description ? `<div class="card bg-base-200 shadow-xl"><div class="card-body p-3 md:p-6"><p class="text-sm md:text-base">${recipe.description}</p>${recipe.author || recipe.published ? `<div class="mt-2 text-xs text-muted">${recipe.author ? `Par ${recipe.author}` : ''}${recipe.author && recipe.published ? ' — ' : ''}${recipe.published ? recipe.published : ''}</div>` : ''}</div></div>` : ''}
-				${this.sectionTimes(recipe.times)}
+			<article class="space-y-6">
+				<header class="space-y-3 pr-12">
+					${recipe.title ? `<h2 class="text-2xl">${esc(recipe.title)}</h2>` : ''}
+					${this.sectionPrimary(recipe)}
+					${recipe.description ? `<p>${esc(recipe.description)}</p>` : ''}
+					${byline ? `<p class="text-sm text-muted">${byline}</p>` : ''}
+					${this.sectionTimes(recipe.times)}
+				</header>
 				${this.sectionIngredients(recipe.ingredients)}
 				${this.sectionUtensils(recipe.utensils)}
 				${this.sectionSteps(recipe.steps)}
-			</div>
+				<div class="flex justify-end">
+					<button type="button" class="btn btn-primary" id="import-recipe-btn">Importer cette recette</button>
+				</div>
+			</article>
 		`;
 
-		// Bind import button
 		const importBtn = document.getElementById("import-recipe-btn");
 		if (importBtn) {
 			importBtn.addEventListener("click", () => this.importRecipe(recipe));
@@ -479,179 +472,84 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🟦 5. SECTIONS
+	   5. SECTIONS (mêmes repères que la fiche : carotte / myrtille / basilic)
 	============================================================ */
-	sectionTitle(r) {
-		if (!r.title) return "";
-		return `
-			<div class="bg-primary text-primary-content p-3 md:p-6 rounded-xl shadow-xl">
-				<h2 class="text-xl md:text-2xl lg:text-3xl font-bold text-center">${r.title}</h2>
-			</div>`;
+	sectionHeading(label, markClass) {
+		return `<div class="flex items-center gap-3"><span class="section-mark ${markClass}" aria-hidden="true"></span><h3 class="text-lg">${label}</h3></div>`;
 	}
 
 	sectionPrimary(r) {
 		if (!r.primary?.length) return "";
-		return `
-			<div class="flex flex-wrap justify-center gap-1 md:gap-2">
-				${r.primary.map(i => `<div class="badge badge-sm md:badge-lg badge-outline">${i}</div>`).join("")}
-			</div>`;
+		return `<ul class="flex flex-wrap gap-2">${r.primary.map(i => `<li class="rounded-full bg-base-200 px-3 py-1 text-sm font-bold">${esc(i)}</li>`).join("")}</ul>`;
 	}
 
 	sectionTimes(times) {
 		if (!times || !times.total) return "";
-
+		const details = (times.details || []).map(d => `<li><span class="text-muted">${esc(d.label)}</span> ${esc(d.value)}</li>`).join("");
 		return `
-    <div class="card bg-base-200 shadow-xl">
-        <div class="card-body p-3 md:p-6">
-            <h3 class="card-title text-lg md:text-2xl mb-2 md:mb-4">⏱️ Temps</h3>
-
-            <!-- Temps total -->
-            <div class="stat place-items-center bg-primary text-primary-content rounded-2xl shadow mb-3 md:mb-6 p-3">
-                <div class="stat-title text-xs md:text-sm text-primary-content/80">Temps total</div>
-                <div class="stat-value text-xl md:text-3xl">${times.total}</div>
-            </div>
-
-            <!-- Stats détaillées -->
-            <div class="stats stats-vertical shadow w-full">
-                ${times.details.map(d => `
-                    <div class="stat p-3">
-                        <div class="stat-figure text-secondary text-lg md:text-2xl">🕒</div>
-                        <div class="stat-title text-xs md:text-sm">${d.label}</div>
-                        <div class="stat-value text-sm md:text-lg">${d.value}</div>
-                    </div>
-                `).join("")}
-            </div>
-        </div>
-    </div>
-    `;
+			<ul class="flex flex-wrap gap-x-6 gap-y-1 font-bold">
+				<li class="inline-flex items-center gap-1.5">${CLOCK_ICON}<span class="text-muted">Total</span> ${esc(times.total)}</li>
+				${details}
+			</ul>`;
 	}
 
-
-	/* ============================================================
-	   🥘 INGREDIENTS — FIXÉS ✔️
-	============================================================ */
 	sectionIngredients(ingredients) {
 		if (!ingredients || ingredients.length === 0) return "";
 
-		// Regrouper par groupe
 		const groups = {};
 		ingredients.forEach(item => {
-			const group = item.group || "Autres";
-			if (!groups[ group ]) groups[ group ] = [];
-			groups[ group ].push(item);
+			const group = item.group || "";
+			(groups[ group ] ||= []).push(item);
 		});
 
-		let html = `
-        <div class="card bg-base-200 shadow-xl">
-            <div class="card-body p-3 md:p-6">
-                <div class="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
-                    <div class="text-2xl md:text-3xl">🍪</div>
-                    <h3 class="card-title text-lg md:text-2xl lg:text-3xl font-bold">Ingrédients</h3>
-                </div>
-    `;
+		const groupsHtml = Object.entries(groups).map(([ groupName, items ]) => `
+			<div class="space-y-3">
+				${groupName ? `<h4 class="text-base">${esc(groupName)}</h4>` : ''}
+				<ul class="grid gap-2 sm:grid-cols-2">
+					${items.map(i => {
+						const text = [ i.quantity, i.unit, i.name, i.complement ].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+						return `<li class="rounded-box border border-base-300 border-l-4 border-l-accent bg-base-100 px-3 py-2">${esc(text)}</li>`;
+					}).join("")}
+				</ul>
+			</div>`).join("");
 
-		Object.entries(groups).forEach(([ groupName, items ]) => {
-			html += `
-            <h4 class="text-base md:text-xl font-bold mt-3 md:mt-6 mb-2 text-primary">${groupName}</h4>
-            <div class="grid grid-cols-2 gap-2 md:gap-3">
-        `;
-
-			items.forEach(i => {
-				const text = [
-					i.quantity || "",
-					i.unit || "",
-					i.name || "",
-					i.complement || ""
-				].join(" ").replace(/\s+/g, " ").trim();
-
-				html += `
-                <div class="p-2 md:p-4 rounded-xl bg-base-100 shadow flex items-center gap-2 md:gap-3 border border-base-300 hover:shadow-lg transition">
-                    <span class="text-base md:text-xl">✓</span>
-                    <span class="text-xs md:text-sm">${text}</span>
-                </div>
-            `;
-			});
-
-			html += `</div>`;
-		});
-
-		html += `
-            </div>
-        </div>
-    `;
-
-		return html;
+		return `<section class="space-y-4">${this.sectionHeading('Ingrédients', 'bg-accent')}${groupsHtml}</section>`;
 	}
 
-
-	/* ============================================================
-	   🔧 USTENSILES — FIXÉS ✔️
-	============================================================ */
 	sectionUtensils(utensils) {
-
 		if (!utensils || utensils.length === 0) return "";
 
-		// Remove duplicates
-		const unique = [];
-		const set = new Set();
-
-		utensils.forEach(u => {
-			const key = (u.name + "|" + u.quantity).trim();
-			if (!set.has(key)) {
-				set.add(key);
-				unique.push(u);
-			}
+		// Sans doublons
+		const seen = new Set();
+		const unique = utensils.filter(u => {
+			const key = `${u.name}|${u.quantity}`.trim();
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
 		});
 
-		let html = `
-        <div class="card bg-base-200 shadow-xl">
-            <div class="card-body p-3 md:p-6">
-                <h3 class="card-title text-lg md:text-2xl">🔧 Ustensiles</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mt-2 md:mt-4">
-    `;
-
-		unique.forEach(u => {
-			const text = `${u.quantity || ""} `.trim();
-
-			html += `
-            <div class="p-2 md:p-3 rounded-xl bg-base-100 shadow border border-base-300 flex items-center justify-center text-center hover:shadow-lg transition text-xs md:text-sm">
-                ${text}
-            </div>
-        `;
-		});
-
-		html += `
-                </div>
-            </div>
-        </div>
-    `;
-
-		return html;
+		return `
+			<section class="space-y-4">
+				${this.sectionHeading('Ustensiles', 'bg-secondary')}
+				<ul class="flex flex-wrap gap-2">
+					${unique.map(u => `<li class="rounded-full bg-utensil-soft px-4 py-2 font-bold">${esc((u.quantity || u.name || '').trim())}</li>`).join("")}
+				</ul>
+			</section>`;
 	}
 
-
-	/* ============================================================
-	   👨‍🍳 STEPS
-	============================================================ */
 	sectionSteps(steps) {
 		if (!steps?.length) return "";
 		return `
-			<div class="card bg-base-200 shadow-xl">
-				<div class="card-body p-3 md:p-6">
-					<h3 class="card-title text-lg md:text-2xl">👨‍🍳 Préparation</h3>
-
-					<div class="mt-2 md:mt-4 space-y-2 md:space-y-4">
-						${steps.map((s, i) => `
-							<div class="card bg-base-100 p-2 md:p-4 shadow">
-								<h4 class="font-bold mb-1 md:mb-2 text-sm md:text-base">
-									<span class="badge badge-sm md:badge-md badge-primary">${i + 1}</span>
-									${s.number || ""}
-								</h4>
-								<p class="text-xs md:text-sm">${s.text}</p>
-							</div>`).join("")}
-					</div>
-				</div>
-			</div>`;
+			<section class="space-y-4">
+				${this.sectionHeading('Préparation', 'bg-primary')}
+				<ol class="space-y-3">
+					${steps.map((s, i) => `
+						<li class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3">
+							<span class="step-badge" aria-hidden="true">${i + 1}</span>
+							<p class="pt-1 leading-relaxed"><span class="sr-only">Étape ${i + 1} : </span>${esc(s.text)}</p>
+						</li>`).join("")}
+				</ol>
+			</section>`;
 	}
 
 	/* ============================================================
@@ -727,7 +625,9 @@ export default class extends Controller {
 
 		const alert = document.createElement("div");
 		alert.className = `alert ${type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : 'alert-info'}`;
-		alert.innerHTML = `<span>${message}</span>`;
+		const span = document.createElement('span');
+		span.textContent = message;
+		alert.appendChild(span);
 		container.appendChild(alert);
 
 		setTimeout(() => {

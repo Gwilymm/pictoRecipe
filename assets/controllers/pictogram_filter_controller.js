@@ -128,13 +128,15 @@ export default class extends Controller {
 		// Insert page buttons before nextBtn
 		for (let i = startPage; i <= endPage; i++) {
 			const btn = document.createElement('button');
-			btn.className = 'join-item btn btn-xs md:btn-sm';
+			btn.className = 'join-item btn';
+			btn.type = 'button';
 			btn.textContent = i;
 			btn.dataset.page = i;
 			btn.dataset.action = 'click->pictogram-filter#goToPage';
 
 			if (i === this.currentPage) {
-				btn.classList.add('btn-active', 'btn-primary');
+				btn.classList.add('border-primary', 'bg-step-soft');
+				btn.setAttribute('aria-current', 'page');
 			}
 
 			if (nextBtn) {
