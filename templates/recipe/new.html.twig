@@ -1,14 +1,43 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Nouvelle recette
-{% endblock %}
+{% block title %}Nouvelle recette{% endblock %}
 
 {% block body %}
-	<h1 class="text-3xl font-bold mb-6">Créer une recette</h1>
+	{# Écran de choix, sauf en saisie manuelle (?mode=manuel) ou après un envoi du formulaire (erreurs à afficher) #}
+	{% set manual = form.vars.submitted or app.request.query.get('mode') == 'manuel' %}
 
-	<div class="mb-4">
+	{% if manual %}
+		<div class="mb-6 space-y-3">
+			<a href="{{ path('app_recipe_new') }}" class="btn btn-ghost btn-sm -ml-3">
+				{{ ux_icon('lucide:chevron-left', { class: 'size-4', 'aria-hidden': 'true' }) }}
+				Autres façons de créer une recette
+			</a>
+			<h1 class="text-2xl">Créer une recette</h1>
+		</div>
+
 		{{ include('recipe/_form.html.twig') }}
-	</div>
+	{% else %}
+		<div class="mx-auto max-w-4xl space-y-6">
+			<div class="space-y-1">
+				<h1 class="text-2xl">Nouvelle recette</h1>
+				<p class="text-muted">Comment voulez-vous commencer ?</p>
+			</div>
 
-	<a href="{{ path('app_recipe_index') }}" class="btn btn-outline">Retour à la liste</a>
+			<ul class="grid gap-4 md:grid-cols-3">
+				{% for option in [
+					{t: 'Rechercher en ligne', d: 'Trouver une recette sur Marmiton, Cuisine AZ ou Papilles & Pupilles et l’importer.', p: path('app_recipe_search'), i: 'lucide:search', bg: 'bg-step-soft'},
+					{t: 'Coller une adresse', d: 'Vous avez déjà le lien d’une recette ? Collez-le pour l’importer.', p: path('app_recipe_import'), i: 'lucide:link', bg: 'bg-ingredient-soft'},
+					{t: 'Créer à la main', d: 'Saisir le titre, les ingrédients et les étapes vous-même.', p: path('app_recipe_new', {mode: 'manuel'}), i: 'lucide:pencil', bg: 'bg-utensil-soft'}
+				] %}
+					<li>
+						<a href="{{ option.p }}" class="flex h-full flex-col gap-3 rounded-box p-5 no-underline {{ option.bg }} hover:outline-2 hover:outline-base-300">
+							{{ ux_icon(option.i, { class: 'size-7', 'aria-hidden': 'true' }) }}
+							<span class="font-display text-lg font-semibold">{{ option.t }}</span>
+							<span class="text-sm">{{ option.d }}</span>
+						</a>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
+	{% endif %}
 {% endblock %}

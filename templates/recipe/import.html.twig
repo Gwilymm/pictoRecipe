@@ -5,6 +5,10 @@
 {% block body %}
 	<div class="mx-auto max-w-3xl space-y-6" data-controller="recipe-import">
 		<div class="space-y-2">
+			<a href="{{ path('app_recipe_new') }}" class="btn btn-ghost btn-sm -ml-3">
+				{{ ux_icon('lucide:chevron-left', { class: 'size-4', 'aria-hidden': 'true' }) }}
+				Nouvelle recette
+			</a>
 			<h1 class="text-2xl">Importer une recette</h1>
 			<p class="text-muted">Collez l’adresse d’une recette Marmiton, Cuisine AZ ou Papilles &amp; Pupilles.</p>
 		</div>
