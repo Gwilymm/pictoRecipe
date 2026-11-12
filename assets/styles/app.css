@@ -167,6 +167,9 @@
 	/* Repère de section (barre verticale colorée + titre) */
 	.section-mark { @apply inline-block h-6 w-1.5 rounded-md; }
 
+	/* Page active d'une pagination : au-dessus de ses voisins, sinon le join-item suivant masque sa bordure droite */
+	.join-item[aria-current] { position: relative; z-index: 1; }
+
 	/* Pilule de filtre (aria-pressed) */
 	.chip {
 		@apply inline-flex min-h-9 items-center gap-1.5 rounded-full border-2 border-base-300 bg-base-100 px-3 text-sm font-semibold;
