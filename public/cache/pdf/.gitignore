@@ -1,5 +1,6 @@
 # Ignorer tous les fichiers PDF générés
 *.pdf
+*.pdf.sha1
 
 # Garder ce répertoire dans git
 !.gitignore
