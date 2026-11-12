@@ -3,6 +3,7 @@
 {% block title %}Nouvelle recette{% endblock %}
 
 {% block body %}
+	<div class="mx-auto w-full max-w-4xl">
 	{# Écran de choix, sauf en saisie manuelle (?mode=manuel) ou après un envoi du formulaire (erreurs à afficher) #}
 	{% set manual = form.vars.submitted or app.request.query.get('mode') == 'manuel' %}
 
@@ -17,7 +18,7 @@
 
 		{{ include('recipe/_form.html.twig') }}
 	{% else %}
-		<div class="mx-auto max-w-4xl space-y-6">
+		<div class="space-y-6">
 			<div class="space-y-1">
 				<h1 class="text-2xl">Nouvelle recette</h1>
 				<p class="text-muted">Comment voulez-vous commencer ?</p>
@@ -40,4 +41,5 @@
 			</ul>
 		</div>
 	{% endif %}
+	</div>
 {% endblock %}

@@ -4,6 +4,7 @@
 {% endblock %}
 
 {% block body %}
+	<div class="mx-auto w-full max-w-4xl">
 	<div class="space-y-6" data-controller="recipe-search sort">
 		<div class="space-y-2">
 			<a href="{{ path('app_recipe_new') }}" class="btn btn-ghost btn-sm -ml-3">
@@ -15,7 +16,7 @@
 		</div>
 
 		{# Formulaire de recherche #}
-		<div class="max-w-2xl rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
+		<div class="rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
 			<form
 				method="post" action="#" data-recipe-search-target="form" data-action="submit->recipe-search#search">
 				{# Mot-clé #}
@@ -51,32 +52,34 @@
 		</div>
 
 		{# Message d'information initial #}
-		<div class="max-w-2xl text-muted" data-recipe-search-target="infoMessage">
+		<div class="text-muted" data-recipe-search-target="infoMessage">
 			<span>Remplissez au moins un critère de recherche pour découvrir des recettes.</span>
 		</div>
 
 		{# Message d'erreur (caché par défaut) #}
-		<div class="hidden max-w-2xl rounded-box bg-danger-soft p-4 font-bold" role="alert" data-recipe-search-target="errorMessage">
+		<div class="hidden rounded-box bg-danger-soft p-4 font-bold" role="alert" data-recipe-search-target="errorMessage">
 			<span data-recipe-search-target="errorText">Une erreur est survenue.</span>
 		</div>
 
-		{# Conteneur des résultats #}
+		{# Barre des résultats : compteur + tri à gauche, pagination à droite #}
 		<div class="flex flex-wrap items-center justify-between gap-3">
-			<p class="text-muted" data-recipe-search-target="count" aria-live="polite"></p>
+			<div class="flex flex-wrap items-center gap-4">
+				<p class="text-muted" data-recipe-search-target="count" aria-live="polite"></p>
+				{# Tri des résultats - Stimulus sort controller #}
+				<div class="flex items-center gap-3">
+					<label for="recipe-search-sort" class="font-bold">Trier par</label>
+					<select id="recipe-search-sort" data-sort-target="select" class="select w-auto">
+						<option value="best">Pertinence</option>
+						<option value="rating">Note</option>
+						<option value="name">Ordre alphabétique</option>
+						<option value="source">Site</option>
+					</select>
+				</div>
+			</div>
 			<div id="search-pagination" data-recipe-search-target="pagination"></div>
 		</div>
 
-		{# Tri des résultats - Stimulus sort controller #}
-		<div class="flex items-center gap-3">
-			<label for="recipe-search-sort" class="font-bold">Trier par</label>
-			<select id="recipe-search-sort" data-sort-target="select" class="select w-auto">
-				<option value="best">Pertinence</option>
-				<option value="rating">Note</option>
-				<option value="name">Ordre alphabétique</option>
-				<option value="source">Site</option>
-			</select>
-		</div>
-
 		<div id="results" class="grid gap-4 sm:grid-cols-3 lg:grid-cols-4" data-recipe-search-target="results" data-sort-target="results"></div>
+	</div>
 	</div>
 {% endblock %}

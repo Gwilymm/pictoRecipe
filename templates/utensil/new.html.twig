@@ -3,8 +3,9 @@
 {% block title %}Ajouter un ustensile{% endblock %}
 
 {% block body %}
+	<div class="mx-auto w-full max-w-4xl">
 	{% import '_ds/_ui.html.twig' as ui %}
-	<div class="mx-auto max-w-2xl">
+	<div>
 		<h1 class="mb-6 text-2xl">Ajouter un ustensile</h1>
 
 		{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
@@ -70,5 +71,6 @@
 				preview.replaceChildren(tile, name);
 			});
 		</script>
+	</div>
 	</div>
 {% endblock %}

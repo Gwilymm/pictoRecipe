@@ -3,8 +3,9 @@
 {% block title %}Modifier l’ustensile{% endblock %}
 
 {% block body %}
+	<div class="mx-auto w-full max-w-4xl">
 	{% import '_ds/_ui.html.twig' as ui %}
-	<div class="mx-auto max-w-2xl">
+	<div>
 		<h1 class="mb-6 text-2xl">Modifier l’ustensile</h1>
 
 		{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
@@ -76,5 +77,6 @@
 		<div class="mt-4">
 			{{ ui.delete_button(path('app_utensil_delete', {'id': utensil.id}), csrf_token('delete' ~ utensil.id), utensil.name, 'l’ustensile') }}
 		</div>
+	</div>
 	</div>
 {% endblock %}

@@ -3,7 +3,8 @@
 {% block title %}Importer une recette{% endblock %}
 
 {% block body %}
-	<div class="mx-auto max-w-3xl space-y-6" data-controller="recipe-import">
+	<div class="mx-auto w-full max-w-4xl">
+	<div class="space-y-6" data-controller="recipe-import">
 		<div class="space-y-2">
 			<a href="{{ path('app_recipe_new') }}" class="btn btn-ghost btn-sm -ml-3">
 				{{ ux_icon('lucide:chevron-left', { class: 'size-4', 'aria-hidden': 'true' }) }}
@@ -36,5 +37,6 @@
 				</button>
 			</div>
 		</div>
+	</div>
 	</div>
 {% endblock %}
