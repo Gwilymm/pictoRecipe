@@ -1,0 +1,75 @@
+{#
+	PictoRecette — composants du design system (macros Twig, aucune dépendance en plus)
+	À placer dans templates/_ds/_ui.html.twig
+	Usage : {% import '_ds/_ui.html.twig' as ui %}
+#}
+
+{# Tuile pictogramme : image sur fond blanc + nom dessous #}
+{% macro picto_tile(src, name, size = 'md', selected = false) %}
+	{% set px = { sm: 'w-16', md: 'w-32', lg: 'w-40' }[size] %}
+	<figure class="flex flex-col items-center gap-2 text-center">
+		<div class="picto-tile {{ px }}{{ selected ? ' is-selected' : '' }}">
+			{% if src %}
+				<img src="{{ src }}" alt="" loading="lazy">
+			{% else %}
+				{{ ux_icon('lucide:image', { class: 'size-1/3 text-base-300', 'aria-hidden': 'true' }) }}
+			{% endif %}
+		</div>
+		{% if name %}<figcaption class="font-bold leading-tight">{{ name }}</figcaption>{% endif %}
+	</figure>
+{% endmacro %}
+
+{# Titre de section avec repère de rôle : ingredient | utensil | step #}
+{% macro section_title(label, role, count = null, id = null) %}
+	{% set mark = { ingredient: 'bg-accent', utensil: 'bg-secondary', step: 'bg-primary' }[role] %}
+	{% set soft = { ingredient: 'bg-ingredient-soft', utensil: 'bg-utensil-soft', step: 'bg-step-soft' }[role] %}
+	<div class="flex items-center gap-3.5">
+		<span class="section-mark {{ mark }}" aria-hidden="true"></span>
+		<h2 {% if id %}id="{{ id }}"{% endif %} class="text-3xl">{{ label }}</h2>
+		{% if count is not null %}<span class="rounded-full px-3 py-1 font-bold {{ soft }}">{{ count }}</span>{% endif %}
+	</div>
+{% endmacro %}
+
+{# Quantité lisible : masque 0 / null, supprime les « .00 » #}
+{% macro amount(value, unit = null) %}
+	{%- if value and value > 0 -%}
+		{{- value == value|round ? value|number_format(0, ',', ' ') : value|number_format(1, ',', ' ') -}}
+		{{- unit ? ' ' ~ unit : '' -}}
+	{%- endif -%}
+{% endmacro %}
+
+{# Carte ingrédient de la fiche #}
+{% macro ingredient_card(ingredient) %}
+	{% import _self as ui %}
+	<li class="flex flex-col items-center gap-3 rounded-box border border-base-300 border-t-[6px] border-t-accent bg-base-100 p-4 text-center">
+		<div class="picto-tile w-32">
+			{% if ingredient.pictogramUrl %}<img src="{{ ingredient.pictogramUrl }}" alt="">{% endif %}
+		</div>
+		{% set qty = ui.amount(ingredient.amount, ingredient.unit) %}
+		{% if qty|trim %}<span class="font-display text-2xl font-semibold">{{ qty }}</span>{% endif %}
+		<span class="text-lg font-bold leading-snug">{{ ingredient.name }}</span>
+	</li>
+{% endmacro %}
+
+{# Étape numérotée + pictos #}
+{% macro step_card(number, text, pictos = []) %}
+	<li class="flex items-start gap-5 rounded-box border border-base-300 bg-base-100 p-5">
+		<span class="step-badge" aria-hidden="true">{{ number }}</span>
+		<div class="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-4">
+			<p class="flex-[1_1_22rem] text-[1.15rem] leading-relaxed"><span class="sr-only">Étape {{ number }} : </span>{{ text }}</p>
+			{% if pictos|length %}
+				<div class="flex gap-2">
+					{% for p in pictos %}<div class="picto-tile w-[72px]"><img src="{{ p.url }}" alt="{{ p.name|default('') }}"></div>{% endfor %}
+				</div>
+			{% endif %}
+		</div>
+	</li>
+{% endmacro %}
+
+{# État vide #}
+{% macro empty_state(message, cta_label = null, cta_path = null) %}
+	<div class="flex flex-col items-center gap-4 rounded-box border-2 border-dashed border-base-300 bg-base-100 p-10 text-center">
+		<p class="text-lg text-muted">{{ message }}</p>
+		{% if cta_label %}<a href="{{ cta_path }}" class="btn btn-primary">{{ cta_label }}</a>{% endif %}
+	</div>
+{% endmacro %}

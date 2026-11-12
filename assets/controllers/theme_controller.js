@@ -1,48 +1,32 @@
 import { Controller } from '@hotwired/stimulus';
 
-// Stimulus controller to manage DaisyUI theme swap (light/dark)
+// Bascule clair / sombre — remplace assets/controllers/theme_controller.js
+// Par défaut : suit le réglage de l'appareil. Le choix manuel est mémorisé.
+const LIGHT = 'pictorecette';
+const DARK = 'pictorecette-dark';
+
 export default class extends Controller {
-	static targets = [ 'toggle' ];
+	static targets = ['button', 'label'];
 
 	connect() {
-		this.html = document.documentElement;
-
-		// Load saved theme or detect system preference
-		const stored = this._safeGet('theme');
-		const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-		const initial = stored || (prefersDark ? 'dark' : 'light');
-
-		this.applyTheme(initial);
+		const stored = this._get('theme');
+		const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+		this.apply(stored === DARK || stored === LIGHT ? stored : (prefersDark ? DARK : LIGHT));
 	}
 
-	// When the swap checkbox changes
-	toggle(event) {
-		const isDark = event.target.checked;
-		const theme = isDark ? 'dark' : 'light';
-		this.applyTheme(theme);
-		this._safeSet('theme', theme);
+	toggle() {
+		const next = document.documentElement.dataset.theme === DARK ? LIGHT : DARK;
+		this.apply(next);
+		this._set('theme', next);
 	}
 
-	applyTheme(theme) {
-		this.html.setAttribute('data-theme', theme);
-		if (this.hasToggleTarget) {
-			this.toggleTarget.checked = (theme === 'dark');
-		}
+	apply(theme) {
+		document.documentElement.dataset.theme = theme;
+		const dark = theme === DARK;
+		if (this.hasButtonTarget) this.buttonTarget.setAttribute('aria-pressed', String(dark));
+		if (this.hasLabelTarget) this.labelTarget.textContent = dark ? 'Thème clair' : 'Thème sombre';
 	}
 
-	_safeGet(key) {
-		try {
-			return window.localStorage.getItem(key);
-		} catch {
-			return null;
-		}
-	}
-
-	_safeSet(key, val) {
-		try {
-			window.localStorage.setItem(key, val);
-		} catch {
-			/* ignore */
-		}
-	}
+	_get(k) { try { return localStorage.getItem(k); } catch { return null; } }
+	_set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } }
 }

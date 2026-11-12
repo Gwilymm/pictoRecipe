@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr" data-theme="pictorecette">
 	<head>
 		<meta charset="UTF-8">
+		<script>try{const t=localStorage.getItem('theme');if(t==='pictorecette'||t==='pictorecette-dark')document.documentElement.dataset.theme=t;else if(matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.dataset.theme='pictorecette-dark'}catch(e){}</script>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>
 			{% block title %}PictoRecette
 			{% endblock %}
 		</title>
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🖼️</text></svg>">
-		<link
-			href="https://fonts.googleapis.com/icon?family=Material+Icons"
-			rel="stylesheet"
-		>
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 36 36%22><rect width=%2236%22 height=%2236%22 rx=%229%22 fill=%22%231F6F5C%22/><rect x=%227%22 y=%227%22 width=%2210%22 height=%2210%22 rx=%223%22 fill=%22%23fff%22/><rect x=%2219%22 y=%227%22 width=%2210%22 height=%2210%22 rx=%223%22 fill=%22%23E8833A%22/><rect x=%227%22 y=%2219%22 width=%2210%22 height=%2210%22 rx=%223%22 fill=%22%23E8833A%22/><rect x=%2219%22 y=%2219%22 width=%2210%22 height=%2210%22 rx=%223%22 fill=%22%23fff%22/></svg>">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;600;700&display=swap">
 		{# templates/base.html.twig #}
 
 		{% block stylesheets %}
@@ -54,7 +54,7 @@
 			{% endfor %}
 		</div>
 
-		<main class="container mx-auto px-2 sm:px-4 py-6"> {% block body %}{% endblock %}
+		<main class="mx-auto max-w-7xl px-4 py-8"> {% block body %}{% endblock %}
 		</main>
 
 		{{ include('partials/_footer.html.twig') }}

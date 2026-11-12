@@ -1,18 +1,182 @@
+/* ==========================================================================
+   PictoRecette — Design system v2
+   Remplace assets/styles/app.css
+   Tailwind v4 (TailwindBundle) + DaisyUI 5 (vendorisé via AssetMapper)
+   ========================================================================== */
+
 @import "tailwindcss";
-@plugin "../vendor/daisyui/daisyui.index.js";
 
-/* Animation pour les toasts */
+/* 1. DaisyUI sans ses thèmes par défaut : on fournit les nôtres */
+@plugin "../vendor/daisyui/daisyui.index.js" {
+	themes: false;
+}
+
+/* 2. Thème clair (défaut) */
+@plugin "../vendor/daisyui/daisyui-theme.mjs" {
+	name: "pictorecette";
+	default: true;
+	prefersdark: false;
+	color-scheme: light;
+
+	--color-base-100: #FFFFFF;   /* cartes, fond des pictos */
+	--color-base-200: #F6F7F5;   /* fond de page */
+	--color-base-300: #D9DEE2;   /* bordures */
+	--color-base-content: #17222B;
+
+	--color-primary: #1F6F5C;    /* basilic : action principale, étapes */
+	--color-primary-content: #FFFFFF;
+	--color-secondary: #2F5D8A;  /* myrtille : ustensiles, liens, focus */
+	--color-secondary-content: #FFFFFF;
+	--color-accent: #E8833A;     /* carotte : ingrédients, repères (jamais en texte) */
+	--color-accent-content: #17222B;
+	--color-neutral: #17222B;
+	--color-neutral-content: #FFFFFF;
+
+	--color-info: #2F5D8A;
+	--color-info-content: #FFFFFF;
+	--color-success: #1F6F5C;
+	--color-success-content: #FFFFFF;
+	--color-warning: #E8833A;
+	--color-warning-content: #17222B;
+	--color-error: #B42318;      /* tomate */
+	--color-error-content: #FFFFFF;
+
+	--radius-selector: 0.5rem;   /* badges, checkbox */
+	--radius-field: 0.75rem;     /* boutons, champs */
+	--radius-box: 1rem;          /* cartes, modales */
+	--size-selector: 0.3rem;
+	--size-field: 0.3rem;        /* btn/input md = 48 px */
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
+}
+
+/* 3. Thème sombre */
+@plugin "../vendor/daisyui/daisyui-theme.mjs" {
+	name: "pictorecette-dark";
+	default: false;
+	prefersdark: true;
+	color-scheme: dark;
+
+	--color-base-100: #1B232A;
+	--color-base-200: #10161B;
+	--color-base-300: #34414B;
+	--color-base-content: #EEF2F4;
+
+	--color-primary: #5CC2A2;
+	--color-primary-content: #0E1A16;
+	--color-secondary: #7FB0E0;
+	--color-secondary-content: #0E1A16;
+	--color-accent: #F09A55;
+	--color-accent-content: #0E1A16;
+	--color-neutral: #EEF2F4;
+	--color-neutral-content: #10161B;
+
+	--color-info: #7FB0E0;
+	--color-info-content: #0E1A16;
+	--color-success: #5CC2A2;
+	--color-success-content: #0E1A16;
+	--color-warning: #F09A55;
+	--color-warning-content: #0E1A16;
+	--color-error: #F2867A;
+	--color-error-content: #0E1A16;
+
+	--radius-selector: 0.5rem;
+	--radius-field: 0.75rem;
+	--radius-box: 1rem;
+	--size-selector: 0.3rem;
+	--size-field: 0.3rem;
+	--border: 1px;
+	--depth: 0;
+	--noise: 0;
+}
+
+/* 4. Couleurs de rôle (fonds doux des sections) — varient selon le thème */
+:root,
+[data-theme="pictorecette"] {
+	--pr-ingredient-soft: #FDEBDC;
+	--pr-utensil-soft: #E3EEF8;
+	--pr-step-soft: #E2F0EA;
+	--pr-danger-soft: #FDECEA;
+	--pr-muted: #4A5862;          /* texte secondaire 7:1 */
+}
+[data-theme="pictorecette-dark"] {
+	--pr-ingredient-soft: #3A2A1E;
+	--pr-utensil-soft: #1D2B3A;
+	--pr-step-soft: #17302A;
+	--pr-danger-soft: #3A1E1C;
+	--pr-muted: #B3BEC6;
+}
+
+/* 5. Tokens Tailwind : génèrent bg-ingredient-soft, text-muted, font-display… */
+@theme inline {
+	--font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+	--font-display: "Lexend", ui-sans-serif, system-ui, sans-serif;
+
+	--color-ingredient-soft: var(--pr-ingredient-soft);
+	--color-utensil-soft: var(--pr-utensil-soft);
+	--color-step-soft: var(--pr-step-soft);
+	--color-danger-soft: var(--pr-danger-soft);
+	--color-muted: var(--pr-muted);
+}
+
+/* 6. Base */
+@layer base {
+	html { font-size: 112.5%; }               /* 18 px de base */
+	body {
+		background: var(--color-base-200);
+		color: var(--color-base-content);
+		line-height: 1.55;
+	}
+	h1, h2, h3, .font-display {
+		font-family: var(--font-display);
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+	:focus-visible {
+		outline: 3px solid var(--color-secondary);
+		outline-offset: 2px;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after { animation: none !important; transition: none !important; }
+	}
+}
+
+/* 7. Composants maison */
+@layer components {
+	/* Tuile pictogramme : toujours blanche, même en sombre (pictos à fond blanc) */
+	.picto-tile {
+		@apply grid place-items-center overflow-hidden rounded-xl border border-base-300;
+		background: #FFFFFF;
+		aspect-ratio: 1;
+	}
+	[data-theme="pictorecette-dark"] .picto-tile { border-color: transparent; }
+	.picto-tile > img { @apply h-full w-full object-contain; }
+	.picto-tile.is-selected { outline: 3px solid var(--color-primary); outline-offset: 0; }
+
+	/* Pastille numéro d'étape */
+	.step-badge {
+		@apply inline-grid size-12 shrink-0 place-items-center rounded-full font-display text-xl font-bold;
+		background: var(--color-accent);
+		color: var(--color-accent-content);
+	}
+
+	/* Repère de section (barre verticale colorée + titre) */
+	.section-mark { @apply inline-block h-9 w-3 rounded-md; }
+
+	/* Pilule de filtre (aria-pressed) */
+	.chip {
+		@apply inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 border-base-300 bg-base-100 px-4 font-bold;
+	}
+	.chip[aria-pressed="true"] {
+		border-color: var(--color-primary);
+		background: var(--color-step-soft);
+	}
+}
+
+/* 8. Toasts (conservé) */
 @keyframes slide-in-right {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+	from { transform: translateX(100%); opacity: 0; }
+	to   { transform: translateX(0);    opacity: 1; }
 }
-
-.animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out;
-}
+.animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }

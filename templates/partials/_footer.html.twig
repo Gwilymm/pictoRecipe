@@ -1,33 +1,34 @@
-<footer class="footer flex flex-col items-start gap-8 sm:flex-row sm:justify-between bg-base-200 text-base-content p-6 sm:p-10 mt-10">
+<footer class="footer mt-10 flex flex-col items-start gap-8 border-t border-base-300 bg-base-100 p-6 text-base-content sm:flex-row sm:justify-between sm:p-10">
 	<aside class="flex flex-col items-start gap-2">
-		<svg width="50" height="50" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="fill-current">
-			<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">🖼️</text>
-		</svg>
+		<span aria-hidden="true" class="grid size-12 grid-cols-2 gap-1 rounded-xl bg-primary p-2.5">
+			<span class="rounded bg-white"></span><span class="rounded bg-accent"></span>
+			<span class="rounded bg-accent"></span><span class="rounded bg-white"></span>
+		</span>
 		<p class="text-sm">
-			<strong class="block text-base">PictoRecette</strong>
+			<strong class="block font-display text-base">PictoRecette</strong>
 			Recettes en pictogrammes pour tous
 		</p>
 	</aside>
-	<nav class="flex flex-col gap-2">
-		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Recettes</h6>
+	<nav class="flex flex-col gap-2" aria-label="Recettes">
+		<h6 class="footer-title mb-1 text-xs font-bold uppercase text-muted opacity-100">Recettes</h6>
 		<a href="{{ path('app_recipe_index') }}" class="link link-hover text-sm">Toutes les recettes</a>
 		<a href="{{ path('app_recipe_new') }}" class="link link-hover text-sm">Créer une recette</a>
 		<a href="{{ path('app_recipe_search') }}" class="link link-hover text-sm">Rechercher</a>
 		<a href="{{ path('app_recipe_import') }}" class="link link-hover text-sm">Importer</a>
 	</nav>
-	<nav class="flex flex-col gap-2">
-		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Pictogrammes</h6>
+	<nav class="flex flex-col gap-2" aria-label="Pictogrammes">
+		<h6 class="footer-title mb-1 text-xs font-bold uppercase text-muted opacity-100">Pictogrammes</h6>
 		<a href="{{ path('app_pictogram_index') }}" class="link link-hover text-sm">Liste des pictogrammes</a>
 		<a href="{{ path('app_pictogram_new') }}" class="link link-hover text-sm">Ajouter un pictogramme</a>
 	</nav>
-	<nav class="flex flex-col gap-2">
-		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Ressources</h6>
-		<a href="https://arasaac.org" target="_blank" class="link link-hover text-sm">ARASAAC</a>
-		<a href="https://commons.wikimedia.org/wiki/Main_Page" target="_blank" class="link link-hover text-sm">Wikimedia Commons</a>
-		<a href="https://bhn-logic.fr" arget="_blank" class="link link-hover text-sm">BHN Logic</a>
+	<nav class="flex flex-col gap-2" aria-label="Ressources">
+		<h6 class="footer-title mb-1 text-xs font-bold uppercase text-muted opacity-100">Ressources</h6>
+		<a href="https://arasaac.org" target="_blank" rel="noopener" class="link link-hover text-sm">ARASAAC</a>
+		<a href="https://commons.wikimedia.org/wiki/Main_Page" target="_blank" rel="noopener" class="link link-hover text-sm">Wikimedia Commons</a>
+		<a href="https://bhn-logic.fr" target="_blank" rel="noopener" class="link link-hover text-sm">BHN Logic</a>
 	</nav>
-	<nav class="flex flex-col gap-2">
-		<h6 class="footer-title opacity-50 text-xs uppercase font-bold mb-1">Contact</h6>
-		<a href="mailto:contact@bhn-logic.fr" target="_blank" class=" link link-hover text-sm">Contacter le support</a>
+	<nav class="flex flex-col gap-2" aria-label="Contact">
+		<h6 class="footer-title mb-1 text-xs font-bold uppercase text-muted opacity-100">Contact</h6>
+		<a href="mailto:contact@bhn-logic.fr" class="link link-hover text-sm">Contacter le support</a>
 	</nav>
 </footer>
