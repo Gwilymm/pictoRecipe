@@ -1,12 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modifier un Ustensile
-{% endblock %}
+{% block title %}Modifier l’ustensile{% endblock %}
 
 {% block body %}
 	{% import '_ds/_ui.html.twig' as ui %}
-	<div class="container mx-auto px-4 py-6 max-w-2xl">
-		<h1 class="text-3xl font-bold mb-6">✏️ Modifier l'Ustensile</h1>
+	<div class="mx-auto max-w-2xl">
+		<h1 class="mb-6 text-2xl">Modifier l’ustensile</h1>
 
 		{{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
 
@@ -19,17 +18,10 @@
 				<div class="divider">Image</div>
 
 				<div class="form-control" data-controller="picto-search">
-					<label class="label">
-						<span class="label-text font-semibold flex items-center gap-2">
-							<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-							</svg>
-							Rechercher une image (OpenFoodFacts + Wikimedia)
-						</span>
-					</label>
+					<label for="utensil-picto-q" class="font-semibold">Rechercher une image (OpenFoodFacts, Wikimedia)</label>
 
 					<div class="space-y-3">
-						<input type="text" data-picto-search-target="input" placeholder="Ex: spatule, casserole, verre..." class="input input-bordered w-full"/>
+						<input id="utensil-picto-q" type="search" data-picto-search-target="input" placeholder="Ex: spatule, casserole, verre..." class="input input-bordered w-full"/>
 
 						{{ ui.source_filters() }}
 
@@ -53,7 +45,7 @@
 							Annuler
 						</a>
 						<button type="submit" class="btn btn-primary">
-							💾 Enregistrer
+							Enregistrer
 						</button>
 					</div>
 				</div>
@@ -63,21 +55,22 @@
 		{{ form_end(form) }}
 
 		<script>
+			// Aperçu de l'image choisie (données OpenFoodFacts / Wikimedia : construites via le DOM, sans innerHTML)
 			document.addEventListener('picto:selected', (e) => {
-const item = e.detail;
-const preview = document.getElementById('utensil-external-preview');
-if (! preview) 
-return;
-
-preview.innerHTML = `
-		<img src="${
-item.image
-}" class="w-24 h-24 object-contain rounded-lg shadow">
-		<div class="mt-1 text-sm opacity-75">${
-item.name || ''
-}</div>
-	`;
-});
+				const item = e.detail;
+				const preview = document.getElementById('utensil-external-preview');
+				if (!preview || !item) return;
+				const tile = document.createElement('div');
+				tile.className = 'picto-tile w-24';
+				const img = document.createElement('img');
+				img.src = item.image || '';
+				img.alt = '';
+				tile.appendChild(img);
+				const name = document.createElement('p');
+				name.className = 'mt-1 text-sm text-muted';
+				name.textContent = item.name || '';
+				preview.replaceChildren(tile, name);
+			});
 		</script>
 
 		<div class="mt-4">

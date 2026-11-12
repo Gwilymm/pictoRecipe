@@ -349,7 +349,7 @@ export default class extends Controller {
 		list.innerHTML = '';
 
 		if (proposals.length === 0) {
-			list.innerHTML = '<div class="col-span-full text-center text-base-content/60 py-8">Aucun pictogramme trouvé</div>';
+			list.innerHTML = '<div class="col-span-full text-center text-muted py-8">Aucun pictogramme trouvé</div>';
 			return;
 		}
 
@@ -361,7 +361,7 @@ export default class extends Controller {
 			img.className = 'w-20 h-20 object-contain';
 			img.alt = p.name || '';
 			const label = document.createElement('div');
-			label.className = 'text-xs text-base-content/60 mt-1 truncate w-full text-center';
+			label.className = 'text-xs text-muted mt-1 truncate w-full text-center';
 			label.textContent = (p.source === 'local' ? 'Local' : 'ARASAAC');
 			label.title = p.name || '';
 			item.appendChild(img);

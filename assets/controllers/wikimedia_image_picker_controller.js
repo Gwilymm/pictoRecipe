@@ -131,7 +131,7 @@ export default class extends Controller {
 		body.appendChild(license);
 
 		const attribution = document.createElement('p');
-		attribution.className = 'text-xs text-base-content/60 line-clamp-3';
+		attribution.className = 'text-xs text-muted line-clamp-3';
 		attribution.textContent = item.attribution || 'Attribution Wikimedia Commons';
 		body.appendChild(attribution);
 

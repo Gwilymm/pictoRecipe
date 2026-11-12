@@ -23,11 +23,11 @@ class StepType extends AbstractType
     {
         $builder
             ->add('content', TextareaType::class, [
-                'attr' => ['class' => 'textarea textarea-bordered w-full', 'rows' => 3],
+                'attr' => ['class' => 'textarea textarea-bordered w-full', 'rows' => 3, 'aria-label' => 'Description de l\'étape'],
             ])
             ->add('durationMinutes', IntegerType::class, [
                 'required' => false,
-                'attr' => ['class' => 'input input-bordered w-28', 'placeholder' => 'min'],
+                'attr' => ['class' => 'input input-bordered w-28', 'placeholder' => 'min', 'aria-label' => 'Durée en minutes'],
             ])
             ->add('position', HiddenType::class, [
                 'required' => false,

@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { esc, IMAGE_ICON } from '../lib/ui.js';
 
 /**
  * Contrôleur Stimulus pour la recherche et sélection de pictogrammes ARASAAC
@@ -179,7 +180,8 @@ export default class extends Controller {
 		const closeBtn = document.createElement('button');
 		closeBtn.type = 'button';
 		closeBtn.className = 'btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10';
-		closeBtn.innerHTML = '✕';
+		closeBtn.textContent = '✕';
+		closeBtn.setAttribute('aria-label', 'Fermer');
 		closeBtn.addEventListener('click', () => this.clearResults());
 
 		const grid = document.createElement('div');
@@ -221,7 +223,7 @@ export default class extends Controller {
 
 		// Gestion des erreurs de chargement d'image
 		img.onerror = () => {
-			card.innerHTML = '<span class="text-xs text-error">⚠️</span>';
+			card.innerHTML = `<div class="picto-tile w-full">${IMAGE_ICON}</div>`;
 		};
 
 		card.appendChild(img);
@@ -285,10 +287,11 @@ export default class extends Controller {
 
 		this.previewTarget.innerHTML = `
             <div class="flex items-center gap-2 p-2 bg-success/10 rounded-lg border border-success/30">
-                <img src="${imageUrl}" alt="${name}" class="w-12 h-12 object-contain rounded" />
-                <span class="text-sm font-medium flex-1">${name || 'Pictogramme sélectionné'}</span>
+                <img src="${esc(imageUrl)}" alt="${esc(name)}" class="w-12 h-12 object-contain rounded" />
+                <span class="text-sm font-medium flex-1">${esc(name || 'Pictogramme sélectionné')}</span>
                 <button type="button" 
-                        class="btn btn-ghost btn-xs btn-circle" 
+                        class="btn btn-ghost btn-xs btn-circle"
+                        aria-label="Retirer le pictogramme"
                         data-action="click->pictogram#clearSelection">
                     ✕
                 </button>
@@ -326,7 +329,7 @@ export default class extends Controller {
                 <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span>Aucun pictogramme trouvé pour "${keyword}".</span>
+                <span>Aucun pictogramme trouvé pour "${esc(keyword)}".</span>
             </div>
         `;
 	}
@@ -340,7 +343,7 @@ export default class extends Controller {
                 <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Erreur : ${message}</span>
+                <span>Erreur : ${esc(message)}</span>
             </div>
         `;
 	}
@@ -390,7 +393,7 @@ export default class extends Controller {
 		toast.className = 'toast toast-top toast-end';
 		toast.innerHTML = `
             <div class="alert alert-success">
-                <span>✓ ${message}</span>
+                <span>${esc(message)}</span>
             </div>
         `;
 		document.body.appendChild(toast);
@@ -454,10 +457,10 @@ export default class extends Controller {
 		badge.dataset.pictogramUrl = imageUrl;
 		badge.innerHTML = `
 			<div class="w-16 h-16 flex items-center justify-center">
-				<img src="${imageUrl}" alt="${name}" class="max-w-16 max-h-16 object-contain" />
+				<img src="${esc(imageUrl)}" alt="${esc(name)}" class="max-w-16 max-h-16 object-contain" />
 			</div>
-			<span class="text-xs sm:text-sm max-w-[140px] truncate">${name}</span>
-			<button type="button" class="btn btn-ghost btn-xs btn-circle" data-url="${imageUrl}">✕</button>
+			<span class="text-xs sm:text-sm max-w-[140px] truncate">${esc(name)}</span>
+			<button type="button" class="btn btn-ghost btn-xs btn-circle" aria-label="Retirer ${esc(name)}" data-url="${esc(imageUrl)}">✕</button>
 		`;
 
 		// Événement pour retirer le pictogramme
@@ -580,7 +583,8 @@ export default class extends Controller {
 		const closeBtn = document.createElement('button');
 		closeBtn.type = 'button';
 		closeBtn.className = 'btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10';
-		closeBtn.innerHTML = '✕';
+		closeBtn.textContent = '✕';
+		closeBtn.setAttribute('aria-label', 'Fermer');
 		closeBtn.addEventListener('click', () => {
 			container.innerHTML = '';
 			container.classList.add('hidden');
@@ -592,7 +596,7 @@ export default class extends Controller {
 		results.forEach(pictogram => {
 			const card = document.createElement('div');
 			card.className = 'cursor-pointer transition p-1 flex items-center justify-center rounded hover:bg-base-200 hover:scale-105';
-			card.innerHTML = `<img src="${pictogram.imageUrl}" alt="${pictogram.name}" class="w-12 h-12 object-contain" title="${pictogram.name}" />`;
+			card.innerHTML = `<img src="${esc(pictogram.imageUrl)}" alt="${esc(pictogram.name)}" class="w-12 h-12 object-contain" title="${esc(pictogram.name)}" />`;
 
 			card.addEventListener('click', () => {
 				if (this.modeValue === 'multiple') {

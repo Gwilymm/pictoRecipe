@@ -48,7 +48,7 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🔍 1. RECHERCHE MARMITON
+	   1. RECHERCHE MARMITON
 	============================================================ */
 	async search(event) {
 		event.preventDefault();
@@ -217,7 +217,7 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🟦 2. AFFICHAGE DES CARTES + PAGINATION
+	   2. AFFICHAGE DES CARTES + PAGINATION
 	============================================================ */
 	setResults(results) {
 		// Ensure we have the latest query (use stored value or input value)
@@ -553,7 +553,7 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🟥 UI HELPERS
+	   UI HELPERS
 	============================================================ */
 	showLoading() {
 		this.submitBtnTarget.disabled = true;
@@ -583,7 +583,7 @@ export default class extends Controller {
 	}
 
 	/* ============================================================
-	   🟩 Import — POST /api/recipes/import
+	   Import — POST /api/recipes/import
 	============================================================ */
 	async importRecipe(recipeJson) {
 		try {

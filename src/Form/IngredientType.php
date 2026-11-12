@@ -18,19 +18,19 @@ class IngredientType extends AbstractType
     {
         $builder
             ->add('name', TextType::class, [
-                'attr' => ['class' => 'input input-bordered w-full', 'placeholder' => 'Nom de l\'ingrédient'],
+                'attr' => ['class' => 'input input-bordered w-full', 'placeholder' => 'Nom de l\'ingrédient', 'aria-label' => 'Nom de l\'ingrédient'],
             ])
             ->add('section', TextType::class, [
                 'required' => false,
-                'attr' => ['class' => 'input input-bordered w-full', 'placeholder' => 'Section (ex: Pâte sablée)'],
+                'attr' => ['class' => 'input input-bordered w-full', 'placeholder' => 'Section (ex: Pâte sablée)', 'aria-label' => 'Section'],
             ])
             ->add('amount', NumberType::class, [
                 'scale' => 2,
-                'attr' => ['class' => 'input input-bordered w-28', 'step' => '0.01'],
+                'attr' => ['class' => 'input input-bordered w-28', 'step' => '0.01', 'aria-label' => 'Quantité'],
             ])
             ->add('unit', TextType::class, [
                 'required' => false,
-                'attr' => ['class' => 'input input-bordered w-32', 'placeholder' => 'g, ml, pcs...'],
+                'attr' => ['class' => 'input input-bordered w-32', 'placeholder' => 'g, ml, pcs...', 'aria-label' => 'Unité'],
             ])
             ->add('position', HiddenType::class, [
                 'required' => false,

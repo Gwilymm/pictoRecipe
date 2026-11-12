@@ -13,13 +13,13 @@
 		</figure>
 		<div class="card-body">
 			<h2 class="card-title">{{ pictogram.name }}</h2>
-			<p class="text-sm text-gray-500">Format :
+			<p class="text-sm text-muted">Format :
 				{{ pictogram.format ? pictogram.format|upper : '—' }}</p>
-			<p class="text-sm text-gray-500">Source :
+			<p class="text-sm text-muted">Source :
 				{{ pictogram.sourceDisplayName }}</p>
-			<p class="text-sm text-gray-500">Validation :
+			<p class="text-sm text-muted">Validation :
 				{{ pictogram.validated ? 'Validé' : 'À valider' }}</p>
-			<p class="text-xs text-base-content/60">Créé le :
+			<p class="text-xs text-muted">Créé le :
 				{{ pictogram.createdAt ? pictogram.createdAt|date('Y-m-d') : '—' }}</p>
 
 			{% if pictogram.license or pictogram.attribution %}

@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
+import { IMAGE_ICON } from "../lib/ui.js";
 
 export default class extends Controller {
 	static targets = [ "input", "results", "brandInput", "pagination", "status", "urlInput", "filters", "preview", "previewImage", "previewPlaceholder", "previewViewport", "zoom", "zoomValue", "background", "backgroundValue", "detailsTab", "wikimediaTab" ];
@@ -183,8 +184,8 @@ export default class extends Controller {
 				}
 				console.warn('Picto image failed to load:', this.src);
 				const back = document.createElement('div');
-				back.className = "w-full h-32 bg-base-300 flex items-center justify-center text-2xl p-1 rounded-lg";
-				back.textContent = '❌';
+				back.className = "picto-tile w-full";
+				back.innerHTML = IMAGE_ICON;
 				try { this.parentNode.replaceChild(back, this); } catch (e) { console.warn('Replace with fallback failed', e); }
 			};
 			img.addEventListener('click', () => this.select(item, img));
@@ -515,7 +516,7 @@ export default class extends Controller {
 		this.selectedImage = item.image;
 		this.updatePreview(item);
 
-		// 🔥 MAJ du champ hidden
+		// MAJ du champ hidden
 		if (this.hasUrlInputTarget) {
 			this.urlInputTarget.value = item.image;
 			this.urlInputTarget.dispatchEvent(new Event('change', { bubbles: true }));
@@ -530,7 +531,7 @@ export default class extends Controller {
 			nameInput.value = item.name || '';
 		}
 
-		// 🔥 Envoi de l’événement pour la preview
+		// Envoi de l’événement pour la preview
 		this.element.dispatchEvent(
 			new CustomEvent("picto:selected", { detail: item, bubbles: true })
 		);
