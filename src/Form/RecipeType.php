@@ -15,8 +15,11 @@ use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\Url;
 
 class RecipeType extends AbstractType
 {
@@ -47,6 +50,18 @@ class RecipeType extends AbstractType
                     'class' => 'file-input file-input-bordered w-full',
                     'accept' => 'image/jpeg,image/png,image/webp',
                 ],
+            ])
+            // Alternative au fichier : l'image est téléchargée côté serveur à l'enregistrement (RemoteImageDownloader)
+            ->add('imageUrl', UrlType::class, [
+                'label' => 'Ou adresse d’une image',
+                'mapped' => false,
+                'required' => false,
+                'default_protocol' => null,
+                'constraints' => [
+                    new Url(message: 'Cette adresse n’est pas valide.', protocols: ['http', 'https'], requireTld: true, tldMessage: 'Cette adresse n’est pas valide.'),
+                    new Length(max: 2048),
+                ],
+                'attr' => ['class' => 'input w-full', 'placeholder' => 'https://…'],
             ])
             ->add('imagePositionX', HiddenType::class)
             ->add('imagePositionY', HiddenType::class)

@@ -3,7 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 export default class extends Controller {
 	static targets = [
 		'input', 'image', 'placeholder', 'positionX', 'positionY',
-		'zoom', 'zoomRange', 'zoomValue', 'viewport'
+		'zoom', 'zoomRange', 'zoomValue', 'viewport', 'url'
 	];
 
 	connect() {
@@ -21,9 +21,29 @@ export default class extends Controller {
 		const file = event.target.files?.[ 0 ];
 		if (!file) return;
 
+		// Un fichier choisi remplace une éventuelle adresse saisie (le serveur donne la priorité au fichier)
+		if (this.hasUrlTarget) this.urlTarget.value = '';
 		if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
 		this.objectUrl = URL.createObjectURL(file);
-		this.imageTarget.src = this.objectUrl;
+		this.showImage(this.objectUrl);
+	}
+
+	// Adresse d'image saisie : aperçu direct ; le téléchargement réel se fait côté serveur à l'enregistrement
+	selectUrl(event) {
+		const url = event.target.value.trim();
+		if (!/^https?:\/\//i.test(url)) return;
+
+		if (this.hasInputTarget) this.inputTarget.value = '';
+		this.showImage(url);
+	}
+
+	showImage(src) {
+		this.imageTarget.onerror = () => {
+			this.imageTarget.classList.add('hidden');
+			this.placeholderTarget.textContent = 'Aperçu indisponible : l’image sera tout de même téléchargée à l’enregistrement.';
+			this.placeholderTarget.classList.remove('hidden');
+		};
+		this.imageTarget.src = src;
 		this.imageTarget.classList.remove('hidden');
 		this.placeholderTarget.classList.add('hidden');
 		this.positionX = 50;

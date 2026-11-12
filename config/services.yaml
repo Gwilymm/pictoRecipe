@@ -20,6 +20,11 @@ services:
         exclude:
             - "../src/Dto/"
 
+    # Client HTTP pour les URL saisies par les utilisateurs : refuse les réseaux privés (SSRF)
+    app.public_http_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ["@http_client"]
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
     App\Logging\RequestIdProcessor:

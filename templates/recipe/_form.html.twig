@@ -170,6 +170,21 @@
 								}) }}
 								<p id="recipe-image-file-help" class="mt-2 text-xs text-muted">Formats acceptés : JPEG, PNG ou WebP — 5 Mo maximum.</p>
 							</div>
+
+							<div class="form-control mt-4">
+								{{ form_row(form.imageUrl, {
+									'label_attr': {'class': 'label font-semibold'},
+									'attr': {
+										'class': 'input w-full',
+										'placeholder': 'https://…',
+										'inputmode': 'url',
+										'aria-describedby': 'recipe-image-url-help',
+										'data-recipe-image-crop-target': 'url',
+										'data-action': 'change->recipe-image-crop#selectUrl'
+									}
+								}) }}
+								<p id="recipe-image-url-help" class="mt-2 text-xs text-muted">Collez le lien d’une image : elle sera téléchargée à l’enregistrement.</p>
+							</div>
 						</section>
 
 						<section class="h-full rounded-xl border border-base-300 bg-base-100 p-4" aria-labelledby="recipe-image-crop-title">

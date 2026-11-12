@@ -7,9 +7,11 @@ use App\Entity\Recipe;
 use App\Form\RecipeType;
 use App\Repository\RecipeRepository;
 use App\Service\PdfGenerator;
+use App\Service\RemoteImageDownloader;
 use App\Service\MarmitonApiService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -25,6 +27,10 @@ final class RecipeController extends AbstractController
 {
     private const PDF_GENERATION_TIMEOUT_SECONDS = 120;
     private const PDF_LOCK_WAIT_SECONDS = 25;
+
+    public function __construct(
+        private readonly RemoteImageDownloader $remoteImageDownloader,
+    ) {}
 
     #[Route(name: 'app_recipe_index', methods: ['GET'])]
     public function index(Request $request, RecipeRepository $recipeRepository): Response
@@ -94,7 +100,7 @@ final class RecipeController extends AbstractController
 
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid() && $this->storeRecipeImage($form, $recipe)) {
             $logger->info('recipe.new.valid', array_merge(
                 $this->requestLogContext($request),
                 $this->recipeLogContext($recipe)
@@ -110,8 +116,6 @@ final class RecipeController extends AbstractController
 
             // Map submitted pictogramUrl fields to local Pictogram relations when applicable
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
-
-            $this->storeRecipeImage($form, $recipe);
 
             // mark updatedAt so cache invalidation works correctly
             $recipe->setUpdatedAt(new \DateTime());
@@ -195,7 +199,7 @@ final class RecipeController extends AbstractController
         $form = $this->createForm(RecipeType::class, $recipe);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid() && $this->storeRecipeImage($form, $recipe)) {
             // ensure positions are set
             $this->normalizeIngredientPositions($recipe);
             $position = 0;
@@ -205,8 +209,6 @@ final class RecipeController extends AbstractController
 
             // Map pictogramUrl -> Pictogram relation for local pictograms
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
-
-            $this->storeRecipeImage($form, $recipe);
 
             // update timestamp to indicate recipe changed
             $recipe->setUpdatedAt(new \DateTime());
@@ -482,7 +484,7 @@ final class RecipeController extends AbstractController
 
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid() && $this->storeRecipeImage($form, $recipe)) {
             $logger->info('recipe.edit.valid', array_merge(
                 $this->requestLogContext($request),
                 $this->recipeLogContext($recipe)
@@ -498,8 +500,6 @@ final class RecipeController extends AbstractController
 
             // Map pictogramUrl -> Pictogram relation for local pictograms
             $this->mapPictogramsOnRecipe($recipe, $pictogramRepository);
-
-            $this->storeRecipeImage($form, $recipe);
 
             // update timestamp to indicate recipe changed
             $recipe->setUpdatedAt(new \DateTime());
@@ -822,26 +822,44 @@ final class RecipeController extends AbstractController
         }
     }
 
-    private function storeRecipeImage(FormInterface $form, Recipe $recipe): void
+    /**
+     * Enregistre l'image de la recette : fichier envoyé en priorité, sinon image téléchargée depuis l'URL saisie.
+     * Renvoie false si l'URL n'a pas pu être utilisée ; l'erreur est alors ajoutée au champ imageUrl.
+     */
+    private function storeRecipeImage(FormInterface $form, Recipe $recipe): bool
     {
-        if (!$form->has('imageFile')) {
-            return;
-        }
-
-        $image = $form->get('imageFile')->getData();
-        if (!$image instanceof UploadedFile) {
-            return;
-        }
-
         $directory = (string) $this->getParameter('recipe_image_directory');
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            throw new \RuntimeException("Impossible de créer le dossier des images de recettes.");
+
+        $image = $form->has('imageFile') ? $form->get('imageFile')->getData() : null;
+        if ($image instanceof UploadedFile) {
+            if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+                throw new \RuntimeException("Impossible de créer le dossier des images de recettes.");
+            }
+
+            $extension = $image->guessExtension() ?: 'jpg';
+            $filename = bin2hex(random_bytes(16)) . '.' . $extension;
+            $image->move($directory, $filename);
+            $recipe->setImagePath('uploads/recipes/' . $filename);
+
+            return true;
         }
 
-        $extension = $image->guessExtension() ?: 'jpg';
-        $filename = bin2hex(random_bytes(16)) . '.' . $extension;
-        $image->move($directory, $filename);
+        $url = $form->has('imageUrl') ? trim((string) $form->get('imageUrl')->getData()) : '';
+        if ($url === '') {
+            return true;
+        }
+
+        try {
+            $filename = $this->remoteImageDownloader->download($url, $directory);
+        } catch (\InvalidArgumentException $e) {
+            $form->get('imageUrl')->addError(new FormError($e->getMessage()));
+
+            return false;
+        }
+
         $recipe->setImagePath('uploads/recipes/' . $filename);
+
+        return true;
     }
 
     private function normalizeIngredientPositions(Recipe $recipe): void
